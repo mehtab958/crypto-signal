@@ -36,11 +36,31 @@ python -m crypto_signal signal   --asset gold                 # latest signal: B
 python -m crypto_signal backtest --asset btc --bars 10000     # backtest on Binance 1h candles
 python -m crypto_signal backtest --csv xauusd_1h.csv --profile gold --trades
 python -m crypto_signal.sweep    --asset gold                 # win rate vs. expectancy trade-off
+python -m crypto_signal basket   --asset gold --target 2 --stop 15   # basket-close mode
 pytest
 ```
 
 Gold data comes from `PAXGUSDT` (a token backed by gold that tracks XAU/USD closely). For your broker's
 XAUUSD feed, export a CSV with `time,open,high,low,close` columns.
+
+## Basket-close mode
+
+`crypto_signal/basket.py` opens a trade on every signal (up to `--max-trades`, default 5), with no
+per-trade stop, and closes **all** of them when their combined profit reaches `--target` ($2) or
+their combined loss reaches `--stop` ($15). Defaults assume a $100 MT5 cent account trading 0.03 lot of gold.
+
+Gold, Apr 2023 to Sep 2026 (30,000 1h bars), fixed lot size:
+
+| Lot | Target / stop | End equity | Lowest equity | Basket win rate | Cents per minute |
+|---|---|---|---|---|---|
+| 0.03 | $2 / $15 | $205 | $93 | 91% | 0.006 |
+| 0.15 | $10 / $75 | $626 | $67 | | 0.029 |
+| 0.30 | $20 / $150 | $1,153 | **$33** | | 0.059 |
+| 0.90 | $60 / $450 | **$0, blown in 6 weeks** | | | |
+| 0.03, **no basket stop** | $1 / none | **$0, blown Apr 2024** | | | |
+
+Gold rose from about $2,000 to over $4,000 in this period, which flatters any strategy that buys dips. Treat these as
+best-case numbers.
 
 ## Results and the truth about win rate
 

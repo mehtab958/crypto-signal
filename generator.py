@@ -93,8 +93,9 @@ def generate(subject: str, topic: str, year: int, syllabus: str = "", books: str
     client = client or anthropic.Anthropic()
     messages = build_messages(subject, topic, year, syllabus, books, issi, syllabus_images)
     tools = [
-        {"type": "web_search_20260209", "name": "web_search", "max_uses": 20,
-         "user_location": {"type": "approximate", "country": "PK"}},
+        # No user_location: the web search tool rejects country code PK. The prompt already
+        # steers searches to Pakistani sources (Dawn, PBS, ISSI).
+        {"type": "web_search_20260209", "name": "web_search", "max_uses": 20},
         {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 8},
     ]
     for _ in range(MAX_CONTINUATIONS + 1):

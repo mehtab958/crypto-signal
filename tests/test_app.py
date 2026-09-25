@@ -76,6 +76,7 @@ def test_request_shape_and_pause_turn_resume():
     assert body["model"] == "claude-opus-5" and body["fallbacks"] == "default"
     assert body["thinking"] == {"type": "adaptive"}
     assert {t["type"] for t in body["tools"]} == {"web_search_20260209", "web_fetch_20260209"}
+    assert all("user_location" not in t for t in body["tools"])   # API rejects country "PK"
     assert body["messages"][0]["content"][0]["title"].startswith("FPSC syllabus extract")
     # resume request re-sends the paused assistant turn and no extra user message
     assert [m["role"] for m in captured[1][1]["messages"]] == ["user", "assistant"]

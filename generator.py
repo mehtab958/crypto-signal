@@ -1,5 +1,6 @@
 """Builds the 5-6 page data bank with Claude + live web search."""
 
+import base64
 import os
 from collections.abc import Iterator
 
@@ -62,8 +63,13 @@ saying no relevant ISSI Issue Brief was found."""
 
 
 def build_messages(subject: str, topic: str, year: int, syllabus: str, books: str,
-                   issi: bool = True) -> list[dict]:
+                   issi: bool = True, syllabus_images: list[bytes] = ()) -> list[dict]:
     content = []
+    if syllabus_images:
+        content.append({"type": "text", "text": f"FPSC syllabus pages for {subject} (scanned):"})
+        content += [{"type": "image", "source": {"type": "base64", "media_type": "image/png",
+                                                 "data": base64.b64encode(img).decode()}}
+                    for img in syllabus_images]
     if syllabus:
         content.append({"type": "document", "title": f"FPSC syllabus extract: {subject}",
                         "source": {"type": "text", "media_type": "text/plain", "data": syllabus}})
@@ -81,10 +87,11 @@ def build_messages(subject: str, topic: str, year: int, syllabus: str, books: st
 
 
 def generate(subject: str, topic: str, year: int, syllabus: str = "", books: str = "",
-             issi: bool = True, client: anthropic.Anthropic | None = None) -> Iterator[str]:
+             issi: bool = True, syllabus_images: list[bytes] = (),
+             client: anthropic.Anthropic | None = None) -> Iterator[str]:
     """Yields the document's text as it streams. Raises RuntimeError if the request is declined."""
     client = client or anthropic.Anthropic()
-    messages = build_messages(subject, topic, year, syllabus, books, issi)
+    messages = build_messages(subject, topic, year, syllabus, books, issi, syllabus_images)
     tools = [
         {"type": "web_search_20260209", "name": "web_search", "max_uses": 20,
          "user_location": {"type": "approximate", "country": "PK"}},

@@ -36,7 +36,7 @@ relevant books and chapters, and can quote from PDFs you upload.
 
 1. **Get a Claude API key:** go to console.anthropic.com, sign up, add credit, then open API Keys and create a key.
 2. **Put this code on GitHub:** create a new repository (for example `css-databank`) and upload these files.
-   Optional: add the FPSC syllabus PDF as `data/fpsc_syllabus.pdf`.
+   The official FPSC syllabus PDF is already included as `data/fpsc_syllabus.pdf`. Replace it if FPSC publishes a newer one.
 3. **Deploy for free:** go to share.streamlit.io, sign in with GitHub, click Create app, pick the repository,
    and set the main file to `app.py`.
 4. **Add secrets:** in the app's Settings, open Secrets and paste:

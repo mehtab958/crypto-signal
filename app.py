@@ -9,7 +9,7 @@ import streamlit as st
 
 from generator import generate
 from pdf_export import to_pdf
-from sources import BOOKS_CHARS, SYLLABUS_CHARS, book_text, syllabus_section
+from sources import BOOKS_CHARS, SYLLABUS_CHARS, SyllabusExtract, book_text, syllabus_section
 from subjects import MY_COMPULSORY, MY_OPTIONAL, OTHER_SUBJECTS, SYLLABUS_LENGTH, SYLLABUS_NAME
 
 st.set_page_config(page_title="CSS Data Bank", page_icon="📚")
@@ -63,12 +63,12 @@ issi = st.checkbox("Include ISSI Issue Briefs when relevant", value=True,
 
 if st.button("Generate data bank", type="primary", disabled=not (topic and subject)):
     name = SYLLABUS_NAME.get(subject, subject)
-    syllabus = (syllabus_section(syllabus_pdf, name, SYLLABUS_LENGTH.get(name, SYLLABUS_CHARS))
-                if syllabus_pdf else "")
+    extract = (syllabus_section(syllabus_pdf, name, SYLLABUS_LENGTH.get(name, SYLLABUS_CHARS))
+               if syllabus_pdf else SyllabusExtract())
     books = "\n\n".join(book_text(f.name, f.getvalue()) for f in book_files or [])[:BOOKS_CHARS]
     st.info("Researching and writing. This usually takes 2 to 5 minutes. Keep this page open.")
     try:
-        text = st.write_stream(generate(subject, topic, int(year), syllabus, books, issi))
+        text = st.write_stream(generate(subject, topic, int(year), extract.text, books, issi, extract.images))
     except anthropic.AuthenticationError:
         st.error("The API key is missing or invalid. Add ANTHROPIC_API_KEY in the app's secrets.")
         st.stop()

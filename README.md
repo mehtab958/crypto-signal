@@ -91,3 +91,18 @@ price movement, so extra filters mainly reduce the number of trades.
 Anyone selling an 85–90%-win-rate system either uses this tiny-target trick, shows cherry-picked
 backtests, or leaves out losing periods. Use this tool to test ideas out-of-sample, keep the risk per trade
 small (0.5–1% of the account), and paper-trade before using real money. This is not financial advice.
+
+## DexScreener pump scanner (`dexscan/`)
+
+Finds tokens pumping right now on DexScreener (top/latest boosted, new profiles, community takeovers, or any
+search) and flags rug-pull risk: low liquidity, brand-new pairs, already-dumped, parabolic moves, sellers
+taking over, no socials, paid promotion. Each token gets a 0-100 momentum score and a verdict
+(MOMENTUM / WATCH / WEAK / AVOID) plus links to DexScreener and a honeypot/rug check.
+
+```bash
+python -m dexscan.scanner          # print the scan
+streamlit run dexscan/app.py       # phone-friendly app
+```
+
+It measures momentum that has already happened; it does not predict the next pump. Most small tokens that
+pump later dump. Deploy free on share.streamlit.io with main file `dexscan/app.py`. No API key is needed.

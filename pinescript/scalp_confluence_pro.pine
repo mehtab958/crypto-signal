@@ -1,0 +1,201 @@
+//@version=5
+// Scalp Confluence Pro: multi-strategy forex / gold scalping signals with built-in backtest.
+// Paste into TradingView's Pine Editor, "Add to chart", then read the Strategy Tester for the real win rate.
+// Suggested: EURUSD, GBPUSD, XAUUSD on the 5-minute chart during London / New York hours.
+// Not financial advice: no setting guarantees profit; test on a demo account first.
+strategy("Scalp Confluence Pro", overlay = true, initial_capital = 100, currency = currency.USD,
+     default_qty_type = strategy.fixed, slippage = 2, pyramiding = 0, max_labels_count = 500)
+
+// ───────────── Inputs
+grpT = "1. Trend filters (the vote)"
+emaFastLen  = input.int(50, "Fast EMA", group = grpT)
+emaSlowLen  = input.int(200, "Slow EMA", group = grpT)
+htfTf       = input.timeframe("15", "Higher timeframe", group = grpT)
+htfLen      = input.int(50, "Higher-timeframe EMA", group = grpT)
+stLen       = input.int(10, "Supertrend ATR length", group = grpT)
+stMult      = input.float(3.0, "Supertrend multiplier", step = 0.1, group = grpT)
+adxLen      = input.int(14, "ADX length", group = grpT)
+adxMin      = input.float(20, "Minimum ADX (trend strength)", group = grpT)
+minScore    = input.float(5.0, "Minimum confluence score (max 7.5)", step = 0.5, group = grpT)
+
+grpTr = "2. Entry triggers (the timing)"
+useRsi = input.bool(true, "RSI pullback", group = grpTr)
+rsiLen = input.int(7, "RSI length", group = grpTr)
+rsiLo  = input.float(40, "RSI dip level (longs)", group = grpTr)
+rsiHi  = input.float(60, "RSI rally level (shorts)", group = grpTr)
+useEma = input.bool(true, "EMA pullback", group = grpTr)
+pbLen  = input.int(21, "Pullback EMA", group = grpTr)
+useBb  = input.bool(true, "Bollinger re-entry", group = grpTr)
+bbLen  = input.int(20, "Bollinger length", group = grpTr)
+bbMult = input.float(2.0, "Bollinger width", step = 0.1, group = grpTr)
+useDon = input.bool(true, "Donchian breakout", group = grpTr)
+donLen = input.int(20, "Donchian length", group = grpTr)
+
+grpS = "3. Sessions and safety"
+useSession   = input.bool(true, "Only trade London / New York", group = grpS)
+sess1        = input.session("0700-1100", "London (UTC)", group = grpS)
+sess2        = input.session("1230-1600", "New York (UTC)", group = grpS)
+atrLen       = input.int(14, "ATR length", group = grpS)
+minAtrRatio  = input.float(0.8, "Skip dead markets: min ATR vs 50-bar average", step = 0.1, group = grpS)
+maxAtrRatio  = input.float(2.5, "Skip news spikes: max ATR vs 50-bar average", step = 0.1, group = grpS)
+allowShort   = input.bool(true, "Allow sell signals", group = grpS)
+cooldown     = input.int(3, "Bars to wait after a trade closes", group = grpS)
+maxTradesDay = input.int(6, "Max trades per day", group = grpS)
+maxDayLossR  = input.float(3.0, "Stop for the day after losing (R)", step = 0.5, group = grpS)
+maxBars      = input.int(24, "Close trade after N bars (time stop)", group = grpS)
+
+grpR = "4. Risk and targets"
+riskPct = input.float(1.0, "Risk per trade (% of equity)", step = 0.25, group = grpR)
+slAtr   = input.float(1.5, "Stop-loss (x ATR)", step = 0.1, group = grpR)
+tp1R    = input.float(1.0, "Target 1 (x risk)", step = 0.25, group = grpR)
+tp2R    = input.float(2.0, "Target 2 (x risk)", step = 0.25, group = grpR)
+tp1Pct  = input.int(50, "Close % at target 1", minval = 0, maxval = 100, group = grpR)
+moveBE  = input.bool(true, "Move stop to breakeven after target 1", group = grpR)
+
+// ───────────── Indicators
+emaF = ta.ema(close, emaFastLen)
+emaS = ta.ema(close, emaSlowLen)
+// Higher timeframe, using the last *closed* HTF bar so signals never repaint.
+htfEma   = request.security(syminfo.tickerid, htfTf, ta.ema(close, htfLen)[1], lookahead = barmerge.lookahead_on)
+htfClose = request.security(syminfo.tickerid, htfTf, close[1], lookahead = barmerge.lookahead_on)
+[stVal, stDir] = ta.supertrend(stMult, stLen)          // stDir < 0 = uptrend
+[diPlus, diMinus, adxVal] = ta.dmi(adxLen, adxLen)
+[macdLine, sigLine, hist] = ta.macd(close, 12, 26, 9)
+vw     = ta.vwap(hlc3)
+atr    = ta.atr(atrLen)
+atrAvg = ta.sma(atr, 50)
+
+// ───────────── Filters vote: +1 buy, -1 sell, 0 neutral
+vTrend = close > emaS and emaF > emaS ? 1 : close < emaS and emaF < emaS ? -1 : 0
+vHtf   = htfClose > htfEma ? 1 : htfClose < htfEma ? -1 : 0
+vSt    = stDir < 0 ? 1 : -1
+vAdx   = adxVal > adxMin ? (diPlus > diMinus ? 1 : -1) : 0
+vMacd  = hist > 0 and hist > hist[1] ? 1 : hist < 0 and hist < hist[1] ? -1 : 0
+vVwap  = close > vw ? 1 : close < vw ? -1 : 0
+score  = 2.0 * vTrend + 1.5 * vHtf + 1.5 * vSt + 1.0 * vAdx + 1.0 * vMacd + 0.5 * vVwap
+
+// ───────────── Triggers: the event that times the entry
+r  = ta.rsi(close, rsiLen)
+pb = ta.ema(close, pbLen)
+[bbMid, bbUp, bbLo] = ta.bb(close, bbLen, bbMult)
+donHi = ta.highest(high, donLen)[1]
+donLo = ta.lowest(low, donLen)[1]
+
+rsiLong   = useRsi and ta.crossover(r, rsiLo)
+rsiShort  = useRsi and ta.crossunder(r, rsiHi)
+emaLong   = useEma and emaF > emaS and low <= pb and close > pb and close > open
+emaShort  = useEma and emaF < emaS and high >= pb and close < pb and close < open
+bbLong    = useBb and close[1] < bbLo[1] and close > bbLo
+bbShort   = useBb and close[1] > bbUp[1] and close < bbUp
+donLong   = useDon and close > donHi and close[1] <= donHi[1]
+donShort  = useDon and close < donLo and close[1] >= donLo[1]
+longTrig  = rsiLong or emaLong or bbLong or donLong
+shortTrig = rsiShort or emaShort or bbShort or donShort
+
+trigName(isLong) =>
+    string s = ""
+    if isLong
+        s := (rsiLong ? "RSI " : "") + (emaLong ? "EMA " : "") + (bbLong ? "BB " : "") + (donLong ? "Breakout" : "")
+    else
+        s := (rsiShort ? "RSI " : "") + (emaShort ? "EMA " : "") + (bbShort ? "BB " : "") + (donShort ? "Breakout" : "")
+    s
+
+// ───────────── Safety filters
+inSess = not useSession or not na(time(timeframe.period, sess1, "UTC")) or not na(time(timeframe.period, sess2, "UTC"))
+volOk  = atr > atrAvg * minAtrRatio and atr < atrAvg * maxAtrRatio
+
+newDay = ta.change(time("D")) != 0
+var int   tradesToday = 0
+var float dayStartNet = 0.0
+if newDay
+    tradesToday := 0
+    dayStartNet := strategy.netprofit
+riskCash   = strategy.equity * riskPct / 100
+dayLossHit = strategy.netprofit - dayStartNet <= -maxDayLossR * riskCash
+
+var int lastExitBar = -1000
+if ta.change(strategy.closedtrades) > 0
+    lastExitBar := bar_index
+cooldownOk = bar_index - lastExitBar > cooldown
+
+// ───────────── Trade state
+var int   dir      = 0
+var float slPx     = na
+var float tp1Px    = na
+var float tp2Px    = na
+var float initQty  = na
+var int   entryBar = na
+
+// Reset once a position has fully closed.
+if strategy.position_size == 0 and strategy.position_size[1] != 0
+    dir := 0
+if strategy.position_size != 0 and strategy.position_size[1] == 0
+    initQty := math.abs(strategy.position_size)
+
+flat     = strategy.position_size == 0 and dir == 0
+warmedUp = bar_index > emaSlowLen
+canTrade = flat and warmedUp and inSess and volOk and cooldownOk and tradesToday < maxTradesDay and not dayLossHit
+goLong   = canTrade and longTrig and score >= minScore
+goShort  = canTrade and allowShort and shortTrig and score <= -minScore
+
+slDist = atr * slAtr
+qty    = math.round(riskCash / (slDist * syminfo.pointvalue), 2)
+
+fmt(x) => str.tostring(x, format.mintick)
+
+if (goLong or goShort) and qty > 0
+    dir      := goLong ? 1 : -1
+    slPx     := close - dir * slDist
+    tp1Px    := close + dir * slDist * tp1R
+    tp2Px    := close + dir * slDist * tp2R
+    entryBar := bar_index
+    tradesToday += 1
+    side = dir == 1 ? "BUY" : "SELL"
+    strategy.entry(side, dir == 1 ? strategy.long : strategy.short, qty = qty)
+    txt = side + " " + syminfo.ticker + " @ " + fmt(close) + "\nSL " + fmt(slPx) + "\nTP1 " + fmt(tp1Px) + "\nTP2 " + fmt(tp2Px) + "\nScore " + str.tostring(score) + " | " + trigName(dir == 1)
+    label.new(bar_index, dir == 1 ? low : high, txt, style = dir == 1 ? label.style_label_up : label.style_label_down,
+         color = dir == 1 ? color.new(color.green, 0) : color.new(color.red, 0), textcolor = color.white, size = size.small)
+    alert(txt, alert.freq_once_per_bar_close)
+
+// Exits: part closes at TP1, the rest at TP2; stop moves to breakeven once TP1 is hit.
+if dir != 0
+    side      = dir == 1 ? "BUY" : "SELL"
+    tp1Done   = not na(initQty) and strategy.position_size != 0 and math.abs(strategy.position_size) < initQty * 0.999
+    stopNow   = moveBE and tp1Done ? strategy.position_avg_price : slPx
+    if tp1Pct > 0
+        strategy.exit("TP1", side, qty_percent = tp1Pct, stop = slPx, limit = tp1Px)
+    strategy.exit("TP2", side, stop = stopNow, limit = tp2Px)
+    if strategy.position_size != 0 and bar_index - entryBar >= maxBars
+        strategy.close_all(comment = "Time stop")
+
+// ───────────── Chart
+plot(emaF, "Fast EMA", color.new(color.orange, 0))
+plot(emaS, "Slow EMA", color.new(color.blue, 0), 2)
+plot(stVal, "Supertrend", stDir < 0 ? color.new(color.green, 40) : color.new(color.red, 40))
+plot(dir != 0 ? slPx : na, "Stop", color.red, style = plot.style_linebr)
+plot(dir != 0 ? tp1Px : na, "Target 1", color.lime, style = plot.style_linebr)
+plot(dir != 0 ? tp2Px : na, "Target 2", color.green, style = plot.style_linebr)
+bgcolor(useSession and inSess ? color.new(color.gray, 92) : na, title = "Session")
+
+// ───────────── "Give signal" panel
+var table dash = table.new(position.top_right, 2, 7, bgcolor = color.new(color.black, 15), border_width = 1)
+if barstate.islast
+    status = dir == 1 ? "IN BUY" : dir == -1 ? "IN SELL" : goLong ? "BUY NOW" : goShort ? "SELL NOW" : "WAIT"
+    why = not inSess ? "outside session" : not volOk ? "volatility filter" : dayLossHit ? "daily loss limit" : tradesToday >= maxTradesDay ? "max trades today" : math.abs(score) < minScore ? "score too low" : "waiting for trigger"
+    stColor = status == "WAIT" ? color.gray : (dir == 1 or goLong) ? color.green : color.red
+    table.cell(dash, 0, 0, "Signal", text_color = color.white)
+    table.cell(dash, 1, 0, status, text_color = color.white, bgcolor = stColor)
+    table.cell(dash, 0, 1, "Score", text_color = color.white)
+    table.cell(dash, 1, 1, str.tostring(score) + " / 7.5", text_color = score >= minScore ? color.lime : score <= -minScore ? color.red : color.white)
+    table.cell(dash, 0, 2, "Reason", text_color = color.white)
+    table.cell(dash, 1, 2, status == "WAIT" ? why : trigName(dir == 1 or goLong), text_color = color.white)
+    table.cell(dash, 0, 3, "Stop", text_color = color.white)
+    table.cell(dash, 1, 3, dir != 0 ? fmt(slPx) : "-", text_color = color.red)
+    table.cell(dash, 0, 4, "Target 1 / 2", text_color = color.white)
+    table.cell(dash, 1, 4, dir != 0 ? fmt(tp1Px) + " / " + fmt(tp2Px) : "-", text_color = color.lime)
+    table.cell(dash, 0, 5, "Trades today", text_color = color.white)
+    table.cell(dash, 1, 5, str.tostring(tradesToday) + " / " + str.tostring(maxTradesDay), text_color = color.white)
+    wins = strategy.wintrades
+    total = strategy.closedtrades
+    table.cell(dash, 0, 6, "Backtest win rate", text_color = color.white)
+    table.cell(dash, 1, 6, total > 0 ? str.tostring(100.0 * wins / total, "#.#") + "% of " + str.tostring(total) : "-", text_color = color.white)

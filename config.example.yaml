@@ -1,0 +1,49 @@
+# Copy to config.yaml and edit. Secrets (tokens / keys) go in .env or env vars.
+
+# Chains to scan. DexScreener chain ids: solana, ethereum, bsc, base, arbitrum, polygon ...
+chains: [solana, base, bsc, ethereum]
+
+scan_interval_seconds: 60
+
+filters:
+  min_liquidity_usd: 8000        # ignored for bonding-curve pairs (pump.fun etc.) which report no liquidity
+  max_liquidity_usd: 2000000
+  min_market_cap_usd: 10000
+  max_market_cap_usd: 5000000    # small caps are where 10x moves happen (and where most rugs happen)
+  max_age_hours: 24              # only young pairs
+  min_txns_h1: 30                # skip dead tokens
+  max_price_change_h1: 400       # already up >400% in 1h = likely late, skip
+
+scoring:
+  alert_threshold: 60            # 0-100. Raise it for fewer, higher-quality alerts
+  whale_alert_always: true       # always alert when a tracked whale buys, even under threshold (still passes safety)
+
+safety:
+  require_safety_check: true     # reject tokens whose safety report can't be fetched
+  max_top10_holder_pct: 45       # EVM (GoPlus) top-10 holder concentration limit
+  max_tax_pct: 10                # EVM buy/sell tax limit
+  max_rugcheck_normalised: 30    # Solana: RugCheck score_normalised is a *risk* score (0 = clean, higher = riskier)
+
+# Wallets you want to copy. Find them on GMGN / Birdeye / Cielo / Arkham "top traders" of tokens
+# that already did 10x+, then verify they're profitable over many trades (not one lucky hit).
+whales:
+  lookback_minutes: 30           # whale buys older than this don't count
+  solana:
+    # - address: "WalletAddressHere"
+    #   label: "smart-money-1"
+    #   weight: 1.0
+  evm:
+    # - address: "0xWalletAddressHere"
+    #   chain: base
+    #   label: "base-sniper"
+    #   weight: 1.0
+
+socials:
+  check_telegram_members: true   # needs TELEGRAM_BOT_TOKEN; works for public groups/channels
+  check_website: true
+
+tracker:
+  # Re-check price of every signal after these delays so you can measure whether the bot is actually any good.
+  checkpoints_minutes: [15, 60, 240, 1440]
+
+database_path: whalebot.db

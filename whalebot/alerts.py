@@ -61,11 +61,17 @@ class Alerter:
     def send(self, text_html: str) -> None:
         plain = html.unescape(_strip_tags(text_html))
         print("\n" + "=" * 60 + "\n" + plain + "\n" + "=" * 60, flush=True)
-        if not self.telegram_enabled:
+        if self.telegram_enabled:
+            self.send_to(self.chat_id, text_html)
+
+    def send_to(self, chat_id: str, text_html: str) -> None:
+        """Send to a specific Telegram chat (used for command replies)."""
+        if not self.bot_token:
+            print(html.unescape(_strip_tags(text_html)), flush=True)
             return
         try:
             self.http.post(f"https://api.telegram.org/bot{self.bot_token}/sendMessage", json={
-                "chat_id": self.chat_id, "text": text_html, "parse_mode": "HTML",
+                "chat_id": chat_id, "text": text_html[:4096], "parse_mode": "HTML",
                 "disable_web_page_preview": True,
             })
         except Exception as exc:

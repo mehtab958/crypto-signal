@@ -137,5 +137,14 @@ class DexScreener:
         return best
 
 
-def _pair_rank(p: Pair) -> float:
-    return (p.liquidity_usd or 0) + p.volume.get("h24", 0)
+def best_pair_any_chain(dex: "DexScreener", address: str) -> Pair | None:
+    """Look a token up without knowing its chain (DexScreener searches every chain)."""
+    data = dex.http.get(f"{BASE}/latest/dex/tokens/{address}") or {}
+    pairs = [Pair.from_api(p) for p in data.get("pairs") or []]
+    pairs = [p for p in pairs if p.token_address.lower() == address.lower()]
+    return max(pairs, key=_pair_rank) if pairs else None
+
+
+def _pair_rank(p: Pair) -> tuple[bool, float]:
+    # Prefer real AMM pools over bonding curves: once a pump.fun token graduates, the curve pair is dead.
+    return (not p.is_bonding_curve, (p.liquidity_usd or 0) + p.volume.get("h1", 0))

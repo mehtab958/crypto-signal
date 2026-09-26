@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from collections import defaultdict
 
@@ -32,6 +33,8 @@ class Bot:
         self.evm = EvmTracker(self.http, cfg.secrets.etherscan_api_key)
         self._safety_cache: dict[tuple[str, str], tuple[float, safety_mod.SafetyReport]] = {}
         self._social_cache: dict[tuple[str, str], tuple[float, socials_mod.SocialReport]] = {}
+        self.lock = threading.RLock()  # serialises scan cycles and Telegram commands
+        self.alerts_paused = False
 
     # ------------------------------------------------------------------ whales
     def poll_whales(self) -> list[WhaleTrade]:
@@ -84,7 +87,8 @@ class Bot:
                                                       self.cfg.socials.check_website))
 
     # ------------------------------------------------------------------ evaluation
-    def evaluate(self, p: Pair, whale_buys: list[WhaleTrade], force: bool = False) -> tuple[Signal | None, str]:
+    def evaluate(self, p: Pair, whale_buys: list[WhaleTrade], force: bool = False,
+                 min_score: float | None = None) -> tuple[Signal | None, str]:
         """Return (signal, reason). Signal is None when rejected."""
         reject = hard_filter(p, self.cfg.filters)
         # A whale buying an older token is still worth a look, so only the age filter is relaxed.
@@ -94,7 +98,8 @@ class Bot:
         # Cheap pre-check before hitting the rate-limited safety/social APIs.
         mom, _, _ = momentum_score(p)
         best_case = mom + 20 + 10 + early_score(p) + (30 if whale_buys else 0)
-        if best_case < self.cfg.scoring.alert_threshold and not whale_buys and not force:
+        floor = self.cfg.scoring.alert_threshold if min_score is None else min_score
+        if best_case < floor and not whale_buys and not force:
             return None, f"momentum too weak ({mom:.0f}/35)"
 
         sreport = self.safety_for(p)
@@ -108,13 +113,36 @@ class Bot:
         new_whale_tokens = {(t.chain, t.token) for t in new_trades if t.side == "buy"}
         self._exit_alerts([t for t in new_trades if t.side == "sell"])
 
-        candidates = set(self.dex.discover(self.cfg.chains)) | new_whale_tokens
+        fired: list[Signal] = []
+        for sig in self.score_candidates(new_whale_tokens):
+            p = sig.pair
+            is_new_whale = (p.chain, p.token_address.lower()) in {(c, a.lower()) for c, a in new_whale_tokens}
+            passes = sig.score >= self.cfg.scoring.alert_threshold or (
+                is_new_whale and self.cfg.scoring.whale_alert_always)
+            if (passes and not self.alerts_paused
+                    and self.store.should_alert(p.chain, p.token_address, sig.score, is_new_whale)):
+                self.store.add_signal(sig)
+                self.alerter.signal(sig)
+                fired.append(sig)
+            else:
+                log.debug("below threshold %s %.0f", p.symbol, sig.score)
+        log.info("%d alerts", len(fired))
+        return fired
+
+    def score_candidates(self, extra: set[tuple[str, str]] = frozenset(),
+                         min_score: float | None = None) -> list[Signal]:
+        """Discover new tokens and return every one that passes filters + safety, scored, best first.
+
+        `min_score` lets tokens whose best possible score is below it skip the slow safety/social lookups;
+        it defaults to the alert threshold.
+        """
+        candidates = set(self.dex.discover(self.cfg.chains)) | set(extra)
         by_chain: dict[str, list[str]] = defaultdict(list)
         for chain, addr in candidates:
             by_chain[chain].append(addr)
 
         since = int(time.time() - self.cfg.whales.lookback_minutes * 60)
-        fired: list[Signal] = []
+        signals: list[Signal] = []
         rejected = 0
         for chain, addrs in by_chain.items():
             try:
@@ -125,7 +153,7 @@ class Bot:
             for addr, pair in pairs.items():
                 buys = self.store.recent_whale_buys(chain, addr, since)
                 try:
-                    sig, why = self.evaluate(pair, buys)
+                    sig, why = self.evaluate(pair, buys, min_score=min_score)
                 except Exception as exc:
                     log.debug("evaluate %s failed: %s", pair.symbol, exc)
                     continue
@@ -133,17 +161,9 @@ class Bot:
                     rejected += 1
                     log.debug("skip %s %s: %s", chain, pair.symbol, why)
                     continue
-                is_new_whale = (chain, addr) in new_whale_tokens
-                passes = sig.score >= self.cfg.scoring.alert_threshold or (
-                    is_new_whale and self.cfg.scoring.whale_alert_always)
-                if passes and self.store.should_alert(chain, addr, sig.score, is_new_whale):
-                    self.store.add_signal(sig)
-                    self.alerter.signal(sig)
-                    fired.append(sig)
-                else:
-                    log.debug("below threshold %s %.0f", pair.symbol, sig.score)
-        log.info("scanned %d tokens, %d rejected by filters, %d alerts", len(candidates), rejected, len(fired))
-        return fired
+                signals.append(sig)
+        log.info("scanned %d tokens, %d rejected, %d scored", len(candidates), rejected, len(signals))
+        return sorted(signals, key=lambda s: s.score, reverse=True)
 
     # ------------------------------------------------------------------ outcome tracking
     def track_outcomes(self) -> None:
@@ -176,8 +196,9 @@ class Bot:
         while True:
             started = time.time()
             try:
-                self.scan()
-                self.track_outcomes()
+                with self.lock:
+                    self.scan()
+                    self.track_outcomes()
             except KeyboardInterrupt:
                 raise
             except Exception:

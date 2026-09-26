@@ -85,10 +85,38 @@ out obvious dev/insider wallets and bots that buy everything.
 
 Only transactions the wallet itself sent count as buys, so spam tokens airdropped to whale wallets are ignored.
 
+## Quick start: get signals with commands
+
+The default settings work without any whale wallets, so you only need a Telegram bot to start:
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env          # put TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in it (see Telegram alerts above)
+python -m whalebot run        # automatic alerts + answers your commands in Telegram
+```
+
+Then send these to your bot in Telegram:
+
+| Command | What you get |
+|---|---|
+| `/top` or `/top 5` | The best-scoring new tokens right now, even if none crossed the alert threshold |
+| `/check <address>` | Full score + safety check for any token (chain auto-detected). You can also just paste an address |
+| `/check base 0x…` | Same thing with the chain given explicitly |
+| `/whales` | Latest buys/sells of your tracked wallets |
+| `/report` | Win rate of past signals at +15m / 1h / 4h / 24h |
+| `/status` | Chains, filters, threshold, alerts on or off |
+| `/threshold 70` | Change the alert threshold without restarting |
+| `/pause` · `/resume` | Stop or restart automatic alerts; commands keep working |
+
+The bot only answers the chat in `TELEGRAM_CHAT_ID` and ignores everyone else.
+No Telegram? `python -m whalebot top` prints the same `/top` signals in your terminal.
+
 ## Usage
 
 ```bash
-python -m whalebot run                         # scan every scan_interval_seconds, send alerts
+python -m whalebot run                         # scan every scan_interval_seconds, alert, answer Telegram commands
+python -m whalebot listen                      # answer Telegram commands only, no automatic alerts
+python -m whalebot top 5                       # best 5 signals right now, printed in the terminal
 python -m whalebot -v once                     # one cycle; -v shows why each token was skipped
 python -m whalebot check solana <mint>         # score any token right now and preview the alert
 python -m whalebot check base 0x...            #   (works for EVM chains too)

@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS cursors (
 
 class Store:
     def __init__(self, path: str):
-        self.db = sqlite3.connect(path)
+        self.db = sqlite3.connect(path, check_same_thread=False)  # access is serialised by Bot.lock
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
 
@@ -94,6 +94,10 @@ class Store:
         return [WhaleTrade(wallet=r["wallet"], wallet_label=r["wallet_label"], weight=r["weight"], chain=r["chain"],
                            token=r["token"], side=r["side"], amount=r["amount"], quote_amount=r["quote_amount"],
                            timestamp=r["timestamp"], tx=r["tx"]) for r in rows]
+
+    def recent_whale_trades(self, limit: int = 15) -> list[dict]:
+        rows = self.db.execute("SELECT * FROM whale_trades ORDER BY timestamp DESC LIMIT ?", (limit,)).fetchall()
+        return [dict(r) for r in rows]
 
     # --- signals -------------------------------------------------------------------------------
     def last_signal(self, chain: str, token: str):

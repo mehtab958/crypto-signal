@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import argparse
+import html
 import logging
+import re
 import sys
 import time
 
 from .alerts import format_signal
 from .bot import Bot, describe
+from .commands import CommandListener
+from .commands import top as top_signals
 from .config import load_config
 from .scoring import hard_filter
 
@@ -18,7 +22,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("-c", "--config", default="config.yaml", help="path to config.yaml")
     ap.add_argument("-v", "--verbose", action="store_true", help="debug logging (shows why tokens are skipped)")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("run", help="scan continuously and send alerts")
+    sub.add_parser("run", help="scan continuously, send alerts, and answer Telegram commands")
+    top = sub.add_parser("top", help="print the best signals right now")
+    top.add_argument("n", nargs="?", type=int, default=5)
+    sub.add_parser("listen", help="only answer Telegram commands (no automatic alerts)")
     sub.add_parser("once", help="run a single scan cycle")
     chk = sub.add_parser("check", help="score one token right now")
     chk.add_argument("chain", help="solana, ethereum, base, bsc ...")
@@ -35,10 +42,24 @@ def main(argv: list[str] | None = None) -> int:
     bot = Bot(load_config(args.config))
 
     if args.cmd == "run":
+        if bot.alerter.telegram_enabled:
+            CommandListener(bot).start_thread()
         try:
             bot.run_forever()
         except KeyboardInterrupt:
             print("\nstopped")
+    elif args.cmd == "listen":
+        if not bot.alerter.telegram_enabled:
+            print("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set")
+            return 1
+        try:
+            CommandListener(bot).run_forever()
+        except KeyboardInterrupt:
+            print("\nstopped")
+    elif args.cmd == "top":
+        result = top_signals(bot, max(1, args.n))
+        for chunk in result if isinstance(result, list) else [result]:
+            print(html.unescape(re.sub(r"<[^>]+>", "", chunk)) + "\n" + "-" * 60)
     elif args.cmd == "once":
         bot.scan()
         bot.track_outcomes()

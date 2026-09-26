@@ -157,3 +157,10 @@ def test_parse_evm_transfers():
     trades = parse_evm_transfers(transfers, {"0x1"}, whale, "base", min_ts=50)
     assert [(t.token, t.side, t.amount) for t in trades] == [("0xmeme", "buy", 5.0)]
     assert parse_evm_transfers(transfers, {"0x1"}, whale, "base", min_ts=200) == []
+
+
+def test_graduated_pool_preferred_over_bonding_curve():
+    from whalebot.dexscreener import _pair_rank
+    curve = make_pair(liquidity=None, volume={"h1": 1_000_000})
+    pool = make_pair(liquidity={"usd": 20_000}, volume={"h1": 5_000})
+    assert _pair_rank(pool) > _pair_rank(curve)

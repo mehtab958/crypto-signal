@@ -34,3 +34,10 @@ File: [`strategies/institutional_confluence_scalper.pine`](strategies/institutio
 * 1:3–1:5 is a **reward-to-risk** ratio, not a win rate. At 3R the break-even win rate is about 25 %. A realistic result for this kind of model is roughly 30–45 % winners, and that is still profitable at these targets. The dashboard shows your win rate next to the break-even rate.
 * No strategy wins all the time. Backtest each symbol, include real commission and slippage, and forward-test on paper before using real money.
 * Pine Script cannot read a live economic calendar. The "fundamentals" here are macro and volatility proxies plus news windows you set yourself.
+
+## Raja Banks-Style Signals (TradingView indicator)
+
+File: [`indicators/raja_banks_style_signals.pine`](indicators/raja_banks_style_signals.pine)
+
+Trend (EMA 50/200, plus the higher-timeframe EMA 200) → price pulls back into a key support/resistance zone → an engulfing or pin-bar confirmation candle. The entry is at the candle's close. The stop sits beyond the zone plus an ATR buffer. TP1/TP2/TP3 = 2R/3R/5R, with the stop moved to break-even after TP1. The on-chart dashboard shows the win rate, TP/SL hits and net R for the last 30 days (configurable).
+Raja Banks has not published an exact coded rulebook, so this follows his publicly taught principles.

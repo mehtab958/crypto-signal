@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Futures Pump Scanner</title>
+<style>
+:root{--bg:#0b0e13;--panel:#121722;--panel2:#171d2a;--line:#232b3b;--text:#e6e9ef;--muted:#8b93a7;--green:#16c784;--red:#ea3943;--amber:#f5a623;--blue:#4c8dff}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--blue);text-decoration:none}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+h1{font-size:17px;margin:0;letter-spacing:.2px}
+.status{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:12.5px}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:6px;vertical-align:middle}
+.dot.on{background:var(--green)}
+button{font:inherit;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:7px 12px;cursor:pointer}
+button.primary{background:var(--green);border-color:var(--green);color:#04130c;font-weight:600}
+button:hover{filter:brightness(1.12)}
+.wrap{padding:14px 16px;max-width:1500px;margin:0 auto}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+summary{cursor:pointer;color:var(--muted)}
+.settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 16px;margin-top:10px}
+.settings label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.settings input[type=number]{width:78px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:14px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.panel h2{font-size:14px;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.panel h2 small{color:var(--muted);font-weight:400}
+#feed{max-height:calc(100vh - 210px);overflow:auto;padding:10px}
+.empty{color:var(--muted);padding:24px 10px;text-align:center}
+.card{border:1px solid var(--line);border-left:4px solid var(--green);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--panel2)}
+.card.dump{border-left-color:var(--red)}
+.card.heat{border-left-color:var(--amber)}
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card .coin{font-size:18px;font-weight:700}
+.card .tag{font-weight:700}
+.card.pump .tag{color:var(--green)} .card.dump .tag{color:var(--red)} .card.heat .tag{color:var(--amber)}
+.card .meta{color:var(--muted);font-size:12.5px;margin:3px 0 6px}
+.levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;font-size:12.5px}
+.levels div{background:var(--bg);border-radius:6px;padding:4px 6px}
+.levels b{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.card .links{margin-top:6px;font-size:12.5px;display:flex;gap:14px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--panel)}
+td:first-child,th:first-child{text-align:left}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--panel2)}
+.up{color:var(--green)} .down{color:var(--red)} .warm{color:var(--amber)}
+.badge{padding:2px 7px;border-radius:5px;font-size:12px;font-weight:600}
+.b-pump{background:rgba(22,199,132,.18);color:var(--green)}
+.b-dump{background:rgba(234,57,67,.18);color:var(--red)}
+.b-hu{background:rgba(245,166,35,.18);color:var(--amber)}
+.b-hd{background:rgba(76,141,255,.18);color:var(--blue)}
+#toasts{position:fixed;top:72px;right:14px;z-index:50;display:flex;flex-direction:column;gap:10px;width:min(360px,calc(100vw - 28px))}
+.toast{background:var(--panel2);border:1px solid var(--line);border-left:5px solid var(--green);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);cursor:pointer;animation:in .25s ease-out}
+.toast.dump{border-left-color:var(--red)} .toast.heat{border-left-color:var(--amber)}
+.toast .t1{font-size:20px;font-weight:800}
+.toast .t2{color:var(--muted);font-size:12.5px;margin-top:2px}
+@keyframes in{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.banner{background:rgba(234,57,67,.12);border:1px solid rgba(234,57,67,.4);color:#ffb3b8;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:none}
+.note{color:var(--muted);font-size:12.5px;margin:10px 0 0}
+.progress{height:3px;background:var(--line);border-radius:2px;overflow:hidden;width:120px;display:inline-block;vertical-align:middle;margin-left:6px}
+.progress i{display:block;height:100%;width:0;background:var(--blue);transition:width .3s}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Futures Pump / Dump Scanner</h1>
+  <div class="status">
+    <span class="pill"><span class="dot" id="wsDot"></span><span id="wsTxt">not started</span></span>
+    <span class="pill"><span id="symCount">0</span> coins</span>
+    <span class="pill">history <span id="histTxt">0</span><span class="progress"><i id="histBar"></i></span></span>
+    <span class="pill">signals <span id="sigCount">0</span></span>
+    <button id="startBtn" class="primary">▶ Start scanner</button>
+    <button id="testBtn">Test pop-up</button>
+    <button id="muteBtn">🔊 Sound on</button>
+  </div>
+</header>
+
+<div id="toasts"></div>
+
+<div class="wrap">
+  <div class="banner" id="banner"></div>
+
+  <details>
+    <summary>Settings (saved in this browser)</summary>
+    <div class="settings" id="settings"></div>
+    <p class="note">PUMP = this 1-minute candle's volume is already ≥ <b>Volume spike</b> × the 30-minute average, price moved ≥ the move %, it broke the 30-minute high, closed near the top of the candle, and aggressive (taker) buyers are ≥ <b>Taker buy %</b>. DUMP = mirror. HEATING = volume pace and price starting to build — an early warning before a full signal. Coins trading under the minimum $/minute are ignored.</p>
+  </details>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Signals <small id="feedHint">newest first</small></h2>
+      <div id="feed"><div class="empty">Press <b>Start scanner</b>. Signals will appear here and pop up on screen.</div></div>
+    </section>
+    <section class="panel">
+      <h2>Live radar <small>hottest coins right now · click to open chart</small></h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Coin</th><th>Price</th><th>1m %</th><th>3m %</th><th>Vol pace</th><th>Taker buy</th><th>$ / min</th><th>Status</th></tr></thead>
+          <tbody id="radar"><tr><td colspan="8" class="empty">waiting…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <p class="note">Data: Binance USDT-M futures public streams (no account or API key needed). This detects the first seconds of a move — it cannot predict one before it starts. Signals can fade; always use the stop-loss. Not financial advice.</p>
+</div>
+
+<script>
+(() => {
+'use strict';
+const FAPI = 'https://fapi.binance.com';
+const WSB  = 'wss://fstream.binance.com';
+const PER_CONN = 150;
+
+// ---------- settings ----------
+const DEFAULTS = {volX:3, pct:0.6, pct3:1.2, taker:60, minQ:20000, cool:5, brk:1, heatShow:1, heatAlert:0, sl:1.5, tp1:1.5, tp2:3, sound:1, notify:1};
+const LABELS = {
+  volX:['Volume spike (× avg)',0.5], pct:['1-candle move %',0.1], pct3:['3-candle move %',0.1], taker:['Taker buy % (pump)',1],
+  minQ:['Min $ / minute',1000], cool:['Cooldown per coin (min)',1], brk:['Require breakout (1/0)',1],
+  heatShow:['Show HEATING in feed (1/0)',1], heatAlert:['Pop-up on HEATING (1/0)',1],
+  sl:['Stop-loss (× ATR)',0.25], tp1:['TP1 (R)',0.5], tp2:['TP2 (R)',0.5], notify:['Desktop notification (1/0)',1]
+};
+let cfg = {...DEFAULTS};
+try { Object.assign(cfg, JSON.parse(localStorage.getItem('pumpScannerCfg') || '{}')); } catch (e) {}
+const save = () => { try { localStorage.setItem('pumpScannerCfg', JSON.stringify(cfg)); } catch (e) {} };
+
+const setEl = document.getElementById('settings');
+for (const [k, [label, step]] of Object.entries(LABELS)) {
+  const l = document.createElement('label');
+  l.textContent = label;
+  const i = document.createElement('input');
+  i.type = 'number'; i.step = step; i.value = cfg[k];
+  i.addEventListener('change', () => { const v = parseFloat(i.value); if (!isNaN(v)) { cfg[k] = v; save(); } });
+  l.appendChild(i); setEl.appendChild(l);
+}
+
+// ---------- state ----------
+const S = {};              // symbol -> state
+let symbols = [];
+let conns = [];
+let histLoaded = 0, sigTotal = 0, started = false;
+const $ = id => document.getElementById(id);
+
+const banner = msg => { const b = $('banner'); b.innerHTML = msg; b.style.display = msg ? 'block' : 'none'; };
+const decimalsFromTick = t => { const s = String(t); if (!s.includes('.')) return 0; return s.replace(/0+$/, '').split('.')[1]?.length || 0; };
+const fmtP = (st, x) => {
+  if (x == null || !isFinite(x)) return '—';
+  if (st && st.dec != null) return x.toFixed(st.dec);
+  return x >= 100 ? x.toFixed(2) : x >= 1 ? x.toFixed(4) : x.toPrecision(4);
+};
+const fmtQ = q => q >= 1e6 ? (q / 1e6).toFixed(1) + 'M' : q >= 1e3 ? (q / 1e3).toFixed(0) + 'k' : q.toFixed(0);
+const coinName = s => s.replace(/USDT$/, '');
+const tvUrl = s => `https://www.tradingview.com/chart/?symbol=BINANCE:${s}.P`;
+const bnUrl = s => `https://www.binance.com/en/futures/${s}`;
+
+// ---------- sound & notifications ----------
+let audio = null, sound = !!cfg.sound;
+$('muteBtn').textContent = sound ? '🔊 Sound on' : '🔇 Muted';
+$('muteBtn').onclick = () => { sound = !sound; cfg.sound = sound ? 1 : 0; save(); $('muteBtn').textContent = sound ? '🔊 Sound on' : '🔇 Muted'; };
+function beep(type) {
+  if (!sound || !audio) return;
+  const seq = type === 1 ? [660, 880, 1100] : type === -1 ? [700, 520, 360] : [600, 600];
+  seq.forEach((f, i) => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = f; o.type = 'sine';
+    const t = audio.currentTime + i * 0.13;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.13);
+  });
+}
+function notify(title, body, sym) {
+  if (!cfg.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
+  try { const n = new Notification(title, {body, tag: sym + title, requireInteraction: false}); n.onclick = () => { window.focus(); window.open(tvUrl(sym), '_blank'); }; } catch (e) {}
+}
+let titleTimer = null;
+function flashTitle(t) {
+  clearInterval(titleTimer); let on = false, n = 0;
+  titleTimer = setInterval(() => { document.title = (on = !on) ? t : 'Futures Pump Scanner'; if (++n > 12) { clearInterval(titleTimer); document.title = 'Futures Pump Scanner'; } }, 700);
+}
+
+// ---------- signal output ----------
+function levels(st, m, d) {
+  const r = cfg.sl * m.atr;
+  return {entry: m.c, sl: m.c - d * r, tp1: m.c + d * r * cfg.tp1, tp2: m.c + d * r * cfg.tp2};
+}
+function toast(cls, title, sub, sym) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + cls;
+  el.innerHTML = `<div class="t1"></div><div class="t2"></div>`;
+  el.querySelector('.t1').textContent = title; el.querySelector('.t2').textContent = sub;
+  el.onclick = () => window.open(tvUrl(sym), '_blank');
+  $('toasts').prepend(el);
+  while ($('toasts').children.length > 5) $('toasts').lastChild.remove();
+  setTimeout(() => el.remove(), 12000);
+}
+function fire(sym, st, sig, m) {
+  const d = sig > 0 ? 1 : -1;
+  const cls = sig === 1 ? 'pump' : sig === -1 ? 'dump' : 'heat';
+  const tag = sig === 1 ? '🚀 PUMP' : sig === -1 ? '🔻 DUMP' : sig === 2 ? '🔥 HEATING ↑' : '🧊 HEATING ↓';
+  const L = levels(st, m, d);
+  const coin = coinName(sym);
+  const sgn = m.chg >= 0 ? '+' : '';
+  const sub = `${sgn}${m.chg.toFixed(2)}% · vol ${m.pace.toFixed(1)}x · taker buy ${m.taker.toFixed(0)}% · ${d > 0 ? 'LONG' : 'SHORT'} ${fmtP(st, L.entry)} SL ${fmtP(st, L.sl)} TP ${fmtP(st, L.tp1)} / ${fmtP(st, L.tp2)}`;
+  const full = Math.abs(sig) === 1;
+
+  if (full || cfg.heatShow) {
+    const feed = $('feed');
+    if (feed.querySelector('.empty')) feed.innerHTML = '';
+    const c = document.createElement('div');
+    c.className = 'card ' + cls;
+    const time = new Date().toLocaleTimeString();
+    c.innerHTML = `
+      <div class="top"><span class="coin"></span><span class="tag"></span></div>
+      <div class="meta"></div>
+      <div class="levels">
+        <div><b>${d > 0 ? 'LONG' : 'SHORT'} entry</b>${fmtP(st, L.entry)}</div>
+        <div><b>Stop-loss</b><span class="down">${fmtP(st, L.sl)}</span></div>
+        <div><b>TP1 (${cfg.tp1}R)</b><span class="up">${fmtP(st, L.tp1)}</span></div>
+        <div><b>TP2 (${cfg.tp2}R)</b><span class="up">${fmtP(st, L.tp2)}</span></div>
+      </div>
+      <div class="links"><a target="_blank" rel="noopener" href="${tvUrl(sym)}">TradingView chart</a><a target="_blank" rel="noopener" href="${bnUrl(sym)}">Binance futures</a></div>`;
+    c.querySelector('.coin').textContent = coin;
+    c.querySelector('.tag').textContent = tag;
+    c.querySelector('.meta').textContent = `${time} · ${sgn}${m.chg.toFixed(2)}% (1m) · ${m.chg3 >= 0 ? '+' : ''}${m.chg3.toFixed(2)}% (3m) · volume ${m.pace.toFixed(1)}× normal · taker buy ${m.taker.toFixed(0)}% · $${fmtQ(m.qNow)} this minute`;
+    feed.prepend(c);
+    while (feed.children.length > 150) feed.lastChild.remove();
+  }
+  if (full) { sigTotal++; $('sigCount').textContent = sigTotal; }
+  if (full || cfg.heatAlert) {
+    toast(cls, `${tag}  ${coin}`, sub, sym);
+    beep(sig === 1 ? 1 : sig === -1 ? -1 : 0);
+    notify(`${tag} ${coin}`, sub, sym);
+    flashTitle(`${tag} ${coin}`);
+  }
+}
+
+// ---------- detection ----------
+const avg = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
+function evaluate(sym, st) {
+  const cur = st.cur, h = st.hist;
+  if (!cur || h.length < 20) { st.m = null; return; }
+  const last = h.slice(-30);
+  const vAvg = avg(last.map(c => c.v)), qAvg = avg(last.map(c => c.q));
+  if (!(vAvg > 0)) { st.m = null; return; }
+  const elapsed = Math.min(1, Math.max(0.05, (Date.now() - cur.t) / 60000));
+  const vr = cur.v / vAvg;
+  const pace = cur.v / (vAvg * elapsed);
+  const chg = (cur.c - cur.o) / cur.o * 100;
+  const ref3 = h[h.length - 3].c;
+  const chg3 = (cur.c - ref3) / ref3 * 100;
+  const hh = Math.max(...last.map(c => c.h)), ll = Math.min(...last.map(c => c.l));
+  const rng = cur.h - cur.l, pos = rng > 0 ? (cur.c - cur.l) / rng : 0.5;
+  const taker = cur.v > 0 ? cur.V / cur.v * 100 : 50;
+  let trs = 0; const a14 = h.slice(-15);
+  for (let i = 1; i < a14.length; i++) { const p = a14[i - 1].c, c = a14[i]; trs += Math.max(c.h - c.l, Math.abs(c.h - p), Math.abs(c.l - p)); }
+  const atr = trs / Math.max(1, a14.length - 1);
+  const liquid = qAvg >= cfg.minQ;
+  const up = chg >= cfg.pct || chg3 >= cfg.pct3, dn = chg <= -cfg.pct || chg3 <= -cfg.pct3;
+
+  let sig = 0;
+  if (liquid) {
+    if (vr >= cfg.volX && up && pos >= 0.65 && taker >= cfg.taker && (!cfg.brk || cur.c > hh)) sig = 1;
+    else if (vr >= cfg.volX && dn && pos <= 0.35 && taker <= 100 - cfg.taker && (!cfg.brk || cur.c < ll)) sig = -1;
+    else if (pace >= cfg.volX && elapsed >= 0.15 && chg >= cfg.pct * 0.5 && taker >= 55) sig = 2;
+    else if (pace >= cfg.volX && elapsed >= 0.15 && chg <= -cfg.pct * 0.5 && taker <= 45) sig = -2;
+  }
+  st.m = {c: cur.c, chg, chg3, vr, pace, taker, atr, qAvg, qNow: cur.q, sig, liquid, score: liquid ? Math.min(pace, 50) * (Math.abs(chg) + 0.05) : 0};
+
+  if (sig !== 0) {
+    const now = Date.now(), key = Math.abs(sig) === 1 ? 'f' + sig : 'h' + sig;
+    const coolMs = cfg.cool * 60000;
+    if (!st.fired[key] || now - st.fired[key] > coolMs) {
+      // a full PUMP/DUMP also silences later HEATING for the same direction
+      st.fired[key] = now;
+      if (Math.abs(sig) === 1) st.fired['h' + (sig * 2)] = now;
+      fire(sym, st, sig, st.m);
+    }
+  }
+}
+
+// ---------- data ----------
+function onKline(k) {
+  const st = S[k.s]; if (!st) return;
+  const c = {t: k.t, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v, q: +k.q, V: +k.V};
+  if (k.x) {
+    const lastT = st.hist.length ? st.hist[st.hist.length - 1].t : 0;
+    if (c.t > lastT) { st.hist.push(c); if (st.hist.length > 60) st.hist.shift(); }
+    st.cur = null;
+  } else {
+    st.cur = c;
+    evaluate(k.s, st);
+  }
+}
+
+function openWS(list, idx) {
+  const url = `${WSB}/stream?streams=` + list.map(s => s.toLowerCase() + '@kline_1m').join('/');
+  let ws;
+  try { ws = new WebSocket(url); } catch (e) { banner('Could not open a WebSocket connection: ' + e.message); return; }
+  conns[idx] = {ws, open: false};
+  ws.onopen = () => { conns[idx].open = true; updStatus(); };
+  ws.onmessage = e => { try { const m = JSON.parse(e.data); if (m.data && m.data.k) onKline(m.data.k); } catch (err) {} };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+  ws.onclose = () => { conns[idx].open = false; updStatus(); setTimeout(() => openWS(list, idx), 3000); };
+}
+function updStatus() {
+  const open = conns.filter(c => c && c.open).length;
+  $('wsDot').classList.toggle('on', open > 0 && open === conns.length);
+  $('wsTxt').textContent = conns.length ? `live ${open}/${conns.length} streams` : 'not started';
+}
+
+async function getSymbols() {
+  try {
+    const r = await fetch(FAPI + '/fapi/v1/exchangeInfo');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    return j.symbols.filter(s => s.contractType === 'PERPETUAL' && s.quoteAsset === 'USDT' && s.status === 'TRADING')
+      .map(s => ({s: s.symbol, tick: (s.filters.find(f => f.filterType === 'PRICE_FILTER') || {}).tickSize}));
+  } catch (e) {
+    // Fallback: learn the symbol list from the all-market mini-ticker stream
+    return new Promise(res => {
+      const ws = new WebSocket(`${WSB}/ws/!miniTicker@arr`);
+      const t = setTimeout(() => { try { ws.close(); } catch (x) {} res([]); }, 8000);
+      ws.onmessage = ev => {
+        clearTimeout(t);
+        try { res(JSON.parse(ev.data).map(x => x.s).filter(s => /USDT$/.test(s)).map(s => ({s, tick: null}))); } catch (x) { res([]); }
+        ws.close();
+      };
+      ws.onerror = () => { clearTimeout(t); res([]); };
+    });
+  }
+}
+
+async function loadHistory() {
+  let i = 0, failed = 0;
+  const worker = async () => {
+    while (i < symbols.length) {
+      const sym = symbols[i++];
+      try {
+        const r = await fetch(`${FAPI}/fapi/v1/klines?symbol=${sym}&interval=1m&limit=61`);
+        if (!r.ok) throw new Error(r.status);
+        const rows = await r.json();
+        const st = S[sym];
+        const curT = st.cur ? st.cur.t : Math.floor(Date.now() / 60000) * 60000;
+        const fetched = rows.map(x => ({t: x[0], o: +x[1], h: +x[2], l: +x[3], c: +x[4], v: +x[5], q: +x[7], V: +x[9]})).filter(c => c.t < curT);
+        const lastT = fetched.length ? fetched[fetched.length - 1].t : 0;
+        st.hist = fetched.concat(st.hist.filter(c => c.t > lastT)).slice(-60);
+      } catch (e) { failed++; }
+      histLoaded++;
+      $('histTxt').textContent = `${histLoaded}/${symbols.length}`;
+      $('histBar').style.width = (histLoaded / symbols.length * 100) + '%';
+      await new Promise(r => setTimeout(r, 60));
+    }
+  };
+  await Promise.all(Array.from({length: 6}, worker));
+  if (failed > symbols.length / 2) banner(`History download was blocked for ${failed} coins, so those coins are warming up from live data. Full signals start after about 20 minutes.`);
+}
+
+// ---------- radar table ----------
+function renderRadar() {
+  const rows = [];
+  for (const sym of symbols) { const st = S[sym]; if (st.m && st.m.liquid) rows.push([sym, st]); }
+  rows.sort((a, b) => (Math.abs(b[1].m.sig) === 1) - (Math.abs(a[1].m.sig) === 1) || (b[1].m.sig !== 0) - (a[1].m.sig !== 0) || b[1].m.score - a[1].m.score);
+  const top = rows.slice(0, 30);
+  const tb = $('radar');
+  if (!top.length) { tb.innerHTML = `<tr><td colspan="8" class="empty">${started ? 'warming up… (loading history)' : 'waiting…'}</td></tr>`; return; }
+  tb.innerHTML = top.map(([sym, st]) => {
+    const m = st.m;
+    const badge = m.sig === 1 ? '<span class="badge b-pump">🚀 PUMP</span>' : m.sig === -1 ? '<span class="badge b-dump">🔻 DUMP</span>'
+      : m.sig === 2 ? '<span class="badge b-hu">🔥 heating</span>' : m.sig === -2 ? '<span class="badge b-hd">🧊 heating</span>' : '<span style="color:var(--muted)">·</span>';
+    const cc = v => v >= 0 ? 'up' : 'down';
+    return `<tr data-s="${sym}"><td><b>${coinName(sym)}</b></td><td>${fmtP(st, m.c)}</td>
+      <td class="${cc(m.chg)}">${m.chg >= 0 ? '+' : ''}${m.chg.toFixed(2)}%</td>
+      <td class="${cc(m.chg3)}">${m.chg3 >= 0 ? '+' : ''}${m.chg3.toFixed(2)}%</td>
+      <td class="${m.pace >= cfg.volX ? 'warm' : ''}">${m.pace.toFixed(1)}×</td>
+      <td class="${m.taker >= cfg.taker ? 'up' : m.taker <= 100 - cfg.taker ? 'down' : ''}">${m.taker.toFixed(0)}%</td>
+      <td>$${fmtQ(m.qAvg)}</td><td>${badge}</td></tr>`;
+  }).join('');
+}
+$('radar').addEventListener('click', e => { const tr = e.target.closest('tr[data-s]'); if (tr) window.open(tvUrl(tr.dataset.s), '_blank'); });
+
+// ---------- start ----------
+async function start() {
+  if (started) return;
+  started = true;
+  $('startBtn').textContent = 'Running…'; $('startBtn').disabled = true;
+  try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  if ('Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (e) {} }
+
+  $('wsTxt').textContent = 'loading coin list…';
+  const list = await getSymbols();
+  if (!list.length) {
+    banner('Could not reach Binance Futures from this browser/network. Check your internet connection. Binance also blocks some countries (for example the US); this scanner only works where Binance Futures is available.');
+    $('wsTxt').textContent = 'offline'; started = false; $('startBtn').disabled = false; $('startBtn').textContent = '▶ Retry';
+    return;
+  }
+  symbols = list.map(x => x.s);
+  for (const x of list) S[x.s] = {hist: [], cur: null, m: null, fired: {}, dec: x.tick ? decimalsFromTick(x.tick) : null};
+  $('symCount').textContent = symbols.length;
+
+  for (let i = 0; i < symbols.length; i += PER_CONN) openWS(symbols.slice(i, i + PER_CONN), conns.length);
+  updStatus();
+  setInterval(renderRadar, 1000);
+  loadHistory();
+}
+$('startBtn').onclick = start;
+$('testBtn').onclick = () => {
+  if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  const st = {dec: 2};
+  fire('TESTUSDT', st, 1, {c: 100, chg: 1.35, chg3: 2.1, pace: 5.2, taker: 71, atr: 0.4, qNow: 250000});
+  sigTotal--; $('sigCount').textContent = sigTotal;
+};
+})();
+</script>
+</body>
+</html>

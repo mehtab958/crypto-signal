@@ -53,3 +53,16 @@ Trend filter (EMA 200/50 + ADX) → a breakout of the 20-bar high/low, or a pull
 File: [`indicators/futures_pump_dump_scanner.pine`](indicators/futures_pump_dump_scanner.pine)
 
 Scans 20 Binance USDT perpetuals on every tick. A signal needs an intrabar volume explosion (≥ 3× average), a price impulse (≥ 0.6 % on one candle or ≥ 1.2 % over three), a breakout of the 30-bar high/low, and a close near the candle's high or low. A "heating" early warning appears when volume starts building. Alerts pop up with the coin name, direction, entry, SL and TP1/TP2. It catches the first seconds of a move; it cannot predict one before it starts.
+
+## Browser Pump/Dump Scanner (all Binance USDT perpetuals)
+
+File: [`web/pump_scanner.html`](web/pump_scanner.html). Download it and open it in Chrome or Edge, then press **Start scanner**.
+
+It streams live 1-minute candles for every Binance USDT-M perpetual (300+ coins) over Binance's public WebSocket, with no account or API key. A PUMP/DUMP needs:
+- a volume explosion (≥ 3× the 30-minute average)
+- a price impulse
+- a breakout of the 30-minute high/low
+- taker-buy dominance
+- a strong candle close
+
+A HEATING early warning appears when volume pace builds. Each signal pops up on screen with the coin name and a sound, and shows as a desktop notification and a feed card with entry, SL and TP1/TP2. The live radar ranks the hottest coins every second. Settings are saved in your browser.

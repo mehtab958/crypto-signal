@@ -47,3 +47,9 @@ Raja Banks has not published an exact coded rulebook, so this follows his public
 File: [`strategies/trend_following_pro.pine`](strategies/trend_following_pro.pine)
 
 Trend filter (EMA 200/50 + ADX) → a breakout of the 20-bar high/low, or a pullback to the EMA 50 with a confirmation candle. Stop = 2 × ATR. TP1 = 2R (30 %), TP2 = 3R (30 %), and the runner rides a 3 × ATR trailing stop, with break-even after TP1. It exits if the trend flips. Best on 1H / 4H / Daily charts.
+
+## Crypto Futures Pump/Dump Scanner (TradingView indicator)
+
+File: [`indicators/futures_pump_dump_scanner.pine`](indicators/futures_pump_dump_scanner.pine)
+
+Scans 20 Binance USDT perpetuals on every tick. A signal needs an intrabar volume explosion (≥ 3× average), a price impulse (≥ 0.6 % on one candle or ≥ 1.2 % over three), a breakout of the 30-bar high/low, and a close near the candle's high or low. A "heating" early warning appears when volume starts building. Alerts pop up with the coin name, direction, entry, SL and TP1/TP2. It catches the first seconds of a move; it cannot predict one before it starts.

@@ -134,6 +134,7 @@ textarea{width:100%;min-height:70px;resize:vertical}
       <div class="row">
         <button id="trendBtn">Load today's biggest Solana winners (DexScreener)</button>
         <button id="scanAllBtn" disabled>Find early buyers in top 10 winners</button>
+        <button id="stopScanBtn" disabled>■ Stop scan</button>
       </div>
       <div class="scroll" style="max-height:260px;margin-top:8px"><table><thead><tr><th>Token</th><th class="num">24h</th><th class="num">Market cap</th><th class="num">Liquidity</th><th class="num">Age</th><th></th></tr></thead><tbody id="trend"></tbody></table></div>
       <div class="row" style="margin-top:12px">
@@ -247,7 +248,7 @@ async function tokenInfo(mints) {
       for (const m of chunk) {
         const ps = (pairs || []).filter(p => p.baseToken && p.baseToken.address === m).sort((a, b) => ((b.liquidity || {}).usd || 0) - ((a.liquidity || {}).usd || 0));
         const p = ps[0];
-        tokCache[m] = {t: Date.now(), sym: p ? p.baseToken.symbol : short(m), name: p ? p.baseToken.name : '', price: p ? +p.priceUsd : null,
+        tokCache[m] = {t: Date.now(), pair: p ? p.pairAddress : null, sym: p ? p.baseToken.symbol : short(m), name: p ? p.baseToken.name : '', price: p ? +p.priceUsd : null,
           mcap: p ? (p.marketCap || p.fdv) : null, liq: p && p.liquidity ? p.liquidity.usd : null, ch24: p && p.priceChange ? p.priceChange.h24 : null,
           created: p ? p.pairCreatedAt : null, url: p ? p.url : links.dex(m)};
       }
@@ -431,7 +432,13 @@ $('trendBtn').onclick = async () => {
   $('trendBtn').disabled = false;
 };
 $('trend').addEventListener('click', e => { const b = e.target.closest('[data-scan]'); if (b) scanTokens([trendList[+b.dataset.scan].m]); });
-$('scanAllBtn').onclick = () => scanTokens(trendList.slice(0, 10).map(x => x.m));
+$('scanAllBtn').onclick = () => {
+  const young = trendList.filter(x => x.created && Date.now() - x.created < 3 * 86400000);
+  const pick = (young.length >= 5 ? young : trendList).slice(0, 10);
+  scanTokens(pick.map(x => x.m));
+};
+let scanStop = false;
+$('stopScanBtn').onclick = () => { scanStop = true; $('finderLog').textContent += ' Stopping…'; };
 $('scanBtn').onclick = () => { const m = $('mintIn').value.trim(); if (!B58.test(m)) { $('finderLog').textContent = 'That is not a valid Solana token address.'; return; } scanTokens([m]); };
 
 let scanning = false;
@@ -439,47 +446,74 @@ async function scanTokens(mints) {
   if (scanning) return;
   scanning = true; setFinderBtns(true);
   try {
-    for (let k = 0; k < mints.length; k++) await earlyBuyers(mints[k], k, mints.length);
-    $('finderLog').textContent += ' Done.';
+    const errs = [];
+    for (let k = 0; k < mints.length && !scanStop; k++) {
+      try { await earlyBuyers(mints[k], k, mints.length); } catch (e) { errs.push(e.message); $('finderLog').textContent = 'Error: ' + e.message; }
+    }
+    $('finderLog').textContent += scanStop ? ' Stopped.' : errs.length ? ` (${errs.length} of ${mints.length} token(s) failed)` : ' Done.';
   } catch (e) { $('finderLog').textContent = 'Error: ' + e.message; }
   scanning = false; setFinderBtns(false);
 }
-function setFinderBtns(busy) { for (const id of ['scanBtn', 'scanAllBtn', 'trendBtn']) $(id).disabled = busy || (id === 'scanAllBtn' && !trendList.length); }
+function setFinderBtns(busy) { for (const id of ['scanBtn', 'scanAllBtn', 'trendBtn']) $(id).disabled = busy || (id === 'scanAllBtn' && !trendList.length); $('stopScanBtn').disabled = !busy; if (busy) scanStop = false; }
+
+// wallets that SIGNED a transaction and whose balance of `mint` went up in it
+function buyersInTx(tx, mint) {
+  const keys = tx.transaction.message.accountKeys;
+  const signers = new Set(keys.filter(k => typeof k !== 'string' && k.signer).map(k => k.pubkey));
+  if (!signers.size) signers.add(typeof keys[0] === 'string' ? keys[0] : keys[0].pubkey);
+  const owners = new Set((tx.meta.postTokenBalances || []).filter(b => b.mint === mint && b.owner).map(b => b.owner));
+  const out = [];
+  for (const o of owners) {
+    if (!signers.has(o)) continue;
+    const d = deltas(tx, o);
+    if ((d.tok[mint] || 0) > 0) out.push({a: o, sol: Math.max(0, -d.sol)});
+  }
+  return out;
+}
 
 async function earlyBuyers(mint, k, total) {
   const [info] = await tokenInfo([mint]);
   const sym = info.sym || short(mint);
   const bar = f => $('finderBar').style.width = ((k + f) / total * 100).toFixed(1) + '%';
   const log = s => $('finderLog').textContent = `[${k + 1}/${total}] $${sym}: ${s}`;
+  const maxPages = cfg.key ? Math.max(cfg.pages, 300) : cfg.pages;
 
-  // 1. walk back to the token's first transactions
-  let before, all = [], reachedStart = false;
-  for (let p = 0; p < cfg.pages; p++) {
-    log(`reading history page ${p + 1}/${cfg.pages} (${all.length} tx so far)…`);
-    const res = await rpc('getSignaturesForAddress', [mint, before ? {limit: 1000, before} : {limit: 1000}]);
-    if (!res || !res.length) { reachedStart = true; break; }
-    all = all.concat(res);
-    before = res[res.length - 1].signature;
-    bar(0.4 * (p + 1) / cfg.pages);
-    if (res.length < 1000) { reachedStart = true; break; }
+  // 1. walk back to the first transactions of BOTH the token (launch / bonding-curve buys)
+  //    and its main pool (DEX swaps that never touch the token address)
+  const addrs = [...new Set([mint, info.pair].filter(a => a && B58.test(a)))];
+  const sigMap = new Map();
+  let reachedAll = true;
+  for (const addr of addrs) {
+    let before, reached = false, n = 0;
+    for (let pg = 0; pg < maxPages && !scanStop; pg++) {
+      log(`reading ${addr === mint ? 'token' : 'pool'} history page ${pg + 1} (${n.toLocaleString()} tx)…`);
+      const res = await rpc('getSignaturesForAddress', [addr, before ? {limit: 1000, before} : {limit: 1000}]);
+      if (!res || !res.length) { reached = true; break; }
+      for (const r of res) if (!r.err) sigMap.set(r.signature, r);
+      n += res.length;
+      before = res[res.length - 1].signature;
+      bar(0.45 * (pg + 1) / maxPages);
+      if (res.length < 1000) { reached = true; break; }
+    }
+    if (!reached) reachedAll = false;
   }
-  if (!reachedStart) log(`history longer than ${cfg.pages}k tx; using the oldest ${all.length} we reached (raise "pages" in Settings for truly first buyers)…`);
-  const oldest = all.filter(s => !s.err).reverse();
+  if (!sigMap.size) throw new Error(`the RPC returned no transactions for $${sym}. Check your Helius key with "Test live connection".`);
+  const oldest = [...sigMap.values()].sort((a, b) => (a.slot - b.slot) || ((a.blockTime || 0) - (b.blockTime || 0)));
 
-  // 2. read the oldest transactions in order and keep wallets whose balance of this token went UP
+  // 2. read the oldest transactions in order and collect the buyers
   const buyers = new Map();
-  let checked = 0;
+  let checked = 0, failed = 0, lastErr = '';
   for (const s of oldest) {
-    if (buyers.size >= cfg.buyers || checked >= cfg.buyers * 3) break;
+    if (scanStop || buyers.size >= cfg.buyers || checked >= cfg.buyers * 5) break;
     checked++;
     let tx;
-    try { tx = await getTx(s.signature); } catch (e) { continue; }
+    try { tx = await getTx(s.signature); } catch (e) { failed++; lastErr = e.message; if (failed >= 10 && failed === checked) break; continue; }
     if (!tx || !tx.meta) continue;
-    const payer = deltas(tx, tx.transaction.message.accountKeys.map(x => typeof x === 'string' ? x : x.pubkey)[0]);
-    const got = payer.tok[mint] || 0;
-    if (got > 0 && !buyers.has(payer.feePayer)) buyers.set(payer.feePayer, {pos: buyers.size + 1, sol: Math.max(0, -payer.sol)});
-    if (checked % 5 === 0) { log(`checking early transactions ${checked} → ${buyers.size} buyers found…`); bar(0.4 + 0.6 * Math.min(1, buyers.size / cfg.buyers)); }
+    for (const b of buyersInTx(tx, mint)) if (!buyers.has(b.a)) buyers.set(b.a, {pos: buyers.size + 1, sol: b.sol});
+    if (checked % 5 === 0) { log(`checking earliest transactions: ${checked} read → ${buyers.size} buyers…`); bar(0.45 + 0.55 * Math.min(1, buyers.size / cfg.buyers)); }
   }
+  if (checked && failed === checked) throw new Error(`could not read any transaction (${lastErr}). Your RPC may block getTransaction; add a Helius API key.`);
+
   for (const [a, b] of buyers) {
     const f = found.get(a) || {tokens: new Set(), syms: [], best: 1e9, sol: 0};
     if (!f.tokens.has(mint)) { f.tokens.add(mint); f.syms.push(sym); f.sol += b.sol; }
@@ -487,7 +521,8 @@ async function earlyBuyers(mint, k, total) {
     found.set(a, f);
   }
   bar(1);
-  log(`${buyers.size} early buyers found (${found.size} unique wallets across all scans).`);
+  const note = reachedAll ? 'reached launch ✓' : `history too long, these are the earliest of the last ${sigMap.size.toLocaleString()} tx; raise "pages" or pick a younger token`;
+  log(`${buyers.size} early buyers found (${note}). ${found.size} unique wallets across all scans.${failed ? ` ${failed} tx could not be read.` : ''}`);
   renderFound();
 }
 

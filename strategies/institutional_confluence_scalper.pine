@@ -1,0 +1,484 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//
+// Institutional Confluence Scalper  [ICT • SMC • MMXM • MMI]
+// ---------------------------------------------------------------------------------------------
+// Model (every trade must pass ALL mandatory steps, then a confluence score):
+//
+//   MANDATORY
+//   1. Liquidity sweep     – wick through a liquidity pool (swing H/L, previous-day H/L, Asian range)
+//                            and CLOSE back inside  (ICT "stop hunt" / Market-Maker "Judas swing")
+//   2. Market Structure Shift (MSS / CHoCH) with DISPLACEMENT – a large-bodied candle closes
+//                            through the last opposite swing point
+//   3. Fair Value Gap      – entry on a limit order at the FVG (Consequent Encroachment = 50 %)
+//   4. Hard gates          – HTF bias (EMA), killzone time, news / volatility guard, daily trade cap,
+//                            optional macro (DXY) filter
+//
+//   CONFLUENCE SCORE (0-5, need >= "Min confluence score")
+//   + swept a KEY level (PDH/PDL/Asia) rather than a minor swing   (institutional / bank liquidity)
+//   + entry in discount (longs) / premium (shorts) of the dealing range   (ICT PD arrays / OTE)
+//   + MMI (Market Meanness Index) falling = market is trending, not mean-reverting
+//   + price on the correct side of session VWAP   (institutional fair value)
+//   + volume spike on the displacement candle   (institutional footprint)
+//
+//   RISK
+//   Stop beyond the sweep wick + ATR buffer. TP1 = 3R (partial), TP2 = 5R (runner),
+//   stop moved to break-even after TP1. Position size = fixed % of equity at risk.
+//
+// No indicator is "perfect". Backtest on YOUR symbol / timeframe and forward-test before live use.
+// ---------------------------------------------------------------------------------------------
+//@version=6
+strategy("Institutional Confluence Scalper [ICT • SMC • MMXM • MMI]", shorttitle = "ICS",
+     overlay = true, initial_capital = 10000, currency = currency.USD,
+     default_qty_type = strategy.fixed, default_qty_value = 1,
+     commission_type = strategy.commission.percent, commission_value = 0.05, slippage = 2,
+     pyramiding = 0, process_orders_on_close = false,
+     max_bars_back = 500, max_boxes_count = 300, max_lines_count = 400, max_labels_count = 300)
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// INPUTS
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const string G_RISK = "1 · Risk & Targets"
+const string G_STR  = "2 · Liquidity & Structure (ICT / SMC / MMXM)"
+const string G_FLT  = "3 · Bias & Confluence"
+const string G_TIME = "4 · Killzones (New York time)"
+const string G_NEWS = "5 · Fundamentals: Macro, News & Volatility Guard"
+const string G_VIS  = "6 · Visuals"
+const string TZ     = "America/New_York"
+
+riskPct    = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 10, step = 0.1, group = G_RISK)
+maxLev     = input.float(10, "Max leverage (caps position size)", minval = 1, step = 1, group = G_RISK)
+qtyStep    = input.float(0, "Round qty down to step (0 = off)", minval = 0, group = G_RISK, tooltip = "Use 1 for futures / stocks that need whole contracts, 0.001 for BTC, etc.")
+tp1R       = input.float(3.0, "TP1 (R multiple)", minval = 0.5, step = 0.5, group = G_RISK)
+tp2R       = input.float(5.0, "TP2 / runner (R multiple)", minval = 0.5, step = 0.5, group = G_RISK)
+tp1Pct     = input.int(50, "% of position closed at TP1", minval = 0, maxval = 100, step = 10, group = G_RISK, tooltip = "100 = everything exits at TP1. 0 = everything rides to TP2.")
+moveBE     = input.bool(true, "Move stop to break-even after TP1", group = G_RISK)
+entryMode  = input.string("FVG 50% (CE)", "Entry model", options = ["FVG 50% (CE)", "FVG edge", "Market on MSS"], group = G_RISK)
+slBuf      = input.float(0.2, "Stop buffer beyond sweep wick (× ATR)", minval = 0, step = 0.05, group = G_RISK)
+minStopAtr = input.float(0.25, "Min stop distance (× ATR)", minval = 0, step = 0.05, group = G_RISK, tooltip = "Rejects setups whose stop is so tight that spread/noise would hit it.")
+maxStopAtr = input.float(3.0, "Max stop distance (× ATR)", minval = 0.5, step = 0.25, group = G_RISK, tooltip = "Rejects setups whose stop is so wide that 3R-5R is unrealistic.")
+pendBars   = input.int(8, "Cancel unfilled limit after N bars", minval = 1, group = G_RISK)
+maxDaily   = input.int(3, "Max trades per day", minval = 1, group = G_RISK)
+doLong     = input.bool(true, "Longs", inline = "dir", group = G_RISK)
+doShort    = input.bool(true, "Shorts", inline = "dir", group = G_RISK)
+
+swLen      = input.int(5, "Swing pivot strength", minval = 2, maxval = 20, group = G_STR)
+liqSwing   = input.bool(true, "Liquidity pool: swing highs / lows", group = G_STR)
+liqPD      = input.bool(true, "Liquidity pool: previous-day high / low", group = G_STR)
+liqAsia    = input.bool(true, "Liquidity pool: Asian range high / low", group = G_STR)
+sweepWin   = input.int(20, "Max bars from sweep to MSS", minval = 3, group = G_STR)
+dispMult   = input.float(0.8, "Displacement: MSS candle body ≥ × ATR", minval = 0, step = 0.1, group = G_STR)
+fvgMin     = input.float(0.1, "Min FVG size (× ATR)", minval = 0, step = 0.05, group = G_STR)
+
+useHTF     = input.bool(true, "HTF bias (hard filter)", group = G_FLT)
+htfTf      = input.timeframe("60", "HTF timeframe", group = G_FLT)
+htfLen     = input.int(200, "HTF EMA length", minval = 10, group = G_FLT)
+useKey     = input.bool(true, "Score: swept a KEY level (PDH/PDL/Asia)", group = G_FLT)
+usePD      = input.bool(true, "Score: discount (long) / premium (short) entry", group = G_FLT)
+useMMI     = input.bool(true, "Score: MMI trending", group = G_FLT)
+mmiLen     = input.int(100, "MMI length", minval = 20, maxval = 300, group = G_FLT)
+mmiSm      = input.int(20, "MMI smoothing", minval = 2, group = G_FLT)
+useVWAP    = input.bool(true, "Score: correct side of session VWAP", group = G_FLT)
+useVol     = input.bool(true, "Score: volume spike on displacement", group = G_FLT)
+volMult    = input.float(1.5, "Volume spike (× 20-bar avg)", minval = 1, step = 0.1, group = G_FLT)
+minScore   = input.int(3, "Min confluence score (0-5)", minval = 0, maxval = 5, group = G_FLT, tooltip = "Automatically capped at the number of enabled score items.")
+
+useKZ      = input.bool(true, "Trade only inside killzones", group = G_TIME)
+kzLon      = input.session("0200-0500", "London killzone", group = G_TIME)
+kzNY       = input.session("0700-1000", "New York AM killzone", group = G_TIME)
+usePM      = input.bool(false, "NY PM", inline = "pm", group = G_TIME)
+kzPM       = input.session("1330-1600", "", inline = "pm", group = G_TIME)
+asiaSess   = input.session("2000-0000", "Asian range (liquidity pool)", group = G_TIME)
+
+useMacro   = input.bool(false, "Macro filter: trade with DXY trend", group = G_NEWS, tooltip = "Crypto, gold and EURUSD/GBPUSD usually move INVERSE to the US Dollar Index. Longs only when DXY is below its HTF EMA (for inverse), shorts only when above.")
+macroSym   = input.symbol("TVC:DXY", "Macro symbol", group = G_NEWS)
+macroInv   = input.bool(true, "Inverse correlation", group = G_NEWS)
+useNews    = input.bool(false, "Block news windows", group = G_NEWS, tooltip = "Turn ON for CPI / NFP / FOMC days. Pine Script cannot read an economic calendar, so set the windows manually.")
+news1      = input.session("0825-0845", "Blackout 1 (08:30 data)", group = G_NEWS)
+news2      = input.session("1355-1430", "Blackout 2 (FOMC 14:00)", group = G_NEWS)
+useVG      = input.bool(true, "Skip abnormal volatility regime", group = G_NEWS)
+vgMult     = input.float(2.5, "Abnormal = ATR > × 200-bar avg ATR", minval = 1.2, step = 0.1, group = G_NEWS)
+noFriPM    = input.bool(true, "No new trades Friday after 12:00 NY", group = G_NEWS)
+
+showLvls   = input.bool(true, "Liquidity levels (PDH / PDL / Asia)", group = G_VIS)
+showKZ     = input.bool(true, "Shade killzones", group = G_VIS)
+showSig    = input.bool(true, "Sweeps, MSS, FVG & trade levels", group = G_VIS)
+showHTF    = input.bool(true, "HTF EMA", group = G_VIS)
+showTbl    = input.bool(true, "Dashboard", group = G_VIS)
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+inSess(string s) => not na(time(timeframe.period, s, TZ))
+
+sweptLo(float lvl) => not na(lvl) and low < lvl and close > lvl
+sweptHi(float lvl) => not na(lvl) and high > lvl and close < lvl
+
+// Market Meanness Index (Financial Hacker). ~75 = random / mean-reverting, falling = trending.
+f_mmi(float src, int len) =>
+    float m = ta.median(src, len)
+    int cnt = 0
+    for i = 1 to len - 1
+        if (src[i] > m and src[i] > src[i - 1]) or (src[i] < m and src[i] < src[i - 1])
+            cnt += 1
+    100.0 * cnt / (len - 1)
+
+f_qty(float entry, float risk) =>
+    float q = (strategy.equity * riskPct / 100) / (risk * syminfo.pointvalue)
+    float qMax = strategy.equity * maxLev / (entry * syminfo.pointvalue)
+    q := math.min(q, qMax)
+    if qtyStep > 0
+        q := math.floor(q / qtyStep) * qtyStep
+    q
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// CORE SERIES
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+atr      = ta.atr(14)
+atrAvg   = ta.sma(atr, 200)
+body     = math.abs(close - open)
+sessVwap = ta.vwap(hlc3)
+volAvg   = ta.sma(volume, 20)
+volSpike = not na(volume) and volume > volAvg * volMult
+
+// HTF bias – previous closed HTF bar only (no repainting)
+[htfC, htfE] = request.security(syminfo.tickerid, htfTf, [close[1], ta.ema(close, htfLen)[1]], lookahead = barmerge.lookahead_on)
+biasUp = htfC > htfE
+biasDn = htfC < htfE
+
+// Macro (DXY) trend on the same HTF
+[mC, mE] = request.security(macroSym, htfTf, [close[1], ta.ema(close, 50)[1]], lookahead = barmerge.lookahead_on)
+macroLongOk  = not useMacro or (macroInv ? mC < mE : mC > mE)
+macroShortOk = not useMacro or (macroInv ? mC > mE : mC < mE)
+
+// Previous-day high / low
+pdh = request.security(syminfo.tickerid, "D", high[1], lookahead = barmerge.lookahead_on)
+pdl = request.security(syminfo.tickerid, "D", low[1], lookahead = barmerge.lookahead_on)
+
+// Sessions
+inLon  = inSess(kzLon)
+inNY   = inSess(kzNY)
+inPMr  = inSess(kzPM)
+inKZ   = inLon or inNY or (usePM and inPMr)
+inAsia = inSess(asiaSess)
+n1     = inSess(news1)
+n2     = inSess(news2)
+
+// Asian range (completed range is used as the liquidity pool)
+var float asiaRunHi = na
+var float asiaRunLo = na
+var float asiaHi    = na
+var float asiaLo    = na
+if inAsia and not inAsia[1]
+    asiaRunHi := high
+    asiaRunLo := low
+else if inAsia
+    asiaRunHi := math.max(asiaRunHi, high)
+    asiaRunLo := math.min(asiaRunLo, low)
+if not inAsia and inAsia[1]
+    asiaHi := asiaRunHi
+    asiaLo := asiaRunLo
+
+// Guards
+newsBlock = useNews and (n1 or n2)
+abnormal  = useVG and atr > atrAvg * vgMult
+friBlock  = noFriPM and dayofweek(time, TZ) == dayofweek.friday and hour(time, TZ) >= 12
+guardsOk  = not newsBlock and not abnormal and not friBlock
+
+// MMI
+mmi      = f_mmi(close, mmiLen)
+mmiS     = ta.sma(mmi, mmiSm)
+mmiTrend = mmiS < mmiS[1]
+
+// Trades per day (counts fills)
+totTrades = strategy.closedtrades + strategy.opentrades
+filledNow = totTrades > nz(totTrades[1])
+var int tradesToday = 0
+if timeframe.change("D")
+    tradesToday := 0
+if filledNow
+    tradesToday += totTrades - nz(totTrades[1])
+
+enabledCnt = (useKey ? 1 : 0) + (usePD ? 1 : 0) + (useMMI ? 1 : 0) + (useVWAP ? 1 : 0) + (useVol ? 1 : 0)
+effMin     = math.min(minScore, enabledCnt)
+
+// Swings
+ph = ta.pivothigh(high, swLen, swLen)
+pl = ta.pivotlow(low, swLen, swLen)
+var float swHi = na
+var float swLo = na
+if not na(ph)
+    swHi := ph
+if not na(pl)
+    swLo := pl
+
+// Sweeps of liquidity
+bKey = (liqPD and sweptLo(pdl)) or (liqAsia and sweptLo(asiaLo))
+bSw  = bKey or (liqSwing and sweptLo(swLo))
+sKey = (liqPD and sweptHi(pdh)) or (liqAsia and sweptHi(asiaHi))
+sSw  = sKey or (liqSwing and sweptHi(swHi))
+
+// Structure breaks + displacement
+crossUp = ta.crossover(close, swHi)
+crossDn = ta.crossunder(close, swLo)
+dispUp  = close > open and body >= dispMult * atr
+dispDn  = close < open and body >= dispMult * atr
+
+// Fair Value Gaps
+bullFVG = low > high[2] and (low - high[2]) >= fvgMin * atr
+bearFVG = high < low[2] and (low[2] - high) >= fvgMin * atr
+
+wantMarket = entryMode == "Market on MSS"
+flat       = strategy.position_size == 0
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// STATE
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// Long setup
+var int   L_swBar  = na
+var float L_ext    = na     // sweep wick low
+var bool  L_key    = false
+var float L_leg    = na     // highest high since sweep (dealing range top)
+var int   L_fBar   = na
+var float L_fTop   = na
+var float L_fBot   = na
+var bool  L_armed  = false
+var int   L_armBar = na
+var int   L_score  = 0
+var bool  L_kz     = false
+var bool  L_pend   = false
+var int   L_pBar   = na
+var float L_tp1    = na
+var float L_tp2    = na
+var float L_sl     = na
+var bool  L_be     = false
+// Short setup
+var int   S_swBar  = na
+var float S_ext    = na     // sweep wick high
+var bool  S_key    = false
+var float S_leg    = na     // lowest low since sweep (dealing range bottom)
+var int   S_fBar   = na
+var float S_fTop   = na
+var float S_fBot   = na
+var bool  S_armed  = false
+var int   S_armBar = na
+var int   S_score  = 0
+var bool  S_kz     = false
+var bool  S_pend   = false
+var int   S_pBar   = na
+var float S_tp1    = na
+var float S_tp2    = na
+var float S_sl     = na
+var bool  S_be     = false
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 1) MANAGE PENDING ORDERS & OPEN POSITIONS
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+if L_pend
+    if strategy.position_size > 0 or filledNow
+        L_pend := false
+    else if bar_index - L_pBar >= pendBars or high >= L_tp1 or close < L_sl
+        strategy.cancel("L")
+        L_pend := false
+if S_pend
+    if strategy.position_size < 0 or filledNow
+        S_pend := false
+    else if bar_index - S_pBar >= pendBars or low <= S_tp1 or close > S_sl
+        strategy.cancel("S")
+        S_pend := false
+
+// Break-even after TP1
+partial = tp1Pct > 0 and tp1Pct < 100
+if moveBE and partial and strategy.position_size > 0 and not L_be and high >= L_tp1
+    L_be := true
+    strategy.exit("L-TP2", "L", limit = L_tp2, stop = strategy.position_avg_price, comment_profit = "TP2", comment_loss = "BE")
+if moveBE and partial and strategy.position_size < 0 and not S_be and low <= S_tp1
+    S_be := true
+    strategy.exit("S-TP2", "S", limit = S_tp2, stop = strategy.position_avg_price, comment_profit = "TP2", comment_loss = "BE")
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 2) LONG SETUP: sweep of sell-side liquidity → bullish MSS w/ displacement → bullish FVG
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+if not na(L_swBar)
+    L_leg := math.max(L_leg, high)
+    if close < L_ext                                        // closed through the sweep = failed
+        L_swBar := na
+        L_armed := false
+    else if low < L_ext
+        L_ext := low
+    if not na(L_swBar) and not L_armed and bar_index - L_swBar > sweepWin
+        L_swBar := na
+    if L_armed and bar_index - L_armBar > pendBars
+        L_swBar := na
+        L_armed := false
+
+if bSw and na(L_swBar) and not L_pend
+    L_swBar := bar_index
+    L_ext   := low
+    L_key   := bKey
+    L_leg   := high
+    L_fBar  := na
+
+if not na(L_swBar)
+    if bullFVG and bar_index - 2 >= L_swBar
+        L_fTop := low
+        L_fBot := high[2]
+        L_fBar := bar_index
+    if not na(L_fBar) and close < L_fBot                    // FVG fully traded through
+        L_fBar := na
+    if not L_armed and crossUp and dispUp
+        L_armed  := true
+        L_armBar := bar_index
+        L_kz     := inKZ
+        L_score  := (useKey and L_key ? 1 : 0) + (useMMI and mmiTrend ? 1 : 0) + (useVWAP and close > sessVwap ? 1 : 0) + (useVol and volSpike ? 1 : 0)
+        if showSig
+            label.new(bar_index, low, "MSS", style = label.style_label_up, color = color.new(color.teal, 0), textcolor = color.white, size = size.tiny)
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 3) SHORT SETUP: sweep of buy-side liquidity → bearish MSS w/ displacement → bearish FVG
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+if not na(S_swBar)
+    S_leg := math.min(S_leg, low)
+    if close > S_ext
+        S_swBar := na
+        S_armed := false
+    else if high > S_ext
+        S_ext := high
+    if not na(S_swBar) and not S_armed and bar_index - S_swBar > sweepWin
+        S_swBar := na
+    if S_armed and bar_index - S_armBar > pendBars
+        S_swBar := na
+        S_armed := false
+
+if sSw and na(S_swBar) and not S_pend
+    S_swBar := bar_index
+    S_ext   := high
+    S_key   := sKey
+    S_leg   := low
+    S_fBar  := na
+
+if not na(S_swBar)
+    if bearFVG and bar_index - 2 >= S_swBar
+        S_fTop := low[2]
+        S_fBot := high
+        S_fBar := bar_index
+    if not na(S_fBar) and close > S_fTop
+        S_fBar := na
+    if not S_armed and crossDn and dispDn
+        S_armed  := true
+        S_armBar := bar_index
+        S_kz     := inKZ
+        S_score  := (useKey and S_key ? 1 : 0) + (useMMI and mmiTrend ? 1 : 0) + (useVWAP and close < sessVwap ? 1 : 0) + (useVol and volSpike ? 1 : 0)
+        if showSig
+            label.new(bar_index, high, "MSS", style = label.style_label_down, color = color.new(color.maroon, 0), textcolor = color.white, size = size.tiny)
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 4) ORDER PLACEMENT
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+canPlace = flat and not L_pend and not S_pend and tradesToday < maxDaily and guardsOk
+
+if L_armed and canPlace and (wantMarket or not na(L_fBar))
+    float entry = wantMarket ? close : entryMode == "FVG edge" ? L_fTop : (L_fTop + L_fBot) / 2
+    float sl    = L_ext - slBuf * atr
+    float risk  = entry - sl
+    float eq    = (L_leg + L_ext) / 2
+    int   score = L_score + (usePD and entry <= eq ? 1 : 0)
+    bool  ok    = doLong and (not useHTF or biasUp) and macroLongOk and (not useKZ or L_kz) and score >= effMin and risk > 0 and risk >= minStopAtr * atr and risk <= maxStopAtr * atr
+    if ok
+        float qty = f_qty(entry, risk)
+        if qty > 0
+            L_tp1  := entry + risk * tp1R
+            L_tp2  := entry + risk * tp2R
+            L_sl   := sl
+            L_be   := false
+            L_pend := not wantMarket
+            L_pBar := bar_index
+            strategy.entry("L", strategy.long, qty = qty, limit = wantMarket ? na : entry, comment = "Long | score " + str.tostring(score))
+            if partial
+                strategy.exit("L-TP1", "L", qty_percent = tp1Pct, limit = L_tp1, stop = sl, comment_profit = "TP1", comment_loss = "SL")
+                strategy.exit("L-TP2", "L", limit = L_tp2, stop = sl, comment_profit = "TP2", comment_loss = "SL")
+            else if tp1Pct >= 100
+                strategy.exit("L-TP1", "L", limit = L_tp1, stop = sl, comment_profit = "TP1", comment_loss = "SL")
+            else
+                strategy.exit("L-TP2", "L", limit = L_tp2, stop = sl, comment_profit = "TP2", comment_loss = "SL")
+            alert('{"side":"buy","symbol":"' + syminfo.ticker + '","entry":' + str.tostring(entry, format.mintick) + ',"sl":' + str.tostring(sl, format.mintick) + ',"tp1":' + str.tostring(L_tp1, format.mintick) + ',"tp2":' + str.tostring(L_tp2, format.mintick) + ',"score":' + str.tostring(score) + '}', alert.freq_once_per_bar_close)
+            if showSig
+                int x2 = bar_index + 20
+                if not wantMarket
+                    box.new(L_fBar - 2, L_fTop, bar_index + pendBars, L_fBot, border_color = color.new(color.teal, 60), bgcolor = color.new(color.teal, 85))
+                line.new(bar_index, entry, x2, entry, color = color.gray, width = 2)
+                line.new(bar_index, sl, x2, sl, color = color.red, width = 2)
+                line.new(bar_index, L_tp1, x2, L_tp1, color = color.lime, style = line.style_dashed)
+                line.new(bar_index, L_tp2, x2, L_tp2, color = color.green, width = 2)
+    L_armed := false
+    L_swBar := na
+
+if S_armed and canPlace and not L_pend and (wantMarket or not na(S_fBar))
+    float entry = wantMarket ? close : entryMode == "FVG edge" ? S_fBot : (S_fTop + S_fBot) / 2
+    float sl    = S_ext + slBuf * atr
+    float risk  = sl - entry
+    float eq    = (S_ext + S_leg) / 2
+    int   score = S_score + (usePD and entry >= eq ? 1 : 0)
+    bool  ok    = doShort and (not useHTF or biasDn) and macroShortOk and (not useKZ or S_kz) and score >= effMin and risk > 0 and risk >= minStopAtr * atr and risk <= maxStopAtr * atr
+    if ok
+        float qty = f_qty(entry, risk)
+        if qty > 0
+            S_tp1  := entry - risk * tp1R
+            S_tp2  := entry - risk * tp2R
+            S_sl   := sl
+            S_be   := false
+            S_pend := not wantMarket
+            S_pBar := bar_index
+            strategy.entry("S", strategy.short, qty = qty, limit = wantMarket ? na : entry, comment = "Short | score " + str.tostring(score))
+            if partial
+                strategy.exit("S-TP1", "S", qty_percent = tp1Pct, limit = S_tp1, stop = sl, comment_profit = "TP1", comment_loss = "SL")
+                strategy.exit("S-TP2", "S", limit = S_tp2, stop = sl, comment_profit = "TP2", comment_loss = "SL")
+            else if tp1Pct >= 100
+                strategy.exit("S-TP1", "S", limit = S_tp1, stop = sl, comment_profit = "TP1", comment_loss = "SL")
+            else
+                strategy.exit("S-TP2", "S", limit = S_tp2, stop = sl, comment_profit = "TP2", comment_loss = "SL")
+            alert('{"side":"sell","symbol":"' + syminfo.ticker + '","entry":' + str.tostring(entry, format.mintick) + ',"sl":' + str.tostring(sl, format.mintick) + ',"tp1":' + str.tostring(S_tp1, format.mintick) + ',"tp2":' + str.tostring(S_tp2, format.mintick) + ',"score":' + str.tostring(score) + '}', alert.freq_once_per_bar_close)
+            if showSig
+                int x2 = bar_index + 20
+                if not wantMarket
+                    box.new(S_fBar - 2, S_fTop, bar_index + pendBars, S_fBot, border_color = color.new(color.maroon, 60), bgcolor = color.new(color.red, 85))
+                line.new(bar_index, entry, x2, entry, color = color.gray, width = 2)
+                line.new(bar_index, sl, x2, sl, color = color.red, width = 2)
+                line.new(bar_index, S_tp1, x2, S_tp1, color = color.lime, style = line.style_dashed)
+                line.new(bar_index, S_tp2, x2, S_tp2, color = color.green, width = 2)
+    S_armed := false
+    S_swBar := na
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// VISUALS
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+plot(showHTF ? htfE : na, "HTF EMA", color = biasUp ? color.new(color.teal, 0) : color.new(color.red, 0), linewidth = 2, style = plot.style_stepline)
+plot(showLvls ? pdh : na, "PDH", color = color.new(color.orange, 20), style = plot.style_stepline)
+plot(showLvls ? pdl : na, "PDL", color = color.new(color.orange, 20), style = plot.style_stepline)
+plot(showLvls ? asiaHi : na, "Asia High", color = color.new(color.purple, 30), style = plot.style_circles, linewidth = 1)
+plot(showLvls ? asiaLo : na, "Asia Low", color = color.new(color.purple, 30), style = plot.style_circles, linewidth = 1)
+plot(sessVwap, "Session VWAP", color = color.new(color.blue, 40))
+plotshape(showSig and bSw, "Sell-side sweep", shape.triangleup, location.belowbar, color.new(color.lime, 0), size = size.tiny)
+plotshape(showSig and sSw, "Buy-side sweep", shape.triangledown, location.abovebar, color.new(color.red, 0), size = size.tiny)
+bgcolor(showKZ and inKZ ? color.new(color.blue, 92) : na, title = "Killzone")
+bgcolor(newsBlock or abnormal ? color.new(color.red, 88) : na, title = "Guard active")
+
+var table tb = table.new(position.top_right, 2, 10, bgcolor = color.new(color.black, 15), border_color = color.new(color.gray, 60), border_width = 1)
+cell(int r, string k, string v, color c) =>
+    table.cell(tb, 0, r, k, text_color = color.silver, text_size = size.small, text_halign = text.align_left)
+    table.cell(tb, 1, r, v, text_color = c, text_size = size.small, text_halign = text.align_right)
+
+if showTbl and barstate.islast
+    float wr = strategy.closedtrades > 0 ? 100.0 * strategy.wintrades / strategy.closedtrades : na
+    float pf = strategy.grossloss > 0 ? strategy.grossprofit / strategy.grossloss : na
+    float be = 100.0 / (1 + tp1R)
+    table.cell(tb, 0, 0, "ICS Scalper", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, str.tostring(tp1R, "#.#") + "R / " + str.tostring(tp2R, "#.#") + "R", text_color = color.white, text_size = size.small)
+    cell(1, "HTF bias", biasUp ? "BULLISH" : biasDn ? "BEARISH" : "—", biasUp ? color.lime : biasDn ? color.red : color.gray)
+    cell(2, "MMI", str.tostring(mmi, "#.0") + (mmiTrend ? "  trending" : "  choppy"), mmiTrend ? color.lime : color.orange)
+    cell(3, "Session", inLon ? "LONDON KZ" : inNY ? "NY AM KZ" : (usePM and inPMr) ? "NY PM" : inAsia ? "ASIA (range)" : "off-hours", inKZ ? color.lime : color.gray)
+    cell(4, "Guards", newsBlock ? "NEWS BLOCK" : abnormal ? "VOL SPIKE" : friBlock ? "FRI PM" : "clear", guardsOk ? color.lime : color.red)
+    cell(5, "Trades today", str.tostring(tradesToday) + " / " + str.tostring(maxDaily), color.white)
+    cell(6, "Closed trades", str.tostring(strategy.closedtrades), color.white)
+    cell(7, "Win rate", na(wr) ? "—" : str.tostring(wr, "#.0") + "%  (BE ≈ " + str.tostring(be, "#") + "%)", na(wr) ? color.gray : wr >= be ? color.lime : color.red)
+    cell(8, "Profit factor", na(pf) ? "—" : str.tostring(pf, "#.00"), na(pf) ? color.gray : pf >= 1 ? color.lime : color.red)
+    cell(9, "Net P&L", str.tostring(strategy.netprofit, "#,###.00") + " " + strategy.account_currency, strategy.netprofit >= 0 ? color.lime : color.red)

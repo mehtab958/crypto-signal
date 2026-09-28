@@ -1,0 +1,231 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//
+// Trend Following Pro  —  Breakout + Pullback entries, ATR stop, partial TPs, ATR trailing runner
+// ---------------------------------------------------------------------------------------------
+//   TREND     Long only when close > EMA 200 and EMA 50 > EMA 200 (short = opposite). ADX ≥ 20.
+//   ENTRY     Breakout: close above the prior N-bar high (Donchian)                (short: below low)
+//             Pullback: price dips to the EMA 50 zone, then a bullish candle closes above
+//                       EMA 20 and the previous high                              (short: mirror)
+//   STOP      Entry − 2 × ATR (short: + 2 × ATR)
+//   TARGETS   TP1 = 2R (close 30 %), TP2 = 3R (close 30 %), runner rides an ATR trailing stop
+//             (3 × ATR from the highest high / lowest low since entry). Stop → break-even after TP1.
+//   EXIT      Also exits if price closes back through EMA 200 (trend over).
+//   SIZE      Fixed % of equity risked per trade.
+//
+// Recommended: 1H / 4H / Daily charts. Backtest 1-2+ years (100+ trades) before trusting results.
+// ---------------------------------------------------------------------------------------------
+//@version=6
+strategy("Trend Following Pro [Breakout + Pullback, ATR Trail]", shorttitle = "TF Pro",
+     overlay = true, initial_capital = 10000, currency = currency.USD,
+     default_qty_type = strategy.fixed, default_qty_value = 1,
+     commission_type = strategy.commission.percent, commission_value = 0.05, slippage = 2,
+     pyramiding = 0, max_lines_count = 500, max_labels_count = 500)
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// INPUTS
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const string G1 = "1 · Trend"
+const string G2 = "2 · Entries"
+const string G3 = "3 · Stop, Targets & Trail"
+const string G4 = "4 · Position size"
+const string G5 = "5 · Visuals"
+
+emaTLen  = input.int(200, "Trend EMA", minval = 50, group = G1)
+emaMLen  = input.int(50, "Mid EMA", minval = 10, group = G1)
+emaFLen  = input.int(20, "Fast EMA", minval = 5, group = G1)
+useADX   = input.bool(true, "Require ADX (trend strength)", group = G1)
+adxMin   = input.float(20, "Min ADX", minval = 5, step = 1, group = G1)
+
+mode     = input.string("Both", "Entry type", options = ["Both", "Breakout", "Pullback"], group = G2)
+donLen   = input.int(20, "Breakout lookback (bars)", minval = 5, group = G2)
+doLong   = input.bool(true, "Longs", inline = "d", group = G2)
+doShort  = input.bool(true, "Shorts", inline = "d", group = G2)
+
+atrLen   = input.int(14, "ATR length", minval = 5, group = G3)
+slAtr    = input.float(2.0, "Stop-loss (× ATR)", minval = 0.5, step = 0.25, group = G3)
+tp1R     = input.float(2.0, "TP1 (R)", minval = 0.5, step = 0.5, group = G3)
+tp1Pct   = input.int(30, "TP1 close %", minval = 0, maxval = 100, step = 5, group = G3)
+tp2R     = input.float(3.0, "TP2 (R)", minval = 0.5, step = 0.5, group = G3)
+tp2Pct   = input.int(30, "TP2 close %", minval = 0, maxval = 100, step = 5, group = G3)
+tp3R     = input.float(5.0, "TP3 reference (R) – runner target shown on chart", minval = 1, step = 0.5, group = G3)
+trailAtr = input.float(3.0, "Runner trailing stop (× ATR)", minval = 0.5, step = 0.25, group = G3)
+moveBE   = input.bool(true, "Stop → break-even after TP1", group = G3)
+flipExit = input.bool(true, "Exit if price closes back through Trend EMA", group = G3)
+
+riskPct  = input.float(1.0, "Risk per trade (% equity)", minval = 0.1, maxval = 10, step = 0.1, group = G4)
+maxLev   = input.float(5, "Max leverage (caps size)", minval = 1, step = 1, group = G4)
+qtyStep  = input.float(0, "Round qty down to step (0 = off)", minval = 0, group = G4, tooltip = "1 for whole contracts / shares, 0.001 for BTC, etc.")
+
+showEma  = input.bool(true, "EMAs", group = G5)
+showDon  = input.bool(false, "Breakout channel", group = G5)
+showTbl  = input.bool(true, "Dashboard", group = G5)
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// CALCULATIONS
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+atr  = ta.atr(atrLen)
+emaT = ta.ema(close, emaTLen)
+emaM = ta.ema(close, emaMLen)
+emaF = ta.ema(close, emaFLen)
+[diP, diM, adx] = ta.dmi(14, 14)
+
+upTrend = close > emaT and emaM > emaT
+dnTrend = close < emaT and emaM < emaT
+adxOk   = not useADX or adx >= adxMin
+
+donHi = ta.highest(high, donLen)[1]
+donLo = ta.lowest(low, donLen)[1]
+lo3   = ta.lowest(low, 3)
+hi3   = ta.highest(high, 3)
+
+brkL = close > donHi
+brkS = close < donLo
+pbL  = lo3 <= emaM + 0.25 * atr and close > emaM and close > emaF and close > open and close > high[1]
+pbS  = hi3 >= emaM - 0.25 * atr and close < emaM and close < emaF and close < open and close < low[1]
+
+useBrk = mode != "Pullback"
+usePb  = mode != "Breakout"
+
+flat     = strategy.position_size == 0
+longSig  = flat and doLong and upTrend and adxOk and ((useBrk and brkL) or (usePb and pbL))
+shortSig = flat and doShort and dnTrend and adxOk and ((useBrk and brkS) or (usePb and pbS))
+
+f_qty(float entry, float risk) =>
+    float q = (strategy.equity * riskPct / 100) / (risk * syminfo.pointvalue)
+    q := math.min(q, strategy.equity * maxLev / (entry * syminfo.pointvalue))
+    if qtyStep > 0
+        q := math.floor(q / qtyStep) * qtyStep
+    q
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// TRADE STATE
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+var float tEntry = na
+var float tSL    = na
+var float tStop  = na
+var float tTP1   = na
+var float tTP2   = na
+var float tTP3   = na
+var float tExt   = na     // highest high (long) / lowest low (short) since entry
+var bool  hit1   = false
+var bool  hit2   = false
+
+runPct = 100 - tp1Pct - tp2Pct
+
+// Record actual fill price
+if strategy.position_size != 0 and strategy.position_size[1] == 0
+    tEntry := strategy.position_avg_price
+
+// ── Manage open LONG ──
+if strategy.position_size > 0
+    tExt := math.max(tExt, high)
+    if high >= tTP1
+        hit1 := true
+    if high >= tTP2
+        hit2 := true
+    float st = math.max(tStop, tExt - trailAtr * atr)
+    if hit1 and moveBE
+        st := math.max(st, tEntry)
+    tStop := st
+    if not hit1 and tp1Pct > 0
+        strategy.exit("L-TP1", "L", qty_percent = tp1Pct, limit = tTP1, stop = tStop, comment_profit = "TP1", comment_loss = "SL")
+    if not hit2 and tp2Pct > 0
+        strategy.exit("L-TP2", "L", qty_percent = tp2Pct, limit = tTP2, stop = tStop, comment_profit = "TP2", comment_loss = "SL")
+    strategy.exit("L-RUN", "L", stop = tStop, comment_loss = hit1 ? "Trail" : "SL")
+    if flipExit and close < emaT
+        strategy.close("L", comment = "Trend over")
+
+// ── Manage open SHORT ──
+if strategy.position_size < 0
+    tExt := math.min(tExt, low)
+    if low <= tTP1
+        hit1 := true
+    if low <= tTP2
+        hit2 := true
+    float st = math.min(tStop, tExt + trailAtr * atr)
+    if hit1 and moveBE
+        st := math.min(st, tEntry)
+    tStop := st
+    if not hit1 and tp1Pct > 0
+        strategy.exit("S-TP1", "S", qty_percent = tp1Pct, limit = tTP1, stop = tStop, comment_profit = "TP1", comment_loss = "SL")
+    if not hit2 and tp2Pct > 0
+        strategy.exit("S-TP2", "S", qty_percent = tp2Pct, limit = tTP2, stop = tStop, comment_profit = "TP2", comment_loss = "SL")
+    strategy.exit("S-RUN", "S", stop = tStop, comment_loss = hit1 ? "Trail" : "SL")
+    if flipExit and close > emaT
+        strategy.close("S", comment = "Trend over")
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// NEW ENTRIES (signal on bar close → market order next bar open)
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+if longSig or shortSig
+    int   d    = longSig ? 1 : -1
+    float risk = slAtr * atr
+    float qty  = f_qty(close, risk)
+    if qty > 0
+        tEntry := close
+        tSL    := close - d * risk
+        tStop  := tSL
+        tTP1   := close + d * risk * tp1R
+        tTP2   := close + d * risk * tp2R
+        tTP3   := close + d * risk * tp3R
+        tExt   := d == 1 ? high : low
+        hit1   := false
+        hit2   := false
+        string id = d == 1 ? "L" : "S"
+        strategy.entry(id, d == 1 ? strategy.long : strategy.short, qty = qty, comment = (d == 1 ? "BUY" : "SELL") + (((d == 1 and brkL) or (d == -1 and brkS)) ? " breakout" : " pullback"))
+        if tp1Pct > 0
+            strategy.exit(id + "-TP1", id, qty_percent = tp1Pct, limit = tTP1, stop = tSL, comment_profit = "TP1", comment_loss = "SL")
+        if tp2Pct > 0
+            strategy.exit(id + "-TP2", id, qty_percent = tp2Pct, limit = tTP2, stop = tSL, comment_profit = "TP2", comment_loss = "SL")
+        strategy.exit(id + "-RUN", id, stop = tSL, comment_loss = "SL")
+
+        string kind = ((d == 1 and brkL) or (d == -1 and brkS)) ? "Breakout" : "Pullback"
+        string txt = (d == 1 ? "BUY" : "SELL") + " – " + kind +
+             "\nEntry: " + str.tostring(close, format.mintick) +
+             "\nSL: "    + str.tostring(tSL, format.mintick) +
+             "\nTP1: "   + str.tostring(tTP1, format.mintick) + "  (" + str.tostring(tp1R) + "R, " + str.tostring(tp1Pct) + "%)" +
+             "\nTP2: "   + str.tostring(tTP2, format.mintick) + "  (" + str.tostring(tp2R) + "R, " + str.tostring(tp2Pct) + "%)" +
+             "\nTP3: "   + str.tostring(tTP3, format.mintick) + "  (" + str.tostring(tp3R) + "R, runner " + str.tostring(runPct) + "% trails)"
+        label.new(bar_index, d == 1 ? low : high, txt, style = d == 1 ? label.style_label_up : label.style_label_down,
+             color = d == 1 ? color.new(color.green, 0) : color.new(color.red, 0), textcolor = color.white, size = size.small)
+        int x2 = bar_index + 30
+        line.new(bar_index, close, x2, close, color = color.blue, width = 2)
+        line.new(bar_index, tSL, x2, tSL, color = color.red, width = 2)
+        line.new(bar_index, tTP1, x2, tTP1, color = color.new(color.green, 40), style = line.style_dashed)
+        line.new(bar_index, tTP2, x2, tTP2, color = color.new(color.green, 20), style = line.style_dashed)
+        line.new(bar_index, tTP3, x2, tTP3, color = color.green, width = 2)
+        alert(syminfo.ticker + " " + (d == 1 ? "BUY" : "SELL") + " (" + kind + ") | Entry " + str.tostring(close, format.mintick) +
+             " | SL " + str.tostring(tSL, format.mintick) + " | TP1 " + str.tostring(tTP1, format.mintick) +
+             " | TP2 " + str.tostring(tTP2, format.mintick) + " | TP3 " + str.tostring(tTP3, format.mintick) +
+             " | then trail " + str.tostring(trailAtr) + "xATR", alert.freq_once_per_bar_close)
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// VISUALS
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+plot(showEma ? emaT : na, "EMA 200", color = upTrend ? color.teal : dnTrend ? color.red : color.gray, linewidth = 2)
+plot(showEma ? emaM : na, "EMA 50", color = color.new(color.orange, 0))
+plot(showEma ? emaF : na, "EMA 20", color = color.new(color.yellow, 30))
+plot(showDon ? donHi : na, "Breakout high", color = color.new(color.teal, 50), style = plot.style_stepline)
+plot(showDon ? donLo : na, "Breakout low", color = color.new(color.red, 50), style = plot.style_stepline)
+plot(strategy.position_size != 0 ? tStop : na, "Live stop / trail", color = color.new(color.fuchsia, 0), style = plot.style_linebr, linewidth = 2)
+
+var table tb = table.new(position.top_right, 2, 9, bgcolor = color.new(color.black, 15), border_color = color.new(color.gray, 60), border_width = 1)
+row(int r, string k, string v, color c) =>
+    table.cell(tb, 0, r, k, text_color = color.silver, text_size = size.small, text_halign = text.align_left)
+    table.cell(tb, 1, r, v, text_color = c, text_size = size.small, text_halign = text.align_right)
+
+if showTbl and barstate.islast
+    int   ct = strategy.closedtrades
+    float wr = ct > 0 ? 100.0 * strategy.wintrades / ct : na
+    float pf = strategy.grossloss > 0 ? strategy.grossprofit / strategy.grossloss : na
+    float aw = strategy.wintrades > 0 ? strategy.grossprofit / strategy.wintrades : na
+    float al = strategy.losstrades > 0 ? strategy.grossloss / strategy.losstrades : na
+    row(0, "TF Pro", upTrend ? "UPTREND – buys" : dnTrend ? "DOWNTREND – sells" : "no trend – wait", upTrend ? color.lime : dnTrend ? color.red : color.gray)
+    row(1, "Closed exits", str.tostring(ct), color.white)
+    row(2, "Win rate", na(wr) ? "—" : str.tostring(wr, "#.0") + "%", color.white)
+    row(3, "Avg win / avg loss", na(aw) or na(al) or al == 0 ? "—" : str.tostring(aw / al, "#.00") + " : 1", color.white)
+    row(4, "Profit factor", na(pf) ? "—" : str.tostring(pf, "#.00"), na(pf) ? color.gray : pf >= 1 ? color.lime : color.red)
+    row(5, "Net profit", str.tostring(strategy.netprofit, "#,###.00") + " " + strategy.account_currency, strategy.netprofit >= 0 ? color.lime : color.red)
+    row(6, "Max drawdown", str.tostring(strategy.max_drawdown, "#,###.00"), color.orange)
+    row(7, "Position", strategy.position_size > 0 ? "LONG" : strategy.position_size < 0 ? "SHORT" : "flat", strategy.position_size == 0 ? color.gray : color.yellow)
+    row(8, "Live stop", strategy.position_size != 0 ? str.tostring(tStop, format.mintick) : "—", color.fuchsia)

@@ -41,3 +41,9 @@ File: [`indicators/raja_banks_style_signals.pine`](indicators/raja_banks_style_s
 
 Trend (EMA 50/200, plus the higher-timeframe EMA 200) → price pulls back into a key support/resistance zone → an engulfing or pin-bar confirmation candle. The entry is at the candle's close. The stop sits beyond the zone plus an ATR buffer. TP1/TP2/TP3 = 2R/3R/5R, with the stop moved to break-even after TP1. The on-chart dashboard shows the win rate, TP/SL hits and net R for the last 30 days (configurable).
 Raja Banks has not published an exact coded rulebook, so this follows his publicly taught principles.
+
+## Trend Following Pro (TradingView strategy)
+
+File: [`strategies/trend_following_pro.pine`](strategies/trend_following_pro.pine)
+
+Trend filter (EMA 200/50 + ADX) → a breakout of the 20-bar high/low, or a pullback to the EMA 50 with a confirmation candle. Stop = 2 × ATR. TP1 = 2R (30 %), TP2 = 3R (30 %), and the runner rides a 3 × ATR trailing stop, with break-even after TP1. It exits if the trend flips. Best on 1H / 4H / Daily charts.

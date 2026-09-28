@@ -76,6 +76,7 @@ textarea{width:100%;min-height:70px;resize:vertical}
   <div class="status">
     <span class="pill"><span class="dot" id="rpcDot"></span><span id="rpcTxt">idle</span></span>
     <span class="pill"><span id="wCount">0</span> wallets tracked</span>
+    <span class="pill">source: <span id="srcTxt">public RPC</span></span>
     <span class="pill">SOL $<span id="solPx">—</span></span>
     <button id="trackBtn" class="primary">▶ Start tracking</button>
     <button id="testBtn">Test pop-up</button>
@@ -91,7 +92,9 @@ textarea{width:100%;min-height:70px;resize:vertical}
   <details>
     <summary>Settings (saved in this browser)</summary>
     <div class="settings">
-      <label style="grid-column:1/-1">Solana RPC URL <input class="wide" id="cfgRpc" placeholder="https://api.mainnet-beta.solana.com"></label>
+      <label style="grid-column:1/-1">Helius API key (recommended, free at helius.dev) <input class="wide" id="cfgKey" placeholder="paste your Helius API key, e.g. 1a2b3c4d-…"></label>
+      <label style="grid-column:1/-1">…or any Solana RPC URL (used when no Helius key) <input class="wide" id="cfgRpc" placeholder="https://api.mainnet-beta.solana.com"></label>
+      <div style="grid-column:1/-1" class="row"><button id="connBtn">Test live connection</button><span class="log" id="connLog">Checks the real Solana mainnet and DexScreener APIs.</span></div>
       <label>Seconds per full wallet cycle <input id="cfgCycle" type="number" min="10" step="5"></label>
       <label>Min trade size to alert (SOL) <input id="cfgMin" type="number" min="0" step="0.1"></label>
       <label>Hot token: whales needed <input id="cfgHotN" type="number" min="2" step="1"></label>
@@ -101,7 +104,7 @@ textarea{width:100%;min-height:70px;resize:vertical}
       <label>Alert on sells too (1/0) <input id="cfgSells" type="number" min="0" max="1" step="1"></label>
       <label>Desktop notifications (1/0) <input id="cfgNotify" type="number" min="0" max="1" step="1"></label>
     </div>
-    <p class="log">The free public RPC is heavily rate-limited, so tracking 100 wallets on it is slow. For fast alerts, create a free RPC key at helius.dev or quicknode.com and paste its URL above.</p>
+    <p class="log">All data is live: token data from DexScreener's official public API (no key needed), and wallet transactions from Solana mainnet. The free public Solana RPC is heavily rate-limited and often blocks browsers. For fast, reliable tracking of 100 wallets, sign up free at <a href="https://dashboard.helius.dev" target="_blank" rel="noopener">dashboard.helius.dev</a>, copy your API key and paste it above.</p>
   </details>
 
   <div class="grid">
@@ -170,13 +173,18 @@ const links = {
 };
 
 // ---------- persistent config ----------
-const DEF = {rpc: 'https://api.mainnet-beta.solana.com', cycle: 60, min: 0.5, hotN: 2, hotMin: 60, pages: 20, buyers: 100, sells: 1, notify: 1, sound: 1};
+const DEF = {key: '', rpc: 'https://api.mainnet-beta.solana.com', cycle: 60, min: 0.5, hotN: 2, hotMin: 60, pages: 20, buyers: 100, sells: 1, notify: 1, sound: 1};
 let cfg = {...DEF};
 const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
 const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 Object.assign(cfg, load('whaleCfg', {}));
 const bind = (id, key, num) => { const el = $(id); el.value = cfg[key]; el.addEventListener('change', () => { const v = num ? parseFloat(el.value) : el.value.trim(); if (num ? !isNaN(v) : v) { cfg[key] = v; store('whaleCfg', cfg); } }); };
-bind('cfgRpc', 'rpc'); bind('cfgCycle', 'cycle', 1); bind('cfgMin', 'min', 1); bind('cfgHotN', 'hotN', 1); bind('cfgHotMin', 'hotMin', 1);
+bind('cfgRpc', 'rpc');
+$('cfgKey').value = cfg.key || '';
+$('cfgKey').addEventListener('change', () => { cfg.key = $('cfgKey').value.trim(); store('whaleCfg', cfg); showSrc(); });
+const rpcUrl = () => cfg.key ? `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(cfg.key)}` : cfg.rpc;
+const showSrc = () => $('srcTxt').textContent = cfg.key ? 'Helius (your key)' : /mainnet-beta\.solana\.com/.test(cfg.rpc) ? 'public RPC (slow)' : 'custom RPC';
+showSrc(); bind('cfgCycle', 'cycle', 1); bind('cfgMin', 'min', 1); bind('cfgHotN', 'hotN', 1); bind('cfgHotMin', 'hotMin', 1);
 bind('cfgPages', 'pages', 1); bind('cfgBuyers', 'buyers', 1); bind('cfgSells', 'sells', 1); bind('cfgNotify', 'notify', 1);
 
 let wallets = load('whaleWallets', []);          // [{a, label, n}]
@@ -187,7 +195,7 @@ const showErr = msg => { const b = $('errBox'); b.textContent = msg || ''; b.sty
 let rpcChain = Promise.resolve(), lastCall = 0, rpcOk = null;
 function setRpc(ok, txt) { rpcOk = ok; $('rpcDot').classList.toggle('on', !!ok); $('rpcTxt').textContent = txt; }
 function rpc(method, params) {
-  const gap = /mainnet-beta\.solana\.com/.test(cfg.rpc) ? 260 : 60;
+  const gap = cfg.key ? 110 : /mainnet-beta\.solana\.com/.test(cfg.rpc) ? 260 : 60;
   const run = async () => {
     const wait = lastCall + gap - Date.now();
     if (wait > 0) await sleep(wait);
@@ -195,7 +203,7 @@ function rpc(method, params) {
     for (let attempt = 0; attempt < 5; attempt++) {
       let r;
       try {
-        r = await fetch(cfg.rpc, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({jsonrpc: '2.0', id: 1, method, params})});
+        r = await fetch(rpcUrl(), {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({jsonrpc: '2.0', id: 1, method, params})});
       } catch (e) { setRpc(false, 'RPC unreachable'); throw new Error('Cannot reach the RPC (' + e.message + ')'); }
       if (r.status === 429) { setRpc(true, 'RPC rate-limited, slowing down'); await sleep(1500 * (attempt + 1)); continue; }
       if (!r.ok) { setRpc(false, 'RPC error ' + r.status); throw new Error('RPC HTTP ' + r.status + (r.status === 403 ? ' (this RPC blocks browser requests; use a Helius/QuickNode URL)' : '')); }
@@ -505,6 +513,22 @@ $('addSelBtn').onclick = () => {
   $('finderLog').textContent = `${n} wallets added to the watchlist.`; renderFound();
 };
 
+$('connBtn').onclick = async () => {
+  const log = $('connLog');
+  log.textContent = 'Testing…';
+  try {
+    const slot = await rpc('getSlot', []);
+    const tip = await rpc('getSignaturesForAddress', [WSOL, {limit: 1}]);
+    const age = tip && tip[0] && tip[0].blockTime ? Math.round(Date.now() / 1000 - tip[0].blockTime) + 's ago' : 'n/a';
+    tokCache[WSOL] = null;
+    await refreshSolPrice();
+    log.textContent = `✅ LIVE: Solana mainnet slot ${Number(slot).toLocaleString()} · latest on-chain tx ${age} · SOL $${solUsd ? solUsd.toFixed(2) : '? (DexScreener unreachable)'} from DexScreener`;
+    log.style.color = 'var(--green)';
+  } catch (e) {
+    log.textContent = '❌ ' + e.message + (cfg.key ? ' (check the Helius key)' : ' (add a Helius API key above)');
+    log.style.color = 'var(--red)';
+  }
+};
 $('testBtn').onclick = () => {
   try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
   popup('buy', '🟢 WHALE BUY  $TEST', 'early $BONK $WIF · 12.50 SOL ($2.1k) · MC $840k · liq $95k', 'https://dexscreener.com/solana');

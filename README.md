@@ -76,3 +76,11 @@ Volume Spread Analysis (Tom Williams / Wyckoff). Each bar is classified by volum
 - **Signs of weakness:** BC, UT, ER, PU, ND, ED
 
 A weighted background score over the last 20 bars decides the bias. A buy needs a No Supply, Test or Spring in a background of strength; a sell needs a No Demand or pseudo-upthrust in a background of weakness. Either one must then be confirmed by a close beyond the signal bar within 3 bars. The stop goes beyond the signal bar and TP1/2/3 = 2R/3R/5R. The dashboard shows the last 30 days of results.
+
+## Solana Whale Tracker (browser)
+
+File: [`web/whale_tracker.html`](web/whale_tracker.html). Open it in Chrome or Edge.
+
+- **Whale Finder:** loads today's biggest Solana winners from DexScreener's public API. For each winner it walks back through the token's history on-chain (Solana RPC) to its first transactions and collects the earliest buyers. Wallets that were early in *several* winners rank highest. You can add the top 100 to the watchlist in one click.
+- **Live tracking:** polls each tracked wallet and decodes new swaps into BUY/SELL, with the token, SOL/USD size, market cap and liquidity. Each trade pops up with a sound and a desktop notification. It sends a 🔥 alert when several tracked whales buy the same token within a time window.
+- A free private RPC (Helius/QuickNode) is recommended; the public RPC is heavily rate-limited.

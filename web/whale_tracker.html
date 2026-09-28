@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solana Whale Tracker</title>
+<style>
+:root{--bg:#0b0e13;--panel:#121722;--panel2:#171d2a;--line:#232b3b;--text:#e6e9ef;--muted:#8b93a7;--green:#16c784;--red:#ea3943;--amber:#f5a623;--blue:#4c8dff;--violet:#a78bfa}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--blue);text-decoration:none}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+h1{font-size:17px;margin:0}
+.status{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:12.5px}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:6px;vertical-align:middle}
+.dot.on{background:var(--green)}
+button{font:inherit;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:7px 12px;cursor:pointer}
+button.primary{background:var(--green);border-color:var(--green);color:#04130c;font-weight:600}
+button.small{padding:3px 8px;font-size:12px}
+button:disabled{opacity:.5;cursor:default}
+button:hover:not(:disabled){filter:brightness(1.12)}
+.wrap{padding:14px 16px;max-width:1500px;margin:0 auto}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+summary{cursor:pointer;color:var(--muted)}
+.settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px 16px;margin-top:10px}
+.settings label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+input,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+.settings input{width:110px}
+.settings input.wide{width:100%}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+@media (max-width:950px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.panel h2{font-size:14px;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.panel h2 small{color:var(--muted);font-weight:400}
+.pad{padding:10px 14px}
+.scroll{max-height:520px;overflow:auto}
+.empty{color:var(--muted);padding:22px 10px;text-align:center}
+.card{border:1px solid var(--line);border-left:4px solid var(--green);border-radius:8px;padding:9px 12px;margin:0 10px 8px;background:var(--panel2)}
+.card:first-child{margin-top:10px}
+.card.sell{border-left-color:var(--red)}
+.card.hot{border-left-color:var(--amber)}
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card .coin{font-size:17px;font-weight:700}
+.card .side{font-weight:700}
+.card:not(.sell) .side{color:var(--green)} .card.sell .side{color:var(--red)}
+.card .meta{color:var(--muted);font-size:12.5px;margin-top:3px}
+.card .links{margin-top:5px;font-size:12.5px;display:flex;flex-wrap:wrap;gap:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--panel)}
+td.num,th.num{text-align:right}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+.up{color:var(--green)} .down{color:var(--red)} .muted{color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row input{flex:1;min-width:220px}
+textarea{width:100%;min-height:70px;resize:vertical}
+.progress{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin:8px 0}
+.progress i{display:block;height:100%;width:0;background:var(--blue);transition:width .3s}
+.log{color:var(--muted);font-size:12.5px;margin-top:6px;min-height:18px}
+#toasts{position:fixed;top:72px;right:14px;z-index:50;display:flex;flex-direction:column;gap:10px;width:min(380px,calc(100vw - 28px))}
+.toast{background:var(--panel2);border:1px solid var(--line);border-left:5px solid var(--green);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);cursor:pointer;animation:in .25s ease-out}
+.toast.sell{border-left-color:var(--red)} .toast.hot{border-left-color:var(--amber)}
+.toast .t1{font-size:19px;font-weight:800}
+.toast .t2{color:var(--muted);font-size:12.5px;margin-top:2px}
+@keyframes in{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.banner{border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.warn{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.35);color:#ffd9a0}
+.err{background:rgba(234,57,67,.12);border:1px solid rgba(234,57,67,.4);color:#ffb3b8;display:none}
+.badge{padding:1px 7px;border-radius:5px;font-size:12px;font-weight:600;background:rgba(167,139,250,.18);color:var(--violet)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🐋 Solana Whale Tracker</h1>
+  <div class="status">
+    <span class="pill"><span class="dot" id="rpcDot"></span><span id="rpcTxt">idle</span></span>
+    <span class="pill"><span id="wCount">0</span> wallets tracked</span>
+    <span class="pill">SOL $<span id="solPx">—</span></span>
+    <button id="trackBtn" class="primary">▶ Start tracking</button>
+    <button id="testBtn">Test pop-up</button>
+    <button id="muteBtn">🔊 Sound on</button>
+  </div>
+</header>
+<div id="toasts"></div>
+
+<div class="wrap">
+  <div class="banner warn">⚠️ Wallets that turned $1 into $10,000 are often <b>insiders, snipers or bundle wallets</b> that buy in the same block a token launches and sell into the people who copy them. By the time you see their buy, the price has usually already moved. Use small size, check liquidity, and never copy a sell-off blindly. Not financial advice.</div>
+  <div class="banner err" id="errBox"></div>
+
+  <details>
+    <summary>Settings (saved in this browser)</summary>
+    <div class="settings">
+      <label style="grid-column:1/-1">Solana RPC URL <input class="wide" id="cfgRpc" placeholder="https://api.mainnet-beta.solana.com"></label>
+      <label>Seconds per full wallet cycle <input id="cfgCycle" type="number" min="10" step="5"></label>
+      <label>Min trade size to alert (SOL) <input id="cfgMin" type="number" min="0" step="0.1"></label>
+      <label>Hot token: whales needed <input id="cfgHotN" type="number" min="2" step="1"></label>
+      <label>Hot token window (minutes) <input id="cfgHotMin" type="number" min="5" step="5"></label>
+      <label>Finder: pages of history (×1000 tx) <input id="cfgPages" type="number" min="1" max="100" step="1"></label>
+      <label>Finder: early buyers per token <input id="cfgBuyers" type="number" min="10" max="300" step="10"></label>
+      <label>Alert on sells too (1/0) <input id="cfgSells" type="number" min="0" max="1" step="1"></label>
+      <label>Desktop notifications (1/0) <input id="cfgNotify" type="number" min="0" max="1" step="1"></label>
+    </div>
+    <p class="log">The free public RPC is heavily rate-limited, so tracking 100 wallets on it is slow. For fast alerts, create a free RPC key at helius.dev or quicknode.com and paste its URL above.</p>
+  </details>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Live whale trades <small>newest first</small></h2>
+      <div class="scroll" id="feed"><div class="empty">Add wallets (use the Whale Finder below), then press <b>Start tracking</b>.</div></div>
+    </section>
+    <div>
+      <section class="panel">
+        <h2>🔥 Hot tokens <small>bought by several tracked whales</small></h2>
+        <div class="scroll" style="max-height:230px" id="hot"><div class="empty">Nothing yet.</div></div>
+      </section>
+      <section class="panel">
+        <h2>Watchlist <span class="row"><button class="small" id="exportBtn">Export</button><button class="small" id="clearBtn">Clear all</button></span></h2>
+        <div class="pad">
+          <textarea id="addBox" placeholder="Paste wallet addresses (one per line, optional label after a comma):&#10;7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU, sniper 1"></textarea>
+          <div class="row" style="margin-top:8px"><button id="addBtn">Add wallets</button><span class="log" id="addLog"></span></div>
+        </div>
+        <div class="scroll" style="max-height:260px"><table><thead><tr><th>Wallet</th><th>Label</th><th class="num">Trades seen</th><th></th></tr></thead><tbody id="wlist"></tbody></table></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel">
+    <h2>🔎 Whale Finder <small>finds the earliest buyers of big winners, then ranks wallets that were early in several of them</small></h2>
+    <div class="pad">
+      <div class="row">
+        <button id="trendBtn">Load today's biggest Solana winners (DexScreener)</button>
+        <button id="scanAllBtn" disabled>Find early buyers in top 10 winners</button>
+      </div>
+      <div class="scroll" style="max-height:260px;margin-top:8px"><table><thead><tr><th>Token</th><th class="num">24h</th><th class="num">Market cap</th><th class="num">Liquidity</th><th class="num">Age</th><th></th></tr></thead><tbody id="trend"></tbody></table></div>
+      <div class="row" style="margin-top:12px">
+        <input id="mintIn" placeholder="…or paste any Solana token address (mint) that pumped">
+        <button id="scanBtn">Find early buyers</button>
+      </div>
+      <div class="progress"><i id="finderBar"></i></div>
+      <div class="log" id="finderLog"></div>
+      <div class="row" style="margin:8px 0">
+        <button id="addTopBtn" disabled>Add top 100 to watchlist</button>
+        <button id="addSelBtn" disabled>Add selected</button>
+        <span class="log">Ranked by how many winning tokens the wallet bought early, then by entry position.</span>
+      </div>
+      <div class="scroll" style="max-height:420px"><table><thead><tr><th><input type="checkbox" id="selAll"></th><th>Wallet</th><th class="num">Early in # winners</th><th>Tokens</th><th class="num">Best entry #</th><th class="num">SOL spent (first buys)</th><th>Stats</th></tr></thead><tbody id="found"></tbody></table></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+'use strict';
+const WSOL = 'So11111111111111111111111111111111111111112';
+const STABLES = ['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'];
+const DEX = 'https://api.dexscreener.com';
+const B58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const short = a => a.slice(0, 4) + '…' + a.slice(-4);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const fmtUsd = x => x == null || !isFinite(x) ? '—' : x >= 1e9 ? '$' + (x / 1e9).toFixed(2) + 'B' : x >= 1e6 ? '$' + (x / 1e6).toFixed(2) + 'M' : x >= 1e3 ? '$' + (x / 1e3).toFixed(1) + 'k' : '$' + x.toFixed(2);
+const ago = ms => { const m = Math.round(ms / 60000); return m < 60 ? m + 'm' : m < 2880 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd'; };
+const links = {
+  wallet: a => `https://solscan.io/account/${a}`,
+  gmgn: a => `https://gmgn.ai/sol/address/${a}`,
+  tx: s => `https://solscan.io/tx/${s}`,
+  dex: m => `https://dexscreener.com/solana/${m}`,
+};
+
+// ---------- persistent config ----------
+const DEF = {rpc: 'https://api.mainnet-beta.solana.com', cycle: 60, min: 0.5, hotN: 2, hotMin: 60, pages: 20, buyers: 100, sells: 1, notify: 1, sound: 1};
+let cfg = {...DEF};
+const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+Object.assign(cfg, load('whaleCfg', {}));
+const bind = (id, key, num) => { const el = $(id); el.value = cfg[key]; el.addEventListener('change', () => { const v = num ? parseFloat(el.value) : el.value.trim(); if (num ? !isNaN(v) : v) { cfg[key] = v; store('whaleCfg', cfg); } }); };
+bind('cfgRpc', 'rpc'); bind('cfgCycle', 'cycle', 1); bind('cfgMin', 'min', 1); bind('cfgHotN', 'hotN', 1); bind('cfgHotMin', 'hotMin', 1);
+bind('cfgPages', 'pages', 1); bind('cfgBuyers', 'buyers', 1); bind('cfgSells', 'sells', 1); bind('cfgNotify', 'notify', 1);
+
+let wallets = load('whaleWallets', []);          // [{a, label, n}]
+const saveWallets = () => store('whaleWallets', wallets);
+const showErr = msg => { const b = $('errBox'); b.textContent = msg || ''; b.style.display = msg ? 'block' : 'none'; };
+
+// ---------- RPC (serialized, rate-limited, retries on 429) ----------
+let rpcChain = Promise.resolve(), lastCall = 0, rpcOk = null;
+function setRpc(ok, txt) { rpcOk = ok; $('rpcDot').classList.toggle('on', !!ok); $('rpcTxt').textContent = txt; }
+function rpc(method, params) {
+  const gap = /mainnet-beta\.solana\.com/.test(cfg.rpc) ? 260 : 60;
+  const run = async () => {
+    const wait = lastCall + gap - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastCall = Date.now();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      let r;
+      try {
+        r = await fetch(cfg.rpc, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({jsonrpc: '2.0', id: 1, method, params})});
+      } catch (e) { setRpc(false, 'RPC unreachable'); throw new Error('Cannot reach the RPC (' + e.message + ')'); }
+      if (r.status === 429) { setRpc(true, 'RPC rate-limited, slowing down'); await sleep(1500 * (attempt + 1)); continue; }
+      if (!r.ok) { setRpc(false, 'RPC error ' + r.status); throw new Error('RPC HTTP ' + r.status + (r.status === 403 ? ' (this RPC blocks browser requests; use a Helius/QuickNode URL)' : '')); }
+      const j = await r.json();
+      if (j.error) throw new Error(j.error.message || 'RPC error');
+      setRpc(true, 'RPC ok');
+      return j.result;
+    }
+    throw new Error('RPC kept rate-limiting; use a private RPC URL in Settings');
+  };
+  const p = rpcChain.then(run, run);
+  rpcChain = p.catch(() => {});
+  return p;
+}
+const getTx = sig => rpc('getTransaction', [sig, {encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'confirmed'}]);
+
+// token balance / SOL change of one owner inside a transaction
+function deltas(tx, owner) {
+  const keys = tx.transaction.message.accountKeys.map(k => typeof k === 'string' ? k : k.pubkey);
+  const i = keys.indexOf(owner);
+  let sol = i >= 0 ? (tx.meta.postBalances[i] - tx.meta.preBalances[i]) / 1e9 : 0;
+  const tok = {};
+  for (const b of tx.meta.preTokenBalances || []) if (b.owner === owner) tok[b.mint] = (tok[b.mint] || 0) - (parseFloat(b.uiTokenAmount.uiAmountString) || 0);
+  for (const b of tx.meta.postTokenBalances || []) if (b.owner === owner) tok[b.mint] = (tok[b.mint] || 0) + (parseFloat(b.uiTokenAmount.uiAmountString) || 0);
+  if (tok[WSOL]) { sol += tok[WSOL]; delete tok[WSOL]; }
+  let usd = 0;
+  for (const s of STABLES) if (tok[s]) { usd += tok[s]; delete tok[s]; }
+  for (const m of Object.keys(tok)) if (Math.abs(tok[m]) < 1e-12) delete tok[m];
+  return {sol, usd, tok, feePayer: keys[0]};
+}
+
+// ---------- DexScreener token info (batched, cached) ----------
+const tokCache = {};
+async function tokenInfo(mints) {
+  const need = mints.filter(m => !tokCache[m] || Date.now() - tokCache[m].t > 60000);
+  for (let i = 0; i < need.length; i += 30) {
+    const chunk = need.slice(i, i + 30);
+    try {
+      const r = await fetch(`${DEX}/tokens/v1/solana/${chunk.join(',')}`);
+      const pairs = r.ok ? await r.json() : [];
+      for (const m of chunk) {
+        const ps = (pairs || []).filter(p => p.baseToken && p.baseToken.address === m).sort((a, b) => ((b.liquidity || {}).usd || 0) - ((a.liquidity || {}).usd || 0));
+        const p = ps[0];
+        tokCache[m] = {t: Date.now(), sym: p ? p.baseToken.symbol : short(m), name: p ? p.baseToken.name : '', price: p ? +p.priceUsd : null,
+          mcap: p ? (p.marketCap || p.fdv) : null, liq: p && p.liquidity ? p.liquidity.usd : null, ch24: p && p.priceChange ? p.priceChange.h24 : null,
+          created: p ? p.pairCreatedAt : null, url: p ? p.url : links.dex(m)};
+      }
+    } catch (e) { for (const m of chunk) tokCache[m] = tokCache[m] || {t: 0, sym: short(m), url: links.dex(m)}; }
+  }
+  return mints.map(m => tokCache[m]);
+}
+async function refreshSolPrice() {
+  const [s] = await tokenInfo([WSOL]);
+  if (s && s.price) { solUsd = s.price; $('solPx').textContent = solUsd.toFixed(2); }
+}
+let solUsd = 0;
+
+// ---------- sound / notifications / toasts ----------
+let audio = null, sound = !!cfg.sound;
+const setMute = () => $('muteBtn').textContent = sound ? '🔊 Sound on' : '🔇 Muted';
+setMute();
+$('muteBtn').onclick = () => { sound = !sound; cfg.sound = sound ? 1 : 0; store('whaleCfg', cfg); setMute(); };
+function beep(kind) {
+  if (!sound || !audio) return;
+  const seq = kind === 'buy' ? [660, 990] : kind === 'sell' ? [660, 440] : [880, 1175, 1480];
+  seq.forEach((f, i) => {
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + i * 0.14;
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.14);
+  });
+}
+function popup(cls, title, sub, url) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + cls;
+  el.innerHTML = '<div class="t1"></div><div class="t2"></div>';
+  el.querySelector('.t1').textContent = title; el.querySelector('.t2').textContent = sub;
+  el.onclick = () => window.open(url, '_blank');
+  $('toasts').prepend(el);
+  while ($('toasts').children.length > 5) $('toasts').lastChild.remove();
+  setTimeout(() => el.remove(), 15000);
+  beep(cls === 'sell' ? 'sell' : cls === 'hot' ? 'hot' : 'buy');
+  if (cfg.notify && 'Notification' in window && Notification.permission === 'granted') {
+    try { const n = new Notification(title, {body: sub}); n.onclick = () => { window.focus(); window.open(url, '_blank'); }; } catch (e) {}
+  }
+}
+
+// ---------- watchlist UI ----------
+function renderWallets() {
+  $('wCount').textContent = wallets.length;
+  const tb = $('wlist');
+  if (!wallets.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">No wallets yet.</td></tr>'; return; }
+  tb.innerHTML = wallets.map((w, i) => `<tr><td class="mono"><a target="_blank" rel="noopener" href="${links.gmgn(w.a)}">${short(w.a)}</a></td>
+    <td>${esc(w.label || '')}</td><td class="num">${w.n || 0}</td><td><button class="small" data-del="${i}">✕</button></td></tr>`).join('');
+}
+$('wlist').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (b) { const w = wallets.splice(+b.dataset.del, 1)[0]; if (w) delete lastSig[w.a]; saveWallets(); renderWallets(); } });
+function addWallets(items) {
+  const have = new Set(wallets.map(w => w.a));
+  let added = 0;
+  for (const {a, label} of items) if (B58.test(a) && !have.has(a)) { wallets.push({a, label: label || '', n: 0}); have.add(a); added++; }
+  saveWallets(); renderWallets();
+  return added;
+}
+$('addBtn').onclick = () => {
+  const items = $('addBox').value.split(/\n+/).map(l => l.trim()).filter(Boolean).map(l => { const [a, ...rest] = l.split(/[,;\s]+/); return {a, label: rest.join(' ')}; });
+  const n = addWallets(items);
+  $('addLog').textContent = `${n} added (${items.length - n} invalid or duplicate)`;
+  $('addBox').value = '';
+};
+$('exportBtn').onclick = () => { $('addBox').value = wallets.map(w => w.a + (w.label ? ', ' + w.label : '')).join('\n'); $('addLog').textContent = 'Watchlist copied into the box above. Select it and copy it to save.'; };
+$('clearBtn').onclick = () => { if (confirm('Remove all tracked wallets?')) { wallets = []; saveWallets(); renderWallets(); } };
+
+// ---------- live tracking ----------
+const lastSig = {};                // wallet -> newest signature already processed
+const hotBuys = {};                // mint -> [{w, t, sol}]
+let tracking = false, trackLoop = null;
+
+async function pollWallet(w) {
+  const sigs = await rpc('getSignaturesForAddress', [w.a, {limit: 10}]);
+  if (!sigs || !sigs.length) return;
+  if (!lastSig[w.a]) { lastSig[w.a] = sigs[0].signature; return; }       // first pass: remember, don't alert history
+  const fresh = [];
+  for (const s of sigs) { if (s.signature === lastSig[w.a]) break; if (!s.err) fresh.push(s); }
+  lastSig[w.a] = sigs[0].signature;
+  for (const s of fresh.reverse()) {
+    const tx = await getTx(s.signature);
+    if (!tx || !tx.meta) continue;
+    const d = deltas(tx, w.a);
+    const mints = Object.keys(d.tok);
+    if (!mints.length) continue;
+    const main = mints.sort((x, y) => Math.abs(d.tok[y]) - Math.abs(d.tok[x]))[0];
+    const side = d.tok[main] > 0 ? 'BUY' : 'SELL';
+    const solAmt = Math.abs(d.sol) + (solUsd ? Math.abs(d.usd) / solUsd : 0);
+    w.n = (w.n || 0) + 1; saveWallets(); renderWallets();
+    if (solAmt < cfg.min) continue;
+    const [info] = await tokenInfo([main]);
+    trade(w, side, main, info, solAmt, s.signature, (s.blockTime || Date.now() / 1000) * 1000);
+  }
+}
+
+function trade(w, side, mint, info, solAmt, sig, t) {
+  const usd = solUsd ? solAmt * solUsd : null;
+  const feed = $('feed');
+  if (feed.querySelector('.empty')) feed.innerHTML = '';
+  const c = document.createElement('div');
+  c.className = 'card' + (side === 'SELL' ? ' sell' : '');
+  c.innerHTML = `<div class="top"><span class="coin"></span><span class="side">${side === 'BUY' ? '🟢 BUY' : '🔴 SELL'}</span></div>
+    <div class="meta"></div>
+    <div class="links"><a target="_blank" rel="noopener" href="${esc(info.url || links.dex(mint))}">DexScreener</a><a target="_blank" rel="noopener" href="${links.tx(sig)}">Transaction</a><a target="_blank" rel="noopener" href="${links.gmgn(w.a)}">Wallet stats</a></div>`;
+  c.querySelector('.coin').textContent = '$' + (info.sym || short(mint));
+  c.querySelector('.meta').textContent = `${new Date(t).toLocaleTimeString()} · ${w.label || short(w.a)} ${side === 'BUY' ? 'bought' : 'sold'} ${solAmt.toFixed(2)} SOL${usd ? ' (' + fmtUsd(usd) + ')' : ''} · MC ${fmtUsd(info.mcap)} · liquidity ${fmtUsd(info.liq)}`;
+  feed.prepend(c);
+  while (feed.children.length > 200) feed.lastChild.remove();
+
+  const title = `${side === 'BUY' ? '🟢 WHALE BUY' : '🔴 WHALE SELL'}  $${info.sym || short(mint)}`;
+  const sub = `${w.label || short(w.a)} · ${solAmt.toFixed(2)} SOL${usd ? ' (' + fmtUsd(usd) + ')' : ''} · MC ${fmtUsd(info.mcap)} · liq ${fmtUsd(info.liq)}`;
+  if (side === 'BUY' || cfg.sells) popup(side === 'BUY' ? 'buy' : 'sell', title, sub, info.url || links.dex(mint));
+
+  if (side === 'BUY') {
+    const now = Date.now(), win = cfg.hotMin * 60000;
+    const list = (hotBuys[mint] = (hotBuys[mint] || []).filter(x => now - x.t < win));
+    const firstTime = !list.some(x => x.w === w.a);
+    list.push({w: w.a, t: now, sol: solAmt});
+    const uniq = new Set(list.map(x => x.w)).size;
+    if (firstTime && uniq === cfg.hotN) popup('hot', `🔥 ${uniq} WHALES BUYING $${info.sym}`, `${uniq} tracked wallets bought within ${cfg.hotMin} min · MC ${fmtUsd(info.mcap)} · liq ${fmtUsd(info.liq)}`, info.url || links.dex(mint));
+    renderHot();
+  }
+}
+
+function renderHot() {
+  const now = Date.now(), win = cfg.hotMin * 60000;
+  const rows = Object.entries(hotBuys).map(([m, l]) => [m, l.filter(x => now - x.t < win)]).filter(([, l]) => l.length)
+    .map(([m, l]) => ({m, n: new Set(l.map(x => x.w)).size, sol: l.reduce((s, x) => s + x.sol, 0), last: Math.max(...l.map(x => x.t))}))
+    .sort((a, b) => b.n - a.n || b.sol - a.sol).slice(0, 15);
+  const box = $('hot');
+  if (!rows.length) { box.innerHTML = '<div class="empty">Nothing yet.</div>'; return; }
+  box.innerHTML = rows.map(r => { const i = tokCache[r.m] || {}; return `<div class="card ${r.n >= cfg.hotN ? 'hot' : ''}"><div class="top"><span class="coin">$${esc(i.sym || short(r.m))}</span><span class="badge">${r.n} whale${r.n > 1 ? 's' : ''}</span></div>
+    <div class="meta">${r.sol.toFixed(2)} SOL bought · last ${ago(now - r.last)} ago · MC ${fmtUsd(i.mcap)} · liq ${fmtUsd(i.liq)}</div>
+    <div class="links"><a target="_blank" rel="noopener" href="${esc(i.url || links.dex(r.m))}">DexScreener</a></div></div>`; }).join('');
+}
+
+async function startTracking() {
+  if (tracking) { tracking = false; clearTimeout(trackLoop); $('trackBtn').textContent = '▶ Start tracking'; setRpc(false, 'stopped'); return; }
+  if (!wallets.length) { showErr('Add at least one wallet first (use the Whale Finder or paste addresses into the Watchlist).'); return; }
+  showErr('');
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  if ('Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (e) {} }
+  tracking = true; $('trackBtn').textContent = '⏸ Stop tracking';
+  refreshSolPrice(); setInterval(refreshSolPrice, 120000);
+  let i = 0;
+  const step = async () => {
+    if (!tracking) return;
+    if (!wallets.length) { trackLoop = setTimeout(step, 2000); return; }
+    const w = wallets[i++ % wallets.length];
+    const t0 = Date.now();
+    try { await pollWallet(w); showErr(''); } catch (e) { showErr('Tracking error: ' + e.message); }
+    const per = Math.max(0, cfg.cycle * 1000 / wallets.length - (Date.now() - t0));
+    trackLoop = setTimeout(step, per);
+  };
+  step();
+}
+$('trackBtn').onclick = startTracking;
+
+// ---------- Whale Finder ----------
+const found = new Map();           // wallet -> {tokens:Set, syms:Set, best, sol}
+let trendList = [];
+
+$('trendBtn').onclick = async () => {
+  $('trendBtn').disabled = true; $('finderLog').textContent = 'Loading DexScreener boosted & latest Solana tokens…';
+  try {
+    const [boosts, profiles] = await Promise.all([
+      fetch(`${DEX}/token-boosts/top/v1`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${DEX}/token-profiles/latest/v1`).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]);
+    const mints = [...new Set([...(boosts || []), ...(profiles || [])].filter(x => x.chainId === 'solana').map(x => x.tokenAddress))].slice(0, 90);
+    if (!mints.length) throw new Error('DexScreener returned no Solana tokens (blocked or offline?)');
+    const infos = await tokenInfo(mints);
+    trendList = mints.map((m, i) => ({m, ...infos[i]})).filter(x => x.ch24 != null && x.liq > 5000).sort((a, b) => b.ch24 - a.ch24).slice(0, 30);
+    $('trend').innerHTML = trendList.map((x, i) => `<tr><td><a target="_blank" rel="noopener" href="${esc(x.url)}"><b>$${esc(x.sym)}</b></a> <span class="muted">${esc((x.name || '').slice(0, 24))}</span></td>
+      <td class="num ${x.ch24 >= 0 ? 'up' : 'down'}">${x.ch24 >= 0 ? '+' : ''}${Math.round(x.ch24)}%</td><td class="num">${fmtUsd(x.mcap)}</td><td class="num">${fmtUsd(x.liq)}</td>
+      <td class="num">${x.created ? ago(Date.now() - x.created) : '—'}</td><td><button class="small" data-scan="${i}">Find early buyers</button></td></tr>`).join('') || '<tr><td colspan="6" class="empty">No big winners right now.</td></tr>';
+    $('scanAllBtn').disabled = !trendList.length;
+    $('finderLog').textContent = `${trendList.length} Solana tokens loaded, sorted by 24h gain.`;
+  } catch (e) { $('finderLog').textContent = 'Error: ' + e.message; }
+  $('trendBtn').disabled = false;
+};
+$('trend').addEventListener('click', e => { const b = e.target.closest('[data-scan]'); if (b) scanTokens([trendList[+b.dataset.scan].m]); });
+$('scanAllBtn').onclick = () => scanTokens(trendList.slice(0, 10).map(x => x.m));
+$('scanBtn').onclick = () => { const m = $('mintIn').value.trim(); if (!B58.test(m)) { $('finderLog').textContent = 'That is not a valid Solana token address.'; return; } scanTokens([m]); };
+
+let scanning = false;
+async function scanTokens(mints) {
+  if (scanning) return;
+  scanning = true; setFinderBtns(true);
+  try {
+    for (let k = 0; k < mints.length; k++) await earlyBuyers(mints[k], k, mints.length);
+    $('finderLog').textContent += ' Done.';
+  } catch (e) { $('finderLog').textContent = 'Error: ' + e.message; }
+  scanning = false; setFinderBtns(false);
+}
+function setFinderBtns(busy) { for (const id of ['scanBtn', 'scanAllBtn', 'trendBtn']) $(id).disabled = busy || (id === 'scanAllBtn' && !trendList.length); }
+
+async function earlyBuyers(mint, k, total) {
+  const [info] = await tokenInfo([mint]);
+  const sym = info.sym || short(mint);
+  const bar = f => $('finderBar').style.width = ((k + f) / total * 100).toFixed(1) + '%';
+  const log = s => $('finderLog').textContent = `[${k + 1}/${total}] $${sym}: ${s}`;
+
+  // 1. walk back to the token's first transactions
+  let before, all = [], reachedStart = false;
+  for (let p = 0; p < cfg.pages; p++) {
+    log(`reading history page ${p + 1}/${cfg.pages} (${all.length} tx so far)…`);
+    const res = await rpc('getSignaturesForAddress', [mint, before ? {limit: 1000, before} : {limit: 1000}]);
+    if (!res || !res.length) { reachedStart = true; break; }
+    all = all.concat(res);
+    before = res[res.length - 1].signature;
+    bar(0.4 * (p + 1) / cfg.pages);
+    if (res.length < 1000) { reachedStart = true; break; }
+  }
+  if (!reachedStart) log(`history longer than ${cfg.pages}k tx; using the oldest ${all.length} we reached (raise "pages" in Settings for truly first buyers)…`);
+  const oldest = all.filter(s => !s.err).reverse();
+
+  // 2. read the oldest transactions in order and keep wallets whose balance of this token went UP
+  const buyers = new Map();
+  let checked = 0;
+  for (const s of oldest) {
+    if (buyers.size >= cfg.buyers || checked >= cfg.buyers * 3) break;
+    checked++;
+    let tx;
+    try { tx = await getTx(s.signature); } catch (e) { continue; }
+    if (!tx || !tx.meta) continue;
+    const payer = deltas(tx, tx.transaction.message.accountKeys.map(x => typeof x === 'string' ? x : x.pubkey)[0]);
+    const got = payer.tok[mint] || 0;
+    if (got > 0 && !buyers.has(payer.feePayer)) buyers.set(payer.feePayer, {pos: buyers.size + 1, sol: Math.max(0, -payer.sol)});
+    if (checked % 5 === 0) { log(`checking early transactions ${checked} → ${buyers.size} buyers found…`); bar(0.4 + 0.6 * Math.min(1, buyers.size / cfg.buyers)); }
+  }
+  for (const [a, b] of buyers) {
+    const f = found.get(a) || {tokens: new Set(), syms: [], best: 1e9, sol: 0};
+    if (!f.tokens.has(mint)) { f.tokens.add(mint); f.syms.push(sym); f.sol += b.sol; }
+    f.best = Math.min(f.best, b.pos);
+    found.set(a, f);
+  }
+  bar(1);
+  log(`${buyers.size} early buyers found (${found.size} unique wallets across all scans).`);
+  renderFound();
+}
+
+function ranked() {
+  return [...found.entries()].sort((x, y) => y[1].tokens.size - x[1].tokens.size || x[1].best - y[1].best);
+}
+function renderFound() {
+  const rows = ranked().slice(0, 300);
+  const tracked = new Set(wallets.map(w => w.a));
+  $('found').innerHTML = rows.map(([a, f]) => `<tr><td><input type="checkbox" data-w="${a}"></td>
+    <td class="mono"><a target="_blank" rel="noopener" href="${links.wallet(a)}">${short(a)}</a>${tracked.has(a) ? ' <span class="badge">tracked</span>' : ''}</td>
+    <td class="num"><b>${f.tokens.size}</b></td><td>${f.syms.slice(0, 5).map(s => '$' + esc(s)).join(', ')}${f.syms.length > 5 ? '…' : ''}</td>
+    <td class="num">#${f.best}</td><td class="num">${f.sol.toFixed(2)}</td>
+    <td><a target="_blank" rel="noopener" href="${links.gmgn(a)}">PnL on GMGN</a></td></tr>`).join('') || '<tr><td colspan="7" class="empty">No results yet.</td></tr>';
+  $('addTopBtn').disabled = $('addSelBtn').disabled = !rows.length;
+}
+$('selAll').onchange = e => document.querySelectorAll('#found input[data-w]').forEach(c => c.checked = e.target.checked);
+const labelFor = f => `early ${f.syms.slice(0, 3).map(s => '$' + s).join(' ')}`;
+$('addTopBtn').onclick = () => { const n = addWallets(ranked().slice(0, 100).map(([a, f]) => ({a, label: labelFor(f)}))); $('finderLog').textContent = `${n} wallets added to the watchlist.`; renderFound(); };
+$('addSelBtn').onclick = () => {
+  const sel = [...document.querySelectorAll('#found input[data-w]:checked')].map(c => c.dataset.w);
+  const n = addWallets(sel.map(a => ({a, label: labelFor(found.get(a))})));
+  $('finderLog').textContent = `${n} wallets added to the watchlist.`; renderFound();
+};
+
+$('testBtn').onclick = () => {
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  popup('buy', '🟢 WHALE BUY  $TEST', 'early $BONK $WIF · 12.50 SOL ($2.1k) · MC $840k · liq $95k', 'https://dexscreener.com/solana');
+};
+
+renderWallets();
+renderFound();
+})();
+</script>
+</body>
+</html>

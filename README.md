@@ -66,3 +66,13 @@ It streams live 1-minute candles for every Binance USDT-M perpetual (300+ coins)
 - a strong candle close
 
 A HEATING early warning appears when volume pace builds. Each signal pops up on screen with the coin name and a sound, and shows as a desktop notification and a feed card with entry, SL and TP1/TP2. The live radar ranks the hottest coins every second. Settings are saved in your browser.
+
+## Holistic VSA (TradingView indicator)
+
+File: [`indicators/holistic_vsa.pine`](indicators/holistic_vsa.pine)
+
+Volume Spread Analysis (Tom Williams / Wyckoff). Each bar is classified by volume, spread and close position, and labelled as one of these:
+- **Signs of strength:** SC, SV, SO, SP, T, NS, EU
+- **Signs of weakness:** BC, UT, ER, PU, ND, ED
+
+A weighted background score over the last 20 bars decides the bias. A buy needs a No Supply, Test or Spring in a background of strength; a sell needs a No Demand or pseudo-upthrust in a background of weakness. Either one must then be confirmed by a close beyond the signal bar within 3 bars. The stop goes beyond the signal bar and TP1/2/3 = 2R/3R/5R. The dashboard shows the last 30 days of results.

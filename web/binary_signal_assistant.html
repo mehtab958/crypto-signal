@@ -83,19 +83,18 @@ td.num,th.num{text-align:right}
     <summary>Settings (saved in this browser)</summary>
     <div class="settings">
       <label>Candle timeframe <select id="cfgTf"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select></label>
-      <label>Expiry (candles) <input id="cfgExp" type="number" min="1" max="5" step="1"></label>
+      <label>Longest expiry to test (candles) <input id="cfgExp" type="number" min="1" max="5" step="1"></label>
       <label>Min confirmations (of 7) <input id="cfgMin" type="number" min="3" max="7" step="1"></label>
       <label>Broker payout % <input id="cfgPay" type="number" min="50" max="100" step="1"></label>
       <label>Crypto pairs <select id="cfgCMode"><option value="top">All (top by volume)</option><option value="list">Only my list</option></select></label>
       <label>How many top crypto pairs <input id="cfgTopN" type="number" min="5" max="200" step="5"></label>
-      <label>Only pairs with proven edge (1/0) <input id="cfgEdge" type="number" min="0" max="1" step="1"></label>
-      <label>Min backtest trades for "proven" <input id="cfgMinBt" type="number" min="3" max="100" step="1"></label>
+      <label>Min trades to validate a strategy <input id="cfgMinBt" type="number" min="10" max="200" step="5"></label>
       <label class="wide">My crypto list (Binance symbols, used with "Only my list") <input id="cfgCrypto"></label>
       <label class="wide">Twelve Data API key (free at twelvedata.com; needed for forex and gold) <input id="cfgKey" placeholder="paste key to enable forex"></label>
       <label>Twelve Data requests/min (free = 8) <input id="cfgCpm" type="number" min="8" step="1"></label>
       <label class="wide">Forex pairs ("ALL" = 29 majors, minors, gold and silver; comma-separated otherwise) <input id="cfgFx"></label>
     </div>
-    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Changes apply after you reload the page and press Start. "Proven edge" = this exact logic beat the break-even win rate on the pair's own recent history; other pairs stay silent.</p>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Changes apply after you reload the page and press Start. Every pair runs a tournament of 6 strategies × expiries. A strategy may only give signals if it beat break-even on the first 60% of history AND again on the last 40% (which it never saw), with enough trades to be statistically convincing. Strategies that fall below break-even live are switched off.</p>
   </details>
 
   <div class="grid">
@@ -118,7 +117,7 @@ td.num,th.num{text-align:right}
           <div class="stat"><b id="stBe">—</b><span>break-even win rate</span></div>
           <div class="stat"><b id="stPnl">0</b><span>net (stake units)</span></div>
         </div>
-        <div class="scroll"><table><thead><tr><th>Time</th><th>Asset</th><th>Signal</th><th class="num">Conf.</th><th class="num">Entry</th><th class="num">Close</th><th>Result</th></tr></thead><tbody id="hist"><tr><td colspan="7" class="muted">No signals yet.</td></tr></tbody></table></div>
+        <div class="scroll"><table><thead><tr><th>Time</th><th>Asset</th><th>Signal</th><th>Strategy</th><th class="num">Validated</th><th class="num">Entry</th><th class="num">Close</th><th>Result</th></tr></thead><tbody id="hist"><tr><td colspan="8" class="muted">No signals yet.</td></tr></tbody></table></div>
       </section>
     </div>
 
@@ -130,7 +129,7 @@ td.num,th.num{text-align:right}
       </section>
       <section class="panel">
         <h2>Markets <small>backtest = win rate of this exact logic on recent history</small></h2>
-        <div class="scroll"><table><thead><tr><th>Asset</th><th class="num">Price</th><th>Trend</th><th class="num">RSI</th><th class="num">Backtest</th><th class="num">Live</th></tr></thead><tbody id="mkts"></tbody></table></div>
+        <div class="scroll"><table><thead><tr><th>Asset</th><th class="num">Price</th><th>Trend</th><th>Best validated strategy</th><th class="num">Test win %</th><th class="num">Live</th></tr></thead><tbody id="mkts"></tbody></table></div>
       </section>
     </div>
   </div>
@@ -143,13 +142,13 @@ const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ───────────────────────── settings ─────────────────────────
-const DEF = {tf: '1', exp: 1, min: 4, pay: 85, cmode: 'top', topN: 50, edge: 1, minBt: 8, crypto: 'BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,LTCUSDT', key: '', cpm: 8, fx: 'ALL', voice: 1};
+const DEF = {tf: '1', exp: 1, min: 4, pay: 85, cmode: 'top', topN: 50, maxExp: 5, minVal: 20, crypto: 'BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,LTCUSDT', key: '', cpm: 8, fx: 'ALL', voice: 1};
 let cfg = {...DEF};
 try { Object.assign(cfg, JSON.parse(localStorage.getItem('bsaCfg') || '{}')); } catch (e) {}
 const save = () => { try { localStorage.setItem('bsaCfg', JSON.stringify(cfg)); } catch (e) {} };
 const bind = (id, k, num) => { const el = $(id); el.value = cfg[k]; el.addEventListener('change', () => { cfg[k] = num ? (parseFloat(el.value) || DEF[k]) : el.value.trim(); save(); }); };
-bind('cfgTf', 'tf'); bind('cfgExp', 'exp', 1); bind('cfgMin', 'min', 1); bind('cfgPay', 'pay', 1); bind('cfgCrypto', 'crypto'); bind('cfgKey', 'key'); bind('cfgFx', 'fx');
-bind('cfgCMode', 'cmode'); bind('cfgTopN', 'topN', 1); bind('cfgEdge', 'edge', 1); bind('cfgMinBt', 'minBt', 1); bind('cfgCpm', 'cpm', 1);
+bind('cfgTf', 'tf'); bind('cfgExp', 'maxExp', 1); bind('cfgMin', 'min', 1); bind('cfgPay', 'pay', 1); bind('cfgCrypto', 'crypto'); bind('cfgKey', 'key'); bind('cfgFx', 'fx');
+bind('cfgCMode', 'cmode'); bind('cfgTopN', 'topN', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgCpm', 'cpm', 1);
 if (!['1', '5', '15', '30', '60'].includes(String(cfg.tf))) cfg.tf = '1';
 const tfLabel = () => cfg.tf === '60' ? '1 hour' : cfg.tf + ' minute';
 const beRate = () => 100 / (1 + cfg.pay / 100);
@@ -295,28 +294,98 @@ function analyze(c, i, hasVol) {
   return out;
 }
 
-// Backtest: run the exact engine over history, entry = next candle open, exit = close after `exp` candles.
-async function backtest(m) {
-  const c = m.c, hv = m.src === 'binance';
-  let w = 0, l = 0, d = 0;
-  for (let i = 210, k = 0; i < c.length - cfg.exp; i++, k++) {
-    if (k % 40 === 39) await sleep(0);                      // keep the page responsive
-    const r = analyze(c, i, hv);
-    if (!r || !r.dir) continue;
-    const entry = c[i + 1].o, exit = c[i + cfg.exp].c;
-    const win = r.dir === 'CALL' ? exit > entry : exit < entry;
-    if (exit === entry) d++; else if (win) w++; else l++;
-    i += cfg.exp;                                           // one trade at a time per asset
+// ───────────────────────── strategy tournament ─────────────────────────
+// Full-series indicators, computed once per window.
+function indicators(c) {
+  const n = c.length, cl = c.map(x => x.c);
+  const x = {e50: ema(cl, 50), e200: ema(cl, 200), rsi: rsi(cl, 14), atr: atr(c, 14), bbLo: new Array(n).fill(NaN), bbHi: new Array(n).fill(NaN), lo20: new Array(n).fill(NaN), hi20: new Array(n).fill(NaN)};
+  for (let i = 20; i < n; i++) {
+    let sum = 0, sq = 0, lo = Infinity, hi = -Infinity;
+    for (let k = i - 19; k <= i; k++) { sum += cl[k]; sq += cl[k] * cl[k]; }
+    for (let k = i - 20; k < i; k++) { if (c[k].l < lo) lo = c[k].l; if (c[k].h > hi) hi = c[k].h; }
+    const m = sum / 20, sd = Math.sqrt(Math.max(0, sq / 20 - m * m));
+    x.bbLo[i] = m - 2 * sd; x.bbHi[i] = m + 2 * sd; x.lo20[i] = lo; x.hi20[i] = hi;
   }
-  m.bt = {w, l, d, n: w + l + d};
+  return x;
+}
+const bull = k => k.c > k.o, bear = k => k.c < k.o;
+const STRATS = {
+  confluence: {name: 'Confluence', long: 'S/R + liquidity + price action confluence',
+    fn: (c, i, x, hv) => { const r = analyze(c, i, hv); return r && r.dir ? {dir: r.dir, why: r.reasons} : null; }},
+  meanrev: {name: 'Mean reversion', long: 'RSI extreme outside the Bollinger Band',
+    fn: (c, i, x) => {
+      if (x.rsi[i] < 25 && c[i].c < x.bbLo[i]) return {dir: 'CALL', why: ['RSI below 25', 'Closed below the lower Bollinger Band']};
+      if (x.rsi[i] > 75 && c[i].c > x.bbHi[i]) return {dir: 'PUT', why: ['RSI above 75', 'Closed above the upper Bollinger Band']};
+      return null; }},
+  pullback: {name: 'Trend pullback', long: 'Pullback ends inside an EMA 50/200 trend',
+    fn: (c, i, x) => {
+      if (x.e50[i] > x.e200[i] && c[i].c > x.e200[i] && x.rsi[i - 1] < 40 && x.rsi[i] >= 40 && bull(c[i])) return {dir: 'CALL', why: ['Uptrend (EMA 50 above 200)', 'RSI turned up through 40', 'Bullish candle']};
+      if (x.e50[i] < x.e200[i] && c[i].c < x.e200[i] && x.rsi[i - 1] > 60 && x.rsi[i] <= 60 && bear(c[i])) return {dir: 'PUT', why: ['Downtrend (EMA 50 below 200)', 'RSI turned down through 60', 'Bearish candle']};
+      return null; }},
+  breakout: {name: 'Breakout', long: 'Strong candle breaks the 20-candle range',
+    fn: (c, i, x) => {
+      const k = c[i], rg = k.h - k.l;
+      if (rg <= 1.2 * x.atr[i]) return null;
+      if (k.c > x.hi20[i] && k.c - k.o > 0.6 * rg) return {dir: 'CALL', why: ['Closed above the 20-candle high', 'Wide, strong bullish candle']};
+      if (k.c < x.lo20[i] && k.o - k.c > 0.6 * rg) return {dir: 'PUT', why: ['Closed below the 20-candle low', 'Wide, strong bearish candle']};
+      return null; }},
+  exhaustion: {name: 'Exhaustion reversal', long: '3-candle run of 2+ ATR, then an opposite candle',
+    fn: (c, i, x) => {
+      if (i < 5) return null;
+      const run = c[i - 4].c - c[i - 1].c;
+      if (bear(c[i - 1]) && bear(c[i - 2]) && bear(c[i - 3]) && run > 2 * x.atr[i] && bull(c[i])) return {dir: 'CALL', why: ['3 falling candles, over 2 ATR', 'Bullish reversal candle']};
+      if (bull(c[i - 1]) && bull(c[i - 2]) && bull(c[i - 3]) && -run > 2 * x.atr[i] && bear(c[i])) return {dir: 'PUT', why: ['3 rising candles, over 2 ATR', 'Bearish reversal candle']};
+      return null; }},
+  sweep: {name: 'Liquidity sweep', long: 'Wick through the 20-candle low/high, close back inside',
+    fn: (c, i, x) => {
+      const k = c[i], rg = k.h - k.l || 1e-12;
+      if (k.l < x.lo20[i] && k.c > x.lo20[i] && k.c - k.l > 0.6 * rg) return {dir: 'CALL', why: ['Swept the 20-candle low', 'Closed back above it, in the top of the candle']};
+      if (k.h > x.hi20[i] && k.c < x.hi20[i] && k.h - k.c > 0.6 * rg) return {dir: 'PUT', why: ['Swept the 20-candle high', 'Closed back below it, in the bottom of the candle']};
+      return null; }},
+};
+const EXPIRIES = () => [1, 2, 3, 5].filter(e => e <= Math.max(1, cfg.maxExp || 5));
+// Lower bound of the Wilson score interval: a win rate the strategy is very likely above.
+function wilsonLB(w, n, z = 1.0) { if (!n) return 0; const p = w / n, d = 1 + z * z / n; return (p + z * z / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / d; }
+
+async function tournament(m) {
+  const c = m.c, n = c.length, hv = m.src === 'binance';
+  if (n < 260) { m.combos = []; m.approved = []; return; }
+  const x = indicators(c), split = Math.floor(210 + (n - 210) * 0.6), be = beRate() / 100;
+  const out = [];
+  for (const [key, S] of Object.entries(STRATS)) {
+    const sig = new Array(n).fill(null);
+    for (let i = 210, k = 0; i < n - 1; i++, k++) {
+      if (key === 'confluence' && k % 40 === 39) await sleep(0);
+      const r = S.fn(c, i, x, hv); if (r) sig[i] = r.dir;
+    }
+    for (const exp of EXPIRIES()) {
+      const tr = {w: 0, l: 0}, te = {w: 0, l: 0};
+      for (let i = 210; i < n - exp; i++) {
+        if (!sig[i]) continue;
+        const en = c[i + 1].o, ex = c[i + exp].c;
+        if (ex !== en) { const b = i < split ? tr : te; ((sig[i] === 'CALL') === (ex > en)) ? b.w++ : b.l++; }
+        i += exp;                                                    // one trade at a time
+      }
+      const tn = tr.w + tr.l, sn = te.w + te.l, w = tr.w + te.w, all = tn + sn;
+      // Strict on purpose: 6 strategies × several expiries are tried per pair, so a loose test would pass lucky noise.
+      const minTrain = Math.max(20, cfg.minVal), minTest = Math.max(12, Math.round(cfg.minVal * 0.6));
+      const lb = wilsonLB(w, all, 2.33);                                 // 99% one-sided confidence floor
+      const ok = tn >= minTrain && sn >= minTest && tr.w / tn >= be + 0.02 && te.w / sn >= be + 0.02 && lb >= be;
+      out.push({key, exp, tr, te, trWr: tn ? tr.w / tn : 0, teWr: sn ? te.w / sn : 0, n: all, lb, ok});
+    }
+  }
+  m.combos = out;
+  m.live2 = m.live2 || {};
+  m.approved = out.filter(o => o.ok && !killed(m, o)).sort((a, b) => b.lb - a.lb);
   m.sinceBt = 0;
   scheduleRender();
 }
+function killed(m, o) { const l = m.live2 && m.live2[o.key + ':' + o.exp]; return !!(l && l.w + l.l >= 10 && l.w / (l.w + l.l) < beRate() / 100); }
 function edgeOf(m) {
-  const n = m.bt ? m.bt.w + m.bt.l : 0;
-  if (n < cfg.minBt) return {ok: false, n, p: null, why: `only ${n} backtest trades`};
-  const p = 100 * m.bt.w / n;
-  return {ok: p >= beRate(), n, p, why: p < beRate() ? `backtest ${p.toFixed(0)}% is below break-even` : ''};
+  const a = m.approved && m.approved[0];
+  if (a) return {ok: true, p: 100 * a.teWr, n: a.te.w + a.te.l, combo: a};
+  const best = (m.combos || []).slice().sort((x, y) => y.lb - x.lb)[0];
+  return {ok: false, p: best ? 100 * best.teWr : null, n: best ? best.te.w + best.te.l : 0, combo: best, why: best ? 'no strategy passed validation' : 'still testing'};
 }
 
 // ───────────────────────── markets & data feeds ─────────────────────────
@@ -421,31 +490,35 @@ function onClose(m, candle, stale) {
   if (last && candle.t <= last.t) return;
   m.c.push(candle); if (m.c.length > 1200) m.c.shift();
   settle(m);
-  const r = analyze(m.c, m.c.length - 1, m.src === 'binance');
-  m.last = r;
-  if (++m.sinceBt >= 50) backtest(m);                      // keep each pair's backtest fresh
+  m.last = analyze(m.c, m.c.length - 1, m.src === 'binance');
+  if (++m.sinceBt >= 100) tournament(m);                   // re-validate every 100 candles
   scheduleRender();
-  if (!r || !r.dir || stale) return;
+  if (stale || !m.approved || !m.approved.length) return;  // no validated strategy → stay silent
   if (open.some(t => t.m === m)) return;                    // one open trade per asset
-  const e = edgeOf(m);
-  if (cfg.edge && !e.ok) { m.muted = (m.muted || 0) + 1; return; }   // pair has no proven edge → stay silent
-  pendingSigs.push({m, r, candle, e});
-  if (!flushT) flushT = setTimeout(flushSignals, 400);       // many pairs close at the same second
+  const w = m.c.slice(-400), x = indicators(w), i = w.length - 1, hv = m.src === 'binance';
+  for (const combo of m.approved) {
+    if (killed(m, combo)) continue;
+    const r = STRATS[combo.key].fn(w, i, x, hv);
+    if (r) { pendingSigs.push({m, r, candle, combo}); break; }
+  }
+  if (pendingSigs.length && !flushT) flushT = setTimeout(flushSignals, 400);   // many pairs close at the same second
 }
+const minsOf = exp => exp * parseInt(cfg.tf, 10);
+const durTxt = mins => mins >= 60 ? (mins / 60) + ' hour' + (mins > 60 ? 's' : '') : mins + ' minute' + (mins > 1 ? 's' : '');
 function flushSignals() {
   flushT = null;
-  const list = pendingSigs.sort((a, b) => ((b.e.p || 0) - (a.e.p || 0)) || (b.r.score - a.r.score));
+  const list = pendingSigs.sort((a, b) => b.combo.lb - a.combo.lb);
   pendingSigs = [];
   if (!list.length) return;
-  const mins = cfg.exp * parseInt(cfg.tf, 10);
-  list.forEach(({m, r, candle, e}, k) => {
-    const sig = {m, dir: r.dir, score: r.score, max: r.max, reasons: r.reasons, t: Date.now(), candleT: candle.t, entryIdxT: candle.t + TFMS(), entry: null, result: null, counter: r.counter, bt: e.p};
+  list.forEach(({m, r, candle, combo}, k) => {
+    const sig = {m, dir: r.dir, reasons: r.why, strat: STRATS[combo.key].name, key: combo.key, exp: combo.exp, val: 100 * combo.teWr, valN: combo.te.w + combo.te.l, lb: 100 * combo.lb,
+      t: Date.now(), candleT: candle.t, entryIdxT: candle.t + TFMS(), entry: null, result: null};
     open.push(sig); history.unshift(sig);
     if (k === 0) { current = sig; showSignal(sig); beep(sig.dir === 'CALL'); }
-    chat(`📢 ${m.label}: ${sig.dir} (${sig.dir === 'CALL' ? '⬆ UP' : '⬇ DOWN'}), expiry ${mins} min, ${sig.score}/${sig.max} confirmations${e.p != null ? `, pair backtest ${e.p.toFixed(0)}% (${e.n} trades)` : ''}\n• ${sig.reasons.join('\n• ')}`);
+    chat(`📢 ${m.label}: ${sig.dir} (${sig.dir === 'CALL' ? '⬆ UP' : '⬇ DOWN'}), expiry ${durTxt(minsOf(sig.exp))}\nStrategy: ${sig.strat}, won ${sig.val.toFixed(0)}% of ${sig.valN} unseen test trades (99% confidence floor ${sig.lb.toFixed(0)}%)\n• ${sig.reasons.join('\n• ')}`);
   });
-  const top = list.slice(0, 3).map(x => `${x.m.label}, ${x.r.dir === 'CALL' ? 'call, up' : 'put, down'}`);
-  say(`${top.join('. Also ')}. ${mins === 60 ? '1 hour' : mins + ' minute' + (mins > 1 ? 's' : '')}. Enter now.${list.length > 3 ? ` Plus ${list.length - 3} more on screen.` : ''}`, true);
+  const top = list.slice(0, 3).map(x => `${x.m.label}, ${x.r.dir === 'CALL' ? 'call, up' : 'put, down'}, ${durTxt(minsOf(x.combo.exp))}`);
+  say(`${top.join('. Also ')}. Enter now.${list.length > 3 ? ` Plus ${list.length - 3} more on screen.` : ''}`, true);
   renderHist();
 }
 
@@ -453,24 +526,28 @@ function settle(m) {
   for (const s of open.filter(x => x.m === m)) {
     const entryC = m.c.find(x => x.t === s.entryIdxT);
     if (entryC && s.entry == null) s.entry = entryC.o;
-    const exitT = s.entryIdxT + (cfg.exp - 1) * TFMS();
+    const exitT = s.entryIdxT + (s.exp - 1) * TFMS();
     const exitC = m.c.find(x => x.t === exitT);
     if (s.entry != null && exitC) {
       s.close = exitC.c;
       s.result = s.close === s.entry ? 'DRAW' : (s.dir === 'CALL' ? s.close > s.entry : s.close < s.entry) ? 'WIN' : 'LOSS';
-      if (s.result === 'WIN') m.live.w++; else if (s.result === 'LOSS') m.live.l++;
+      const lk = s.key + ':' + s.exp, l = (m.live2 = m.live2 || {})[lk] = (m.live2[lk] || {w: 0, l: 0});
+      if (s.result === 'WIN') { m.live.w++; l.w++; } else if (s.result === 'LOSS') { m.live.l++; l.l++; }
       open.splice(open.indexOf(s), 1);
-      const txt = `${m.label} ${s.dir}: ${s.result === 'WIN' ? '✅ WIN' : s.result === 'LOSS' ? '❌ LOSS' : '➖ DRAW (refund)'}`;
-      chat(txt); say(`${m.label} ${s.dir.toLowerCase()}, ${s.result.toLowerCase()}.`);
-      renderHist(); renderStats();
+      chat(`${m.label} ${s.dir}: ${s.result === 'WIN' ? '✅ WIN' : s.result === 'LOSS' ? '❌ LOSS' : '➖ DRAW (refund)'}`);
+      say(`${m.label} ${s.dir.toLowerCase()}, ${s.result.toLowerCase()}.`);
+      if (killed(m, {key: s.key, exp: s.exp})) {
+        m.approved = (m.approved || []).filter(o => !(o.key === s.key && o.exp === s.exp));
+        reply(`${m.label}: the ${s.strat} strategy is below break-even live after ${l.w + l.l} trades, so I switched it off.`);
+      }
+      renderHist(); renderStats(); scheduleRender();
     }
   }
 }
 
 function showSignal(s) {
   $('sigAsset').textContent = s.m.label;
-  const mins = cfg.exp * parseInt(cfg.tf, 10);
-  $('sigSub').textContent = `Expiry ${mins} min · ${s.score}/${s.max} confirmations${s.bt != null ? ` · pair backtest ${s.bt.toFixed(0)}%` : ''}${s.counter ? ' · counter-trend' : ''}`;
+  $('sigSub').textContent = `Expiry ${durTxt(minsOf(s.exp))} · ${s.strat} · won ${s.val.toFixed(0)}% of ${s.valN} unseen test trades`;
   const d = $('sigDir'); d.className = 'dir ' + (s.dir === 'CALL' ? 'call' : 'put'); d.textContent = s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT';
   $('sigReasons').innerHTML = '';
   for (const r of s.reasons) { const c = document.createElement('span'); c.className = 'chip ok'; c.textContent = '✓ ' + r; $('sigReasons').appendChild(c); }
@@ -489,9 +566,9 @@ setInterval(() => {
 
 function renderHist() {
   $('hist').innerHTML = history.slice(0, 100).map(s => `<tr><td>${new Date(s.t).toLocaleTimeString()}</td><td>${s.m.label}</td>
-    <td class="${s.dir === 'CALL' ? 'up' : 'down'}"><b>${s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT'}</b></td><td class="num">${s.score}/${s.max}</td>
+    <td class="${s.dir === 'CALL' ? 'up' : 'down'}"><b>${s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT'}</b></td><td>${s.strat} · ${durTxt(minsOf(s.exp))}</td><td class="num">${s.val.toFixed(0)}%</td>
     <td class="num">${s.entry != null ? fmt(s.entry) : '…'}</td><td class="num">${s.close != null ? fmt(s.close) : '…'}</td>
-    <td class="${s.result === 'WIN' ? 'up' : s.result === 'LOSS' ? 'down' : 'muted'}">${s.result || 'running'}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">No signals yet.</td></tr>';
+    <td class="${s.result === 'WIN' ? 'up' : s.result === 'LOSS' ? 'down' : 'muted'}">${s.result || 'running'}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">No signals yet.</td></tr>';
 }
 const fmt = x => x >= 100 ? x.toFixed(2) : x >= 1 ? x.toFixed(4) : x.toPrecision(5);
 function totals() {
@@ -510,18 +587,15 @@ function renderStats() {
 }
 function renderMarkets() {
   const be = beRate();
-  const rows = Object.values(M).sort((a, b) => {
-    const pa = a.bt && a.bt.w + a.bt.l ? a.bt.w / (a.bt.w + a.bt.l) : -1, pb = b.bt && b.bt.w + b.bt.l ? b.bt.w / (b.bt.w + b.bt.l) : -1;
-    return pb - pa;
-  });
-  $('mkts').innerHTML = rows.map(m => {
-    const r = m.last, bt = m.bt, lv = m.live, ln = lv.w + lv.l, e = edgeOf(m);
-    const btPct = bt && (bt.w + bt.l) ? 100 * bt.w / (bt.w + bt.l) : null;
-    return `<tr><td><b>${m.label}</b>${e.ok ? ' <span class="up" title="proven edge: signals ON">●</span>' : cfg.edge ? ' <span class="muted" title="' + e.why + ': signals muted">○</span>' : ''}</td>
+  const rows = Object.values(M).map(m => ({m, e: edgeOf(m)})).sort((a, b) => (b.e.ok - a.e.ok) || ((b.e.combo ? b.e.combo.lb : -1) - (a.e.combo ? a.e.combo.lb : -1)));
+  $('mkts').innerHTML = rows.map(({m, e}) => {
+    const r = m.last, lv = m.live, ln = lv.w + lv.l, c = e.combo;
+    const strat = c ? `${STRATS[c.key].name} · ${durTxt(minsOf(c.exp))}` : (m.combos ? 'none qualifies' : 'testing…');
+    return `<tr><td><b>${m.label}</b> ${e.ok ? '<span class="up" title="validated strategy: signals ON">●</span>' : '<span class="muted" title="' + (e.why || '') + ': signals off">○</span>'}</td>
       <td class="num">${m.price != null ? fmt(m.price) : m.c.length ? fmt(m.c[m.c.length - 1].c) : '…'}</td>
       <td class="${r && r.trend === 'up' ? 'up' : r && r.trend === 'down' ? 'down' : 'muted'}">${r ? r.trend : '…'}</td>
-      <td class="num">${r ? r.rsi.toFixed(0) : '…'}</td>
-      <td class="num ${btPct == null ? 'muted' : btPct >= be ? 'up' : 'down'}">${btPct == null ? (bt ? '0 trades' : '…') : btPct.toFixed(0) + '% (' + (bt.w + bt.l) + ')'}</td>
+      <td class="${e.ok ? '' : 'muted'}">${strat}</td>
+      <td class="num ${c ? (c.teWr * 100 >= be && e.ok ? 'up' : 'down') : 'muted'}">${c && e.n ? (100 * c.teWr).toFixed(0) + '% (' + e.n + ')' : '—'}</td>
       <td class="num">${ln ? (100 * lv.w / ln).toFixed(0) + '% (' + ln + ')' : '—'}</td></tr>`;
   }).join('') || '<tr><td colspan="6" class="muted">Press Start.</td></tr>';
 }
@@ -531,8 +605,9 @@ function describe(m) {
   const r = m.last || analyze(m.c, m.c.length - 1, m.src === 'binance');
   if (!r) return {text: `${m.label}: still loading data.`};
   const lv = [r.support ? `support ${fmt(r.support)}` : null, r.resistance ? `resistance ${fmt(r.resistance)}` : null].filter(Boolean).join(', ');
-  const bt = m.bt && (m.bt.w + m.bt.l) ? ` Backtest ${(100 * m.bt.w / (m.bt.w + m.bt.l)).toFixed(0)}% over ${m.bt.w + m.bt.l} trades.` : '';
-  const state = r.dir ? `${r.dir} signal with ${r.score} confirmations.` : (r.note ? r.note.charAt(0).toUpperCase() + r.note.slice(1) + '.' : 'No setup.');
+  const e = edgeOf(m);
+  const bt = e.ok ? ` Validated strategy: ${STRATS[e.combo.key].name}, ${durTxt(minsOf(e.combo.exp))} expiry, ${e.p.toFixed(0)}% on ${e.n} unseen test trades.` : ' No strategy has passed validation on this pair, so I will not signal it.';
+  const state = r.dir ? `Confluence setup: ${r.dir}.` : '';
   const text = `${m.label} at ${fmt(r.price)}. Trend ${r.trend}. RSI ${r.rsi.toFixed(0)}.${lv ? ' Key levels: ' + lv + '.' : ''} ${state}${bt}`;
   return {text};
 }
@@ -554,15 +629,13 @@ function command(raw) {
   }
   if (/(last|latest|current) signal/.test(t)) {
     const s = history[0];
-    return reply(s ? `Last signal: ${s.m.label} ${s.dir}, ${s.score} confirmations, ${s.result ? 'result ' + s.result : 'still running'}.` : 'No signals yet.');
+    return reply(s ? `Last signal: ${s.m.label} ${s.dir}, ${s.strat}, ${durTxt(minsOf(s.exp))}, ${s.result ? 'result ' + s.result : 'still running'}.` : 'No signals yet.');
   }
-  if (/(which|what|list).*(market|pair|asset|coin)/.test(t)) { const on = Object.values(M).filter(m => edgeOf(m).ok); return reply(`Watching ${Object.keys(M).length} markets. ${cfg.edge ? `${on.length} have a proven edge and can give signals: ${on.slice(0, 12).map(m => m.label).join(', ')}${on.length > 12 ? ' and more' : ''}.` : ''}`); }
+  if (/(which|what|list).*(market|pair|asset|coin)/.test(t)) { const on = Object.values(M).filter(m => edgeOf(m).ok); return reply(`Watching ${Object.keys(M).length} markets. ${on.length} have a validated strategy and can give signals${on.length ? ': ' + on.slice(0, 12).map(m => m.label).join(', ') + (on.length > 12 ? ' and more' : '') : ''}.`); }
   if (/(best|strongest|top)/.test(t)) {
-    const be = 100 / (1 + cfg.pay / 100);
-    const r = Object.values(M).filter(m => m.bt && m.bt.w + m.bt.l >= 5).sort((a, b) => b.bt.w / (b.bt.w + b.bt.l) - a.bt.w / (a.bt.w + a.bt.l))[0];
-    if (!r) return reply('Not enough backtest trades yet to rank markets.');
-    const p = 100 * r.bt.w / (r.bt.w + r.bt.l);
-    return reply(`Best backtest right now: ${r.label} at ${p.toFixed(0)}% over ${r.bt.w + r.bt.l} trades${p < be ? ', which is still below break-even, so be careful' : ''}.`);
+    const r = Object.values(M).map(m => ({m, e: edgeOf(m)})).filter(x => x.e.ok).sort((a, b) => b.e.combo.lb - a.e.combo.lb)[0];
+    if (!r) return reply('No pair has a validated strategy right now. Try the 5 or 15 minute timeframe, or more pairs.');
+    return reply(`Best right now: ${r.m.label} with ${STRATS[r.e.combo.key].name}, ${durTxt(minsOf(r.e.combo.exp))} expiry. It won ${r.e.p.toFixed(0)}% of ${r.e.n} unseen test trades; 99% confidence floor ${(100 * r.e.combo.lb).toFixed(0)}%.`);
   }
   if (/(status|what.*happening|market|analy[sz]e|check|how is|what about)/.test(t) || findAsset(t)) {
     const m = findAsset(t);
@@ -612,12 +685,12 @@ async function start() {
   }
   renderMarkets();
   // history + backtest for every crypto pair (4 at a time)
-  const cm = Object.values(M).filter(m => m.src === 'binance'), limit = cm.length > 50 ? 500 : 1000;
+  const cm = Object.values(M).filter(m => m.src === 'binance'), limit = 1000;
   let idx = 0, done = 0;
   const worker = async () => {
     while (idx < cm.length) {
       const m = cm[idx++];
-      try { await loadBinance(m, limit); await backtest(m); m.last = analyze(m.c, m.c.length - 1, true); }
+      try { await loadBinance(m, limit); await tournament(m); m.last = analyze(m.c, m.c.length - 1, true); }
       catch (e) { errs.push(e.message); delete M[m.id]; }
       setFeed(false, `loading ${++done}/${cm.length}`);
     }
@@ -626,11 +699,11 @@ async function start() {
   // forex history: one batched request
   if (fx.length) {
     try {
-      const res = await twelveBatch(fx, 600);
+      const res = await twelveBatch(fx, 1000);
       for (const s of fx) {
         const d = res[s];
         if (!d || !d.rows) { errs.push(`${s}: ${d ? d.err : 'no data'}`); delete M[s]; continue; }
-        M[s].c = d.rows; await backtest(M[s]); M[s].last = analyze(M[s].c, M[s].c.length - 1, false);
+        M[s].c = d.rows; await tournament(M[s]); M[s].last = analyze(M[s].c, M[s].c.length - 1, false);
       }
     } catch (e) { errs.push(e.message); for (const s of fx) delete M[s]; }
   }
@@ -639,11 +712,10 @@ async function start() {
   for (let i = 0; i < bm.length; i += 100) openBinanceWS(bm.slice(i, i + 100), conns.length);
   if (Object.values(M).some(m => m.src === 'twelve')) { pollTwelve(); if (!bm.length) setFeed(true, 'live (forex)'); }
   renderMarkets(); renderStats();
-  const tot = Object.values(M).reduce((a, m) => { if (m.bt) { a.w += m.bt.w; a.l += m.bt.l; } return a; }, {w: 0, l: 0});
-  const p = tot.w + tot.l ? 100 * tot.w / (tot.w + tot.l) : 0;
-  const proven = Object.values(M).filter(m => edgeOf(m).ok).length;
-  reply(`Ready. Watching ${Object.keys(M).length} pairs on the ${tfLabel()} chart. Backtest on recent history: ${tot.w + tot.l} trades, ${p.toFixed(1)}% wins, break-even ${beRate().toFixed(1)}%. ${cfg.edge ? `${proven} pairs have a proven edge; only those will give signals.` : 'All pairs can give signals.'} I will speak every signal. Say help for commands.`);
-  if (cfg.edge && !proven) chat('No pair has a proven edge on this timeframe right now, so I will stay silent rather than give weak signals. Try another timeframe (5 or 15 minutes usually test better than 1 minute), a longer expiry, or more pairs. You can turn the filter off in Settings, but those signals have not beaten break-even.');
+  const ms = Object.values(M), on = ms.filter(m => edgeOf(m).ok);
+  const tested = ms.reduce((a, m) => a + (m.combos ? m.combos.length : 0), 0);
+  reply(`Ready. ${ms.length} pairs on the ${tfLabel()} chart, ${tested} strategy and expiry combinations tested. ${on.length} pair${on.length === 1 ? '' : 's'} passed validation and will give signals${on.length ? ': ' + on.slice(0, 8).map(m => m.label).join(', ') + (on.length > 8 ? ' and more' : '') : ''}. Break-even is ${beRate().toFixed(1)}%. I will speak every signal. Say help for commands.`);
+  if (!on.length) chat('No strategy passed validation on this timeframe, so I will stay silent rather than give weak signals. Short timeframes are close to a coin flip. Try 5 or 15 minutes, raise "Longest expiry", or scan more pairs.');
   if (!cfg.key) chat('Tip: add a free Twelve Data API key in Settings to also get forex and gold signals.');
 }
 // pause gate: keep analysing and settling, but don't announce while paused

@@ -101,3 +101,5 @@ It checks every candle close on real markets: crypto from Binance (no key) and f
 Counter-trend trades need one extra confirmation.
 
 Every market is backtested on load with the exact same logic (entry at the next open, exit after the expiry candles), and live results are tracked against the break-even win rate for your payout. It speaks each signal and result, and understands voice or typed commands: status, win rate, analyze <market>, best market, last signal, stop/start, mute. It deliberately does not support Quotex OTC (broker-generated prices) or martingale.
+
+Timeframes: 1m, 5m, 15m, 30m and 1h. Pairs: all Binance USDT pairs (top N by volume, stablecoins and leveraged tokens excluded) plus up to 29 forex pairs and gold/silver. The forex count is capped by your Twelve Data requests-per-minute, because all pairs are fetched in one batch at each candle close. With **proven edge** on (the default), only pairs whose own backtest beats the break-even win rate are allowed to signal. Backtests refresh every 50 candles.

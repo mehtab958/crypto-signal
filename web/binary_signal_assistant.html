@@ -84,7 +84,7 @@ td.num,th.num{text-align:right}
     <summary>Settings (saved in this browser)</summary>
     <div class="settings">
       <label class="wide">Trading mode <select id="cfgMode" style="width:auto"><option value="binary">Binary options: CALL/PUT with expiry</option><option value="forex">Forex / spot: entry, stop-loss and take-profit</option></select></label>
-      <label>Candle timeframe <select id="cfgTf"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select></label>
+      <label>Candle timeframe <select id="cfgTf"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="240">4 hours</option></select></label>
       <label>Longest expiry to test (candles) <input id="cfgExp" type="number" min="1" max="5" step="1"></label>
       <label>Min confirmations (of 7) <input id="cfgMin" type="number" min="3" max="7" step="1"></label>
       <label>Broker payout % <input id="cfgPay" type="number" min="50" max="100" step="1"></label>
@@ -154,8 +154,10 @@ const save = () => { try { localStorage.setItem('bsaCfg', JSON.stringify(cfg)); 
 const bind = (id, k, num) => { const el = $(id); el.value = cfg[k]; el.addEventListener('change', () => { cfg[k] = num ? (parseFloat(el.value) || DEF[k]) : el.value.trim(); save(); }); };
 bind('cfgTf', 'tf'); bind('cfgExp', 'maxExp', 1); bind('cfgMin', 'min', 1); bind('cfgPay', 'pay', 1); bind('cfgCrypto', 'crypto'); bind('cfgKey', 'key'); bind('cfgFx', 'fx');
 bind('cfgMode', 'mode'); bind('cfgCMode', 'cmode'); bind('cfgTopN', 'topN', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1); bind('cfgDayLoss', 'dayLoss', 1); bind('cfgMaxOpen', 'maxOpen', 1); bind('cfgCpm', 'cpm', 1);
-if (!['1', '5', '15', '30', '60'].includes(String(cfg.tf))) cfg.tf = '1';
-const tfLabel = () => cfg.tf === '60' ? '1 hour' : cfg.tf + ' minute';
+// Ready-made futures preset: open the page with #futures → Forex/spot mode (entry, SL, TP), 4h candles, top 100 Binance coins.
+if (location.hash === '#futures') { Object.assign(cfg, {mode: 'forex', tf: '240', cmode: 'top', topN: 100}); save(); for (const [id, k] of [['cfgMode', 'mode'], ['cfgTf', 'tf'], ['cfgCMode', 'cmode'], ['cfgTopN', 'topN']]) $(id).value = cfg[k]; }
+if (!['1', '5', '15', '30', '60', '240'].includes(String(cfg.tf))) cfg.tf = '1';
+const tfLabel = () => cfg.tf === '240' ? '4 hour' : cfg.tf === '60' ? '1 hour' : cfg.tf + ' minute';
 const beRate = () => 100 / (1 + cfg.pay / 100);
 const FX = () => cfg.mode === 'forex';
 const RRS = [1.5, 2, 3], MAXH = 48, SLATR = 1.5;
@@ -499,7 +501,7 @@ function edgeOf(m) {
 
 // ───────────────────────── markets & data feeds ─────────────────────────
 const M = {};                   // id -> {id, label, src, sym, c:[], bt, live:{w,l}, last}
-const TFS = {'1': ['1m', '1min'], '5': ['5m', '5min'], '15': ['15m', '15min'], '30': ['30m', '30min'], '60': ['1h', '1h']};
+const TFS = {'1': ['1m', '1min'], '5': ['5m', '5min'], '15': ['15m', '15min'], '30': ['30m', '30min'], '60': ['1h', '1h'], '240': ['4h', '4h']};
 const bInt = () => TFS[cfg.tf][0], tInt = () => TFS[cfg.tf][1];
 const FX_ALL = 'EUR/USD,GBP/USD,USD/JPY,AUD/USD,USD/CAD,USD/CHF,NZD/USD,EUR/GBP,EUR/JPY,GBP/JPY,AUD/JPY,EUR/AUD,EUR/CAD,EUR/CHF,GBP/AUD,GBP/CAD,GBP/CHF,AUD/CAD,AUD/CHF,CAD/JPY,CHF/JPY,NZD/JPY,AUD/NZD,EUR/NZD,GBP/NZD,CAD/CHF,USD/SGD,XAU/USD,XAG/USD';
 const addMarket = (id, label, src, sym) => { M[id] = {id, label, src, sym, c: [], live: {w: 0, l: 0}, bt: null, sinceBt: 0}; };

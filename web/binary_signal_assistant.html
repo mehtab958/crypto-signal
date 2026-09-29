@@ -431,7 +431,7 @@ async function tournament(m) {
       const r = S.fn(c, i, x, hv); if (r && quality(c, i, x, r.dir, m.src).ok) sig[i] = r.dir;
     }
     if (FX()) { for (const rr of RRS) out.push(fxCombo(key, rr, simForex(c, x, sig, rr, split, m.src))); continue; }
-    for (const exp of EXPIRIES()) {
+    for (const exp of EXPIRIES().filter(e => typeof durOk !== 'function' || durOk(m, e))) {
       const tr = {w: 0, l: 0}, te = {w: 0, l: 0};
       for (let i = 210; i < n - exp; i++) {
         if (!sig[i]) continue;

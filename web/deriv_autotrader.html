@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deriv Auto Trader</title>
+<style>
+:root{--bg:#0b0e13;--panel:#121722;--panel2:#171d2a;--line:#232b3b;--text:#e6e9ef;--muted:#8b93a7;--green:#16c784;--red:#ea3943;--amber:#f5a623;--blue:#4c8dff}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--blue)}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+h1{font-size:17px;margin:0}
+.status{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:12.5px}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.pill.demo{color:var(--amber);border-color:rgba(245,166,35,.5)} .pill.real{color:#fff;background:var(--red);border-color:var(--red)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:6px;vertical-align:middle}
+.dot.on{background:var(--green)}
+button{font:inherit;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:7px 12px;cursor:pointer}
+button.primary{background:var(--green);border-color:var(--green);color:#04130c;font-weight:700}
+button.danger{background:transparent;border-color:rgba(234,57,67,.6);color:#ffb3b8}
+button.mic-on{background:var(--red);border-color:var(--red);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+button:hover:not(:disabled){filter:brightness(1.12)}
+.wrap{padding:14px 16px;max-width:1500px;margin:0 auto}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+summary{cursor:pointer;color:var(--muted)}
+.settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px 16px;margin-top:10px}
+.settings label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+input,select{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+.settings input,.settings select{width:120px}
+.settings .wide{grid-column:1/-1}
+.settings .wide input{width:100%}
+.warn{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.35);color:#ffd9a0;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.err{background:rgba(234,57,67,.12);border:1px solid rgba(234,57,67,.4);color:#ffb3b8;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;display:none}
+.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px}
+@media (max-width:980px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.panel h2{font-size:14px;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.panel h2 small{color:var(--muted);font-weight:400}
+.pad{padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pairs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;max-height:260px;overflow:auto;padding:12px 14px}
+.tile{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer;text-align:left}
+.tile b{display:block;font-size:13.5px}
+.tile span{color:var(--muted);font-size:11.5px}
+.tile.sel{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+.tf{display:flex;gap:6px;flex-wrap:wrap}
+.tf button{padding:6px 12px}
+.tf button.sel{background:var(--blue);border-color:var(--blue);color:#fff}
+.card{padding:16px 14px;display:grid;gap:10px}
+.card .big{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.card .name{font-size:22px;font-weight:800}
+.card .state{font-size:15px;font-weight:700}
+.state.ok{color:var(--green)} .state.no{color:var(--red)} .state.watch{color:var(--amber)}
+.kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:600px){.kv{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kv div{background:var(--panel2);border-radius:8px;padding:7px 9px}
+.kv b{display:block;font-size:16px}
+.kv span{color:var(--muted);font-size:11.5px}
+.take{font-size:18px;padding:14px 18px;flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px}
+.chip.ok{border-color:rgba(22,199,132,.5);color:#9ff0cd} .chip.bad{border-color:rgba(234,57,67,.45);color:#ffb3b8}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--panel)}
+td.num,th.num{text-align:right}
+.scroll{max-height:300px;overflow:auto}
+.up{color:var(--green)} .down{color:var(--red)} .muted{color:var(--muted)} .amber{color:var(--amber)}
+#chat{height:280px;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:90%;padding:7px 11px;border-radius:10px;font-size:13.5px;white-space:pre-wrap}
+.msg.bot{background:var(--panel2);border:1px solid var(--line);align-self:flex-start}
+.msg.me{background:rgba(76,141,255,.18);border:1px solid rgba(76,141,255,.35);align-self:flex-end}
+.chatin{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+.chatin input{flex:1;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px 14px}
+.stat{background:var(--panel2);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font-size:18px}
+.stat span{color:var(--muted);font-size:11.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🤖 Deriv Auto Trader</h1>
+  <div class="status">
+    <span class="pill"><span class="dot" id="connDot"></span><span id="connTxt">not connected</span></span>
+    <span class="pill" id="acctPill">no account</span>
+    <span class="pill">balance <b id="bal">—</b></span>
+    <button id="connectBtn" class="primary">Connect</button>
+    <button id="micBtn">🎤 Talk</button>
+    <button id="muteBtn">🔊 Voice on</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="warn">⚠️ This places <b>real Rise/Fall (CALL/PUT) trades</b> on your Deriv account. Start on the <b>demo account</b>. Real-money trading stays blocked until you switch it on in Settings. It only trades pairs where a strategy has beaten Deriv's actual payout break-even on unseen history, and it refuses everything else. No bot can guarantee profit. Synthetic indices (Volatility, Crash/Boom, Step) are random by design and are hidden.</div>
+  <div class="err" id="errBox"></div>
+
+  <details id="setBox" open>
+    <summary>Settings (saved in this browser)</summary>
+    <div class="settings">
+      <label class="wide">Deriv API token (Read + Trade scope) <input id="cfgToken" type="password" placeholder="Deriv → Account settings → API token (create it while your Demo account is selected)" autocomplete="off"></label>
+      <label>Remember token on this device <select id="cfgRemember"><option value="0">No</option><option value="1">Yes</option></select></label>
+      <label>App ID <input id="cfgApp" type="number"></label>
+      <label>Stake per trade <input id="cfgStake" type="number" min="0.35" step="0.5"></label>
+      <label>Longest expiry to test (candles) <input id="cfgExp" type="number" min="1" max="5" step="1"></label>
+      <label>Min trades to validate <input id="cfgMinBt" type="number" min="10" max="200" step="5"></label>
+      <label>Quality checks that must pass (%) <input id="cfgQ" type="number" min="50" max="100" step="5"></label>
+      <label>Daily loss limit (account currency) <input id="cfgDayLoss" type="number" min="1" step="1"></label>
+      <label>Max trades per day <input id="cfgMaxDay" type="number" min="1" max="100" step="1"></label>
+      <label>Allow REAL-money trades <select id="cfgReal"><option value="0">No (demo only)</option><option value="1">Yes, I accept the risk</option></select></label>
+    </div>
+  </details>
+
+  <div class="grid">
+    <div>
+      <section class="panel">
+        <h2>1 · Tap a pair <small><input id="search" placeholder="search" style="width:130px;padding:4px 8px"></small></h2>
+        <div class="pairs" id="pairs"><div class="muted">Connect to load Deriv's open markets.</div></div>
+      </section>
+      <section class="panel">
+        <h2>2 · Timeframe, then 3 · Take trade</h2>
+        <div class="pad" style="display:grid;gap:12px">
+          <div class="tf" id="tfs"><button data-tf="1">1 min</button><button data-tf="5">5 min</button><button data-tf="15">15 min</button><button data-tf="30">30 min</button><button data-tf="60">1 hour</button></div>
+          <div class="row"><button id="takeBtn" class="primary take" disabled>🎯 Take trade</button><button id="cancelBtn" class="danger" disabled>Stop watching</button></div>
+        </div>
+        <div class="card" id="card">
+          <div class="big"><div class="name" id="selName">No pair selected</div><div class="state" id="selState">—</div></div>
+          <div class="kv">
+            <div><b id="kStrat">—</b><span>best validated strategy</span></div>
+            <div><b id="kWin">—</b><span>win rate on unseen history</span></div>
+            <div><b id="kBe">—</b><span>break-even at Deriv's payout</span></div>
+            <div><b id="kPrice">—</b><span>price</span></div>
+          </div>
+          <div class="chips" id="checks"></div>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Trades <small>today</small></h2>
+        <div class="stats">
+          <div class="stat"><b id="stN">0</b><span>trades</span></div>
+          <div class="stat"><b id="stW">—</b><span>win rate</span></div>
+          <div class="stat"><b id="stPL">0.00</b><span>profit / loss</span></div>
+          <div class="stat"><b id="stOpen">0</b><span>open now</span></div>
+        </div>
+        <div class="scroll"><table><thead><tr><th>Time</th><th>Pair</th><th>Trade</th><th>Strategy</th><th class="num">Stake</th><th class="num">Result</th></tr></thead><tbody id="trades"><tr><td colspan="6" class="muted">No trades yet.</td></tr></tbody></table></div>
+      </section>
+    </div>
+    <section class="panel">
+      <h2>Assistant <small>say or type: take trade · trade euro dollar 5 minutes · balance · help</small></h2>
+      <div id="chat"></div>
+      <div class="chatin"><input id="chatIn" placeholder="e.g. trade gold 15 minutes"><button id="sendBtn">Send</button></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ───────────────────────── settings ─────────────────────────
+const DEF = {appId: 1089, stake: 1, maxExp: 5, minVal: 20, qmin: 70, dayLoss: 20, maxDay: 10, allowReal: 0, remember: 0, voice: 1, tf: '5', min: 4, pay: 85, mode: 'binary'};
+let cfg = {...DEF};
+try { Object.assign(cfg, JSON.parse(localStorage.getItem('derivCfg') || '{}')); } catch (e) {}
+let token = '';
+try { token = localStorage.getItem('derivToken') || ''; } catch (e) {}
+const save = () => { try { const c = {...cfg}; localStorage.setItem('derivCfg', JSON.stringify(c)); if (cfg.remember) localStorage.setItem('derivToken', token); else localStorage.removeItem('derivToken'); } catch (e) {} };
+const bind = (id, k, num) => { const el = $(id); el.value = cfg[k]; el.addEventListener('change', () => { cfg[k] = num ? (parseFloat(el.value) || DEF[k]) : el.value; save(); }); };
+bind('cfgApp', 'appId', 1); bind('cfgStake', 'stake', 1); bind('cfgExp', 'maxExp', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1);
+bind('cfgDayLoss', 'dayLoss', 1); bind('cfgMaxDay', 'maxDay', 1); bind('cfgReal', 'allowReal', 1); bind('cfgRemember', 'remember', 1);
+$('cfgToken').value = token;
+$('cfgToken').addEventListener('change', () => { token = $('cfgToken').value.trim(); save(); });
+const showErr = m => { $('errBox').textContent = m || ''; $('errBox').style.display = m ? 'block' : 'none'; };
+
+// Globals the shared engine expects
+const TFMS = () => parseInt(cfg.tf, 10) * 60000;
+const beRate = () => 100 / (1 + cfg.pay / 100);
+const FX = () => false;
+const RRS = [1.5, 2, 3], MAXH = 48, SLATR = 1.5;
+const minsOf = exp => exp * parseInt(cfg.tf, 10);
+const durTxt = mins => mins >= 60 ? (mins / 60) + ' hour' + (mins > 60 ? 's' : '') : mins + ' minute' + (mins > 1 ? 's' : '');
+const fmt = x => x == null || !isFinite(x) ? '—' : x >= 100 ? x.toFixed(2) : x >= 1 ? x.toFixed(4) : x.toPrecision(5);
+let renderT = null;
+function scheduleRender() { if (!renderT) renderT = setTimeout(() => { renderT = null; renderSel(); }, 300); }
+const durOk = (m, e) => { const mins = e * m.tf; return (m.minDur == null || mins >= m.minDur) && (m.maxDur == null || mins <= m.maxDur); };
+
+// ───────────────────────── voice & chat ─────────────────────────
+let voiceOn = !!cfg.voice, voice = null;
+const pickVoice = () => { const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || []; voice = vs.find(v => /en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; };
+if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function say(text, urgent) {
+  if (!voiceOn || !window.speechSynthesis) return;
+  try { if (urgent) speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/\//g, ' ')); if (voice) u.voice = voice; speechSynthesis.speak(u); } catch (e) {}
+}
+const setMute = () => $('muteBtn').textContent = voiceOn ? '🔊 Voice on' : '🔇 Voice off';
+setMute();
+$('muteBtn').onclick = () => { voiceOn = !voiceOn; cfg.voice = voiceOn ? 1 : 0; save(); setMute(); };
+function chat(text, who) {
+  const el = document.createElement('div'); el.className = 'msg ' + (who || 'bot'); el.textContent = text;
+  $('chat').appendChild(el); while ($('chat').children.length > 150) $('chat').firstChild.remove();
+  $('chat').scrollTop = $('chat').scrollHeight;
+}
+const reply = (text, spoken) => { chat(text); say(spoken || text); };
+
+// ═════ Shared analysis engine (same code as binary_signal_assistant.html) ═════
+// ───────────────────────── indicators ─────────────────────────
+function ema(a, p) { const k = 2 / (p + 1), o = new Array(a.length); let e = a[0]; for (let i = 0; i < a.length; i++) { e = i ? a[i] * k + e * (1 - k) : a[0]; o[i] = e; } return o; }
+function rsi(a, p = 14) {
+  const o = new Array(a.length).fill(50); let g = 0, l = 0;
+  for (let i = 1; i < a.length; i++) {
+    const d = a[i] - a[i - 1], up = Math.max(d, 0), dn = Math.max(-d, 0);
+    if (i <= p) { g += up / p; l += dn / p; } else { g = (g * (p - 1) + up) / p; l = (l * (p - 1) + dn) / p; }
+    if (i >= p) o[i] = l === 0 ? 100 : 100 - 100 / (1 + g / l);
+  }
+  return o;
+}
+function atr(c, p = 14) {
+  const o = new Array(c.length).fill(0); let v = 0;
+  for (let i = 1; i < c.length; i++) {
+    const tr = Math.max(c[i].h - c[i].l, Math.abs(c[i].h - c[i - 1].c), Math.abs(c[i].l - c[i - 1].c));
+    v = i <= p ? v + tr / p : (v * (p - 1) + tr) / p; o[i] = v;
+  }
+  return o;
+}
+const avg = a => a.reduce((s, x) => s + x, 0) / (a.length || 1);
+
+// ───────────────────────── strategy engine ─────────────────────────
+// Evaluates the candle at index i (closed). Returns a signal or a description of the market.
+function analyze(c, i, hasVol) {
+  if (i < 210) return null;
+  const s = c.slice(Math.max(0, i - 300), i + 1);          // work on a window ending at i
+  const n = s.length, L = s[n - 1], P = s[n - 2];
+  const cl = s.map(x => x.c);
+  const e50 = ema(cl, 50), e200 = ema(cl, 200), r = rsi(cl, 14), A = atr(s, 14);
+  const a = A[n - 1], avgA = avg(A.slice(-100));
+  const out = {price: L.c, rsi: r[n - 1], trend: 'sideways', dir: null, score: 0, max: hasVol ? 7 : 6, reasons: [], support: null, resistance: null, note: ''};
+  const trendUp = e50[n - 1] > e200[n - 1] && L.c > e200[n - 1];
+  const trendDn = e50[n - 1] < e200[n - 1] && L.c < e200[n - 1];
+  out.trend = trendUp ? 'up' : trendDn ? 'down' : 'sideways';
+
+  // Support / resistance zones from swing points (clustered, touches counted)
+  const tol = 0.5 * a, zones = [];
+  for (let j = Math.max(3, n - 200); j < n - 4; j++) {
+    const win = s.slice(j - 3, j + 4);
+    const isH = s[j].h >= Math.max(...win.map(x => x.h)), isL = s[j].l <= Math.min(...win.map(x => x.l));
+    for (const p of [isH ? s[j].h : null, isL ? s[j].l : null]) {
+      if (p == null) continue;
+      const z = zones.find(z => Math.abs(z.p - p) <= tol);
+      if (z) { z.p = (z.p * z.t + p) / (z.t + 1); z.t++; } else zones.push({p, t: 1});
+    }
+  }
+  const key = zones.filter(z => z.t >= 2);
+  const below = key.filter(z => z.p < L.c).sort((x, y) => y.p - x.p)[0];
+  const above = key.filter(z => z.p > L.c).sort((x, y) => x.p - y.p)[0];
+  out.support = below ? below.p : null; out.resistance = above ? above.p : null;
+
+  // Market-condition filters
+  if (a < 0.3 * avgA) { out.note = 'market too quiet'; return out; }
+  if (L.h - L.l > 3.5 * a) { out.note = 'news-size spike, skipping'; return out; }
+
+  const body = Math.abs(L.c - L.o), rng = L.h - L.l || 1e-12;
+  const lowWk = Math.min(L.o, L.c) - L.l, upWk = L.h - Math.max(L.o, L.c);
+  const lo20 = Math.min(...s.slice(n - 21, n - 1).map(x => x.l)), hi20 = Math.max(...s.slice(n - 21, n - 1).map(x => x.h));
+  const m20 = avg(cl.slice(-20)), sd = Math.sqrt(avg(cl.slice(-20).map(x => (x - m20) ** 2)));
+  const bbLo = m20 - 2 * sd, bbHi = m20 + 2 * sd;
+  const vAvg = avg(s.slice(n - 21, n - 1).map(x => x.v));
+  // divergence: compare with the extreme of 5–20 bars ago
+  const seg = s.slice(n - 20, n - 5);
+  const jLo = seg.reduce((b, x, k) => x.l < seg[b].l ? k : b, 0) + (n - 20);
+  const jHi = seg.reduce((b, x, k) => x.h > seg[b].h ? k : b, 0) + (n - 20);
+
+  const side = (d) => {
+    const R = [], up = d === 'CALL';
+    const at = up ? (below && L.l <= below.p + tol && L.c > below.p) : (above && L.h >= above.p - tol && L.c < above.p);
+    const sweep = up ? (L.l < lo20 && L.c > lo20) : (L.h > hi20 && L.c < hi20);
+    const eng = up ? (L.c > L.o && P.c < P.o && L.c >= P.o && L.o <= P.c) : (L.c < L.o && P.c > P.o && L.c <= P.o && L.o >= P.c);
+    const pin = up ? (lowWk >= 2 * body && lowWk >= 0.5 * rng && L.c - L.l >= 0.6 * rng) : (upWk >= 2 * body && upWk >= 0.5 * rng && L.h - L.c >= 0.6 * rng);
+    const pa = eng || pin;
+    const rs = up ? (r[n - 1] < 35 || (L.l < s[jLo].l && r[n - 1] > r[jLo])) : (r[n - 1] > 65 || (L.h > s[jHi].h && r[n - 1] < r[jHi]));
+    const bb = up ? (L.l < bbLo && L.c > bbLo) : (L.h > bbHi && L.c < bbHi);
+    const vol = hasVol && L.v > 1.5 * vAvg;
+    const tr = up ? trendUp : trendDn, counter = up ? trendDn : trendUp;
+    if (tr) R.push('Trend with you (EMA 50/200)');
+    if (at) R.push(up ? 'At key support' : 'At key resistance');
+    if (sweep) R.push(up ? 'Liquidity sweep of lows' : 'Liquidity sweep of highs');
+    if (pa) R.push(eng ? (up ? 'Bullish engulfing' : 'Bearish engulfing') : (up ? 'Bullish pin bar' : 'Bearish pin bar'));
+    if (rs) R.push(up ? 'RSI oversold / bullish divergence' : 'RSI overbought / bearish divergence');
+    if (bb) R.push(up ? 'Bollinger re-entry from below' : 'Bollinger re-entry from above');
+    if (vol) R.push('Volume spike on the reaction');
+    // mandatory: price-action confirmation AND a location (level or liquidity sweep)
+    const ok = pa && (at || sweep);
+    const need = cfg.min + (counter ? 1 : 0);
+    return {ok: ok && R.length >= need, score: R.length, R, counter};
+  };
+  const cs = side('CALL'), ps = side('PUT');
+  if (cs.ok && (!ps.ok || cs.score > ps.score)) { out.dir = 'CALL'; out.score = cs.score; out.reasons = cs.R; out.counter = cs.counter; }
+  else if (ps.ok) { out.dir = 'PUT'; out.score = ps.score; out.reasons = ps.R; out.counter = ps.counter; }
+  else {
+    const best = cs.score >= ps.score ? cs : ps;
+    out.note = best.score ? `${best.score} confirmation${best.score > 1 ? 's' : ''} for ${cs.score >= ps.score ? 'CALL' : 'PUT'}, waiting for ${best.R.some(x => /engulf|pin/i.test(x)) ? 'a key level or sweep' : 'a rejection candle'}` : 'no setup';
+    out.partial = best.R;
+  }
+  return out;
+}
+
+// ───────────────────────── strategy tournament ─────────────────────────
+// Full-series indicators, computed once per window.
+function indicators(c) {
+  const n = c.length, cl = c.map(x => x.c);
+  const x = {e50: ema(cl, 50), e200: ema(cl, 200), rsi: rsi(cl, 14), atr: atr(c, 14), bbLo: new Array(n).fill(NaN), bbHi: new Array(n).fill(NaN), lo20: new Array(n).fill(NaN), hi20: new Array(n).fill(NaN)};
+  x.e20 = ema(cl, 20);
+  const e12 = ema(cl, 12), e26 = ema(cl, 26), macd = cl.map((_, i) => e12[i] - e26[i]), sigl = ema(macd, 9);
+  x.hist = macd.map((v, i) => v - sigl[i]);
+  x.sma240 = new Array(n).fill(NaN); x.atrAvg = new Array(n).fill(NaN); x.bbw = new Array(n).fill(NaN); x.bbwAvg = new Array(n).fill(NaN);
+  x.stoch = new Array(n).fill(50); x.er = new Array(n).fill(0); x.hi50 = new Array(n).fill(NaN); x.lo50 = new Array(n).fill(NaN); x.vAvg = new Array(n).fill(NaN);
+  let s240 = 0, sA = 0;
+  for (let i = 0; i < n; i++) {
+    s240 += cl[i]; if (i >= 240) s240 -= cl[i - 240]; if (i >= 239) x.sma240[i] = s240 / 240;
+    sA += x.atr[i]; if (i >= 100) sA -= x.atr[i - 100]; if (i >= 99) x.atrAvg[i] = sA / 100;
+    if (i >= 14) { let lo = Infinity, hi = -Infinity; for (let k = i - 13; k <= i; k++) { lo = Math.min(lo, c[k].l); hi = Math.max(hi, c[k].h); } x.stoch[i] = hi > lo ? 100 * (cl[i] - lo) / (hi - lo) : 50; }
+    if (i >= 20) { let path = 0; for (let k = i - 19; k <= i; k++) path += Math.abs(cl[k] - cl[k - 1]); x.er[i] = path ? Math.abs(cl[i] - cl[i - 20]) / path : 0; }
+    if (i >= 50) { let lo = Infinity, hi = -Infinity, v = 0; for (let k = i - 50; k < i; k++) { lo = Math.min(lo, c[k].l); hi = Math.max(hi, c[k].h); } x.hi50[i] = hi; x.lo50[i] = lo; }
+    if (i >= 20) { let v = 0; for (let k = i - 20; k < i; k++) v += c[k].v || 0; x.vAvg[i] = v / 20; }
+  }
+  for (let i = 20; i < n; i++) {
+    let sum = 0, sq = 0, lo = Infinity, hi = -Infinity;
+    for (let k = i - 19; k <= i; k++) { sum += cl[k]; sq += cl[k] * cl[k]; }
+    for (let k = i - 20; k < i; k++) { if (c[k].l < lo) lo = c[k].l; if (c[k].h > hi) hi = c[k].h; }
+    const m = sum / 20, sd = Math.sqrt(Math.max(0, sq / 20 - m * m));
+    x.bbLo[i] = m - 2 * sd; x.bbHi[i] = m + 2 * sd; x.lo20[i] = lo; x.hi20[i] = hi; x.bbw[i] = m ? 4 * sd / m : 0;
+  }
+  let sw = 0, cw = 0;
+  for (let i = 0; i < n; i++) { if (!isNaN(x.bbw[i])) { sw += x.bbw[i]; cw++; } if (i >= 120 && !isNaN(x.bbw[i - 100])) { sw -= x.bbw[i - 100]; cw--; } if (cw >= 50) x.bbwAvg[i] = sw / cw; }
+  return x;
+}
+const bull = k => k.c > k.o, bear = k => k.c < k.o;
+const STRATS = {
+  confluence: {name: 'Confluence', long: 'S/R + liquidity + price action confluence',
+    fn: (c, i, x, hv) => { const r = analyze(c, i, hv); return r && r.dir ? {dir: r.dir, why: r.reasons} : null; }},
+  meanrev: {name: 'Mean reversion', long: 'RSI extreme outside the Bollinger Band',
+    fn: (c, i, x) => {
+      if (x.rsi[i] < 25 && c[i].c < x.bbLo[i]) return {dir: 'CALL', why: ['RSI below 25', 'Closed below the lower Bollinger Band']};
+      if (x.rsi[i] > 75 && c[i].c > x.bbHi[i]) return {dir: 'PUT', why: ['RSI above 75', 'Closed above the upper Bollinger Band']};
+      return null; }},
+  pullback: {name: 'Trend pullback', long: 'Pullback ends inside an EMA 50/200 trend',
+    fn: (c, i, x) => {
+      if (x.e50[i] > x.e200[i] && c[i].c > x.e200[i] && x.rsi[i - 1] < 40 && x.rsi[i] >= 40 && bull(c[i])) return {dir: 'CALL', why: ['Uptrend (EMA 50 above 200)', 'RSI turned up through 40', 'Bullish candle']};
+      if (x.e50[i] < x.e200[i] && c[i].c < x.e200[i] && x.rsi[i - 1] > 60 && x.rsi[i] <= 60 && bear(c[i])) return {dir: 'PUT', why: ['Downtrend (EMA 50 below 200)', 'RSI turned down through 60', 'Bearish candle']};
+      return null; }},
+  breakout: {name: 'Breakout', long: 'Strong candle breaks the 20-candle range',
+    fn: (c, i, x) => {
+      const k = c[i], rg = k.h - k.l;
+      if (rg <= 1.2 * x.atr[i]) return null;
+      if (k.c > x.hi20[i] && k.c - k.o > 0.6 * rg) return {dir: 'CALL', why: ['Closed above the 20-candle high', 'Wide, strong bullish candle']};
+      if (k.c < x.lo20[i] && k.o - k.c > 0.6 * rg) return {dir: 'PUT', why: ['Closed below the 20-candle low', 'Wide, strong bearish candle']};
+      return null; }},
+  exhaustion: {name: 'Exhaustion reversal', long: '3-candle run of 2+ ATR, then an opposite candle',
+    fn: (c, i, x) => {
+      if (i < 5) return null;
+      const run = c[i - 4].c - c[i - 1].c;
+      if (bear(c[i - 1]) && bear(c[i - 2]) && bear(c[i - 3]) && run > 2 * x.atr[i] && bull(c[i])) return {dir: 'CALL', why: ['3 falling candles, over 2 ATR', 'Bullish reversal candle']};
+      if (bull(c[i - 1]) && bull(c[i - 2]) && bull(c[i - 3]) && -run > 2 * x.atr[i] && bear(c[i])) return {dir: 'PUT', why: ['3 rising candles, over 2 ATR', 'Bearish reversal candle']};
+      return null; }},
+  sweep: {name: 'Liquidity sweep', long: 'Wick through the 20-candle low/high, close back inside',
+    fn: (c, i, x) => {
+      const k = c[i], rg = k.h - k.l || 1e-12;
+      if (k.l < x.lo20[i] && k.c > x.lo20[i] && k.c - k.l > 0.6 * rg) return {dir: 'CALL', why: ['Swept the 20-candle low', 'Closed back above it, in the top of the candle']};
+      if (k.h > x.hi20[i] && k.c < x.hi20[i] && k.h - k.c > 0.6 * rg) return {dir: 'PUT', why: ['Swept the 20-candle high', 'Closed back below it, in the bottom of the candle']};
+      return null; }},
+};
+// ───────────── 30 quality checks (7 groups). A check that cannot be measured (no volume for forex) is skipped. ─────────────
+function quality(c, i, x, dir, src) {
+  const d = dir === 'CALL' ? 1 : -1, k = c[i], p = c[i - 1], rg = k.h - k.l || 1e-12, body = Math.abs(k.c - k.o), a = x.atr[i] || 1e-12;
+  const up = d === 1, hasV = src === 'binance' && k.v > 0, hasTaker = hasV && k.V != null;
+  const upWick = k.h - Math.max(k.o, k.c), dnWick = Math.min(k.o, k.c) - k.l, against = up ? upWick : dnWick;
+  let run = 0; for (let j = i; j > i - 8 && j > 0; j--) { if ((c[j].c - c[j].o) * d > 0) run++; else break; }
+  const hr = new Date(k.t + TFMS()).getUTCHours(), dow = new Date(k.t).getUTCDay();
+  const C = [
+    // Market condition
+    ['Market', 'Volatility not dead (ATR ≥ 0.5× its 100-candle average)', a >= 0.5 * x.atrAvg[i]],
+    ['Market', 'Volatility not extreme (ATR ≤ 2.5× average)', a <= 2.5 * x.atrAvg[i]],
+    ['Market', 'Signal candle is not a news spike (range ≤ 3 ATR)', rg <= 3 * a],
+    ['Market', 'Bollinger width not squeezed flat', !(x.bbw[i] < 0.5 * x.bbwAvg[i])],
+    ['Market', 'Price is actually moving (efficiency ratio ≥ 0.1)', x.er[i] >= 0.1],
+    // Trend alignment
+    ['Trend', 'Price on the right side of EMA 200', (k.c - x.e200[i]) * d > 0],
+    ['Trend', 'EMA 50 on the right side of EMA 200', (x.e50[i] - x.e200[i]) * d > 0],
+    ['Trend', 'EMA 20 sloping your way', (x.e20[i] - x.e20[i - 3]) * d > 0],
+    ['Trend', 'Higher timeframe agrees (price vs 240-candle average)', (k.c - x.sma240[i]) * d > 0],
+    ['Trend', 'Room to move: ≥ 1 ATR to the 50-candle extreme', up ? x.hi50[i] - k.c >= a : k.c - x.lo50[i] >= a],
+    // Momentum
+    ['Momentum', up ? 'RSI not overbought (< 70)' : 'RSI not oversold (> 30)', up ? x.rsi[i] < 70 : x.rsi[i] > 30],
+    ['Momentum', 'RSI turning your way', (x.rsi[i] - x.rsi[i - 1]) * d > 0],
+    ['Momentum', 'MACD histogram turning your way', (x.hist[i] - x.hist[i - 1]) * d > 0],
+    ['Momentum', up ? 'Stochastic not overbought (< 80)' : 'Stochastic not oversold (> 20)', up ? x.stoch[i] < 80 : x.stoch[i] > 20],
+    ['Momentum', 'Closed beyond the previous close', (k.c - p.c) * d > 0],
+    // Candle quality
+    ['Candle', 'Closed in the strong 40% of its range', up ? (k.c - k.l) / rg >= 0.6 : (k.h - k.c) / rg >= 0.6],
+    ['Candle', 'Decisive body (≥ 30% of range)', body >= 0.3 * rg],
+    ['Candle', 'No big rejection wick against you', against <= Math.max(body, 0.25 * rg)],
+    ['Candle', 'Not a doji (range ≥ 0.5 ATR)', rg >= 0.5 * a],
+    ['Candle', 'Not late: fewer than 5 candles already in your direction', run < 5],
+    ['Candle', 'Previous candle was not a huge move against you', !((p.c - p.o) * d < 0 && Math.abs(p.c - p.o) > 1.5 * a)],
+    // Location
+    ['Location', up ? 'Not buying right under the 20-candle high' : 'Not selling right above the 20-candle low', up ? x.hi20[i] - k.c >= 0.5 * a || k.c > x.hi20[i] : k.c - x.lo20[i] >= 0.5 * a || k.c < x.lo20[i]],
+    ['Location', 'Not over-extended (within 2 ATR of EMA 20)', Math.abs(k.c - x.e20[i]) <= 2 * a],
+    ['Location', 'Inside the Bollinger Bands or just re-entered', k.c <= x.bbHi[i] && k.c >= x.bbLo[i]],
+    // Volume (crypto only)
+    ['Volume', 'Volume at least average', hasV ? k.v >= x.vAvg[i] : null],
+    ['Volume', 'Volume rising vs the previous candle', hasV ? k.v > (p.v || 0) : null],
+    ['Volume', up ? 'Buyers in control (taker buy ≥ 50%)' : 'Sellers in control (taker buy ≤ 50%)', hasTaker ? (up ? k.V / k.v >= 0.5 : k.V / k.v <= 0.5) : null],
+    ['Volume', 'Volume not a climax (≤ 4× average)', hasV ? k.v <= 4 * x.vAvg[i] : null],
+    // Session
+    ['Session', 'Not in the thin rollover hour (21:00–22:00 UTC)', src === 'binance' ? null : !(hr === 21)],
+    ['Session', src === 'binance' ? 'Not a quiet weekend night (Sat/Sun 00–06 UTC)' : 'Market open (not the weekend)', src === 'binance' ? !((dow === 0 || dow === 6) && hr < 6) : !(dow === 6 || (dow === 0 && hr < 22))],
+  ];
+  const used = C.filter(q => q[2] !== null), passed = used.filter(q => q[2]);
+  return {pass: passed.length, total: used.length, pct: used.length ? 100 * passed.length / used.length : 0, ok: used.length && 100 * passed.length / used.length >= cfg.qmin, checks: C};
+}
+const EXPIRIES = () => [1, 2, 3, 5].filter(e => e <= Math.max(1, cfg.maxExp || 5));
+// Lower bound of the Wilson score interval: a win rate the strategy is very likely above.
+function wilsonLB(w, n, z = 1.0) { if (!n) return 0; const p = w / n, d = 1 + z * z / n; return (p + z * z / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / d; }
+
+async function tournament(m) {
+  const c = m.c, n = c.length, hv = m.src === 'binance';
+  if (n < 260) { m.combos = []; m.approved = []; return; }
+  const x = indicators(c), split = Math.floor(210 + (n - 210) * 0.6), be = beRate() / 100;
+  const out = [];
+  for (const [key, S] of Object.entries(STRATS)) {
+    const sig = new Array(n).fill(null);
+    for (let i = 210, k = 0; i < n - 1; i++, k++) {
+      if (key === 'confluence' && k % 40 === 39) await sleep(0);
+      const r = S.fn(c, i, x, hv); if (r && quality(c, i, x, r.dir, m.src).ok) sig[i] = r.dir;
+    }
+    if (FX()) { for (const rr of RRS) out.push(fxCombo(key, rr, simForex(c, x, sig, rr, split, m.src))); continue; }
+    for (const exp of EXPIRIES().filter(e => typeof durOk !== 'function' || durOk(m, e))) {
+      const tr = {w: 0, l: 0}, te = {w: 0, l: 0};
+      for (let i = 210; i < n - exp; i++) {
+        if (!sig[i]) continue;
+        const en = c[i + 1].o, ex = c[i + exp].c;
+        if (ex !== en) { const b = i < split ? tr : te; ((sig[i] === 'CALL') === (ex > en)) ? b.w++ : b.l++; }
+        i += exp;                                                    // one trade at a time
+      }
+      const tn = tr.w + tr.l, sn = te.w + te.l, w = tr.w + te.w, all = tn + sn;
+      // Strict on purpose: 6 strategies × several expiries are tried per pair, so a loose test would pass lucky noise.
+      const minTrain = Math.max(20, cfg.minVal), minTest = Math.max(12, Math.round(cfg.minVal * 0.6));
+      const lb = wilsonLB(w, all, 2.33);                                 // 99% one-sided confidence floor
+      const ok = tn >= minTrain && sn >= minTest && tr.w / tn >= be + 0.02 && te.w / sn >= be + 0.02 && lb >= be;
+      out.push({id: key + ':' + exp, key, exp, tr, te, nTest: sn, trWr: tn ? tr.w / tn : 0, teWr: sn ? te.w / sn : 0, n: all, lb, ok});
+    }
+  }
+  m.combos = out;
+  m.live2 = m.live2 || {};
+  m.approved = out.filter(o => o.ok && !killed(m, o)).sort((a, b) => b.lb - a.lb);
+  m.sinceBt = 0;
+  scheduleRender();
+}
+// Forex/spot simulation: entry next open, stop 1.5 ATR, target rr × stop, max 48 candles; spread/fees deducted.
+function simForex(c, x, sig, rr, split, src) {
+  const n = c.length, tr = [], te = [];
+  for (let i = 210; i < n - 2; i++) {
+    if (!sig[i]) continue;
+    const d = sig[i] === 'CALL' ? 1 : -1, en = c[i + 1].o, rk = SLATR * x.atr[i];
+    if (!(rk > 0)) continue;
+    const sl = en - d * rk, tp = en + d * rr * rk;
+    let R = null, j = i + 1;
+    for (; j < Math.min(n, i + 1 + MAXH); j++) {
+      const k = c[j];
+      if (d === 1 ? k.l <= sl : k.h >= sl) { R = -1; break; }          // stop first if both touched (conservative)
+      if (d === 1 ? k.h >= tp : k.l <= tp) { R = rr; break; }
+    }
+    if (R === null) { j = Math.min(n - 1, i + MAXH); R = (c[j].c - en) * d / rk; }
+    R -= (src === 'binance' ? 0.001 : 0.0001) * en / rk;                  // round-trip fee (crypto) or spread (forex)
+    (i < split ? tr : te).push(R);
+    i = j;
+  }
+  return {tr, te};
+}
+const meanOf = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+function fxCombo(key, rr, {tr, te}) {
+  const all = tr.concat(te), mu = meanOf(all), sd = Math.sqrt(meanOf(all.map(v => (v - mu) ** 2)));
+  const lb = all.length ? mu - 2.33 * sd / Math.sqrt(all.length) : -9;        // 99% one-sided floor on profit per trade
+  const minTrain = Math.max(20, cfg.minVal), minTest = Math.max(12, Math.round(cfg.minVal * 0.6));
+  const ok = tr.length >= minTrain && te.length >= minTest && meanOf(tr) >= 0.05 && meanOf(te) >= 0.05 && lb > 0;
+  return {id: key + ':rr' + rr, key, rr, nTest: te.length, n: all.length, teMean: meanOf(te), trMean: meanOf(tr), teWr: te.length ? te.filter(v => v > 0).length / te.length : 0, lb, ok};
+}
+const comboLabel = c => FX() ? `${STRATS[c.key].name} · 1:${c.rr}` : `${STRATS[c.key].name} · ${durTxt(minsOf(c.exp))}`;
+const comboMetric = c => FX() ? `${c.teMean >= 0 ? '+' : ''}${c.teMean.toFixed(2)}R/trade, ${(100 * c.teWr).toFixed(0)}% wins (${c.nTest})` : `${(100 * c.teWr).toFixed(0)}% (${c.nTest})`;
+const comboGood = c => FX() ? c.teMean > 0 : c.teWr * 100 >= beRate();
+function killed(m, o) {
+  const l = m.live2 && m.live2[o.id];
+  if (!l || l.n < 10) return false;
+  return FX() ? l.r / l.n < 0 : l.w / l.n < beRate() / 100;
+}
+function edgeOf(m) {
+  const a = m.approved && m.approved[0];
+  if (a) return {ok: true, p: 100 * a.teWr, n: a.nTest, combo: a};
+  const best = (m.combos || []).slice().sort((x, y) => y.lb - x.lb)[0];
+  return {ok: false, p: best ? 100 * best.teWr : null, n: best ? best.nTest : 0, combo: best, why: best ? 'no strategy passed validation' : 'still testing'};
+}
+
+
+
+// ───────────────────────── Deriv API client ─────────────────────────
+let ws = null, reqId = 0, acct = null, wantConn = false;
+const pend = new Map();
+function setConn(ok, t) { $('connDot').classList.toggle('on', ok); $('connTxt').textContent = t; }
+function openWS() {
+  return new Promise((res, rej) => {
+    ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(cfg.appId)}`);
+    let opened = false;
+    ws.onopen = () => { opened = true; setConn(true, 'connected'); res(); };
+    ws.onerror = () => { if (!opened) rej(new Error('Cannot reach Deriv. Check your internet connection (Deriv may be blocked on this network).')); };
+    ws.onclose = () => { setConn(false, 'disconnected'); for (const p of pend.values()) p.rej(new Error('Connection closed')); pend.clear(); if (wantConn) setTimeout(reconnect, 3000); };
+    ws.onmessage = onMsg;
+  });
+}
+function api(req, timeout = 20000) {
+  return new Promise((res, rej) => {
+    if (!ws || ws.readyState !== 1) return rej(new Error('Not connected to Deriv'));
+    const id = ++reqId;
+    pend.set(id, {res, rej});
+    ws.send(JSON.stringify({...req, req_id: id}));
+    setTimeout(() => { if (pend.has(id)) { pend.delete(id); rej(new Error('Deriv did not answer in time')); } }, timeout);
+  });
+}
+function onMsg(e) {
+  let d; try { d = JSON.parse(e.data); } catch (err) { return; }
+  if (d.msg_type === 'ohlc' && d.ohlc) onOhlc(d.ohlc);
+  if (d.msg_type === 'proposal_open_contract' && d.proposal_open_contract) onContract(d.proposal_open_contract);
+  if (d.msg_type === 'balance' && d.balance) { acct && (acct.balance = d.balance.balance); $('bal').textContent = `${(+d.balance.balance).toFixed(2)} ${d.balance.currency}`; }
+  const p = pend.get(d.req_id);
+  if (p) { pend.delete(d.req_id); d.error ? p.rej(new Error(d.error.message || d.error.code)) : p.res(d); }
+}
+setInterval(() => { if (ws && ws.readyState === 1) api({ping: 1}).catch(() => {}); }, 30000);
+
+async function connect() {
+  showErr('');
+  token = $('cfgToken').value.trim(); save();
+  if (!token) { showErr('Paste your Deriv API token in Settings first. Create it at Deriv → Account settings → API token with the Read and Trade scopes, while your Demo account is selected.'); $('setBox').open = true; return; }
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  $('connectBtn').disabled = true; setConn(false, 'connecting…');
+  try {
+    wantConn = true;
+    await openWS();
+    const a = await api({authorize: token});
+    acct = a.authorize;
+    $('acctPill').textContent = `${acct.is_virtual ? 'DEMO' : 'REAL'} · ${acct.loginid}`;
+    $('acctPill').className = 'pill ' + (acct.is_virtual ? 'demo' : 'real');
+    $('bal').textContent = `${(+acct.balance).toFixed(2)} ${acct.currency}`;
+    api({balance: 1, subscribe: 1}).catch(() => {});
+    await loadSymbols();
+    $('connectBtn').textContent = 'Connected';
+    reply(`Connected to your ${acct.is_virtual ? 'demo' : 'REAL'} account with ${(+acct.balance).toFixed(2)} ${acct.currency}. Tap a pair, choose a timeframe, then tap or say take trade.`,
+          `Connected to your ${acct.is_virtual ? 'demo' : 'real'} account. Tap a pair, choose a timeframe, then say take trade.`);
+    if (!acct.is_virtual && !cfg.allowReal) chat('This is a REAL-money account. Trades are blocked until you set "Allow REAL-money trades" to Yes in Settings.');
+  } catch (e) {
+    wantConn = false; showErr(e.message); setConn(false, 'not connected'); $('connectBtn').disabled = false;
+  }
+}
+async function reconnect() {
+  try { await openWS(); await api({authorize: token}); api({balance: 1, subscribe: 1}).catch(() => {}); if (sel) await loadMarket(sel.sym, sel.tf, true); }
+  catch (e) { setTimeout(reconnect, 5000); }
+}
+$('connectBtn').onclick = connect;
+
+// ───────────────────────── markets ─────────────────────────
+let symbols = [];                  // [{symbol, name, market}]
+const M = {};                      // "sym|tf" -> market state
+let sel = null;                    // selected market state
+let selSym = null;
+const ALIAS = {'euro dollar': 'EUR/USD', euro: 'EUR/USD', 'pound dollar': 'GBP/USD', pound: 'GBP/USD', cable: 'GBP/USD', 'dollar yen': 'USD/JPY', yen: 'USD/JPY', aussie: 'AUD/USD', kiwi: 'NZD/USD',
+  'dollar franc': 'USD/CHF', 'dollar cad': 'USD/CAD', loonie: 'USD/CAD', 'euro yen': 'EUR/JPY', 'pound yen': 'GBP/JPY', 'euro pound': 'EUR/GBP', gold: 'Gold/USD', silver: 'Silver/USD'};
+const norm = t => t.toLowerCase().replace(/[^a-z0-9]/g, '');
+async function loadSymbols() {
+  const r = await api({active_symbols: 'brief', product_type: 'basic'});
+  symbols = r.active_symbols.filter(s => ['forex', 'commodities', 'cryptocurrency', 'indices'].includes(s.market) && s.exchange_is_open && !s.is_trading_suspended)
+    .map(s => ({symbol: s.symbol, name: s.display_name, market: s.market})).sort((a, b) => a.market.localeCompare(b.market) || a.name.localeCompare(b.name));
+  renderPairs();
+  if (!symbols.length) chat('No real markets are open right now (forex closes at the weekend). Deriv\'s synthetic indices are open, but they are random by design, so I do not trade them.');
+}
+function renderPairs() {
+  const q = norm($('search').value || '');
+  const list = symbols.filter(s => !q || norm(s.name).includes(q) || norm(s.symbol).includes(q));
+  $('pairs').innerHTML = list.map(s => `<button class="tile${selSym === s.symbol ? ' sel' : ''}" data-s="${s.symbol}"><b>${s.name}</b><span>${s.market}</span></button>`).join('') || '<div class="muted">No open markets match.</div>';
+}
+$('search').addEventListener('input', renderPairs);
+$('pairs').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (b) selectPair(b.dataset.s); });
+$('tfs').addEventListener('click', e => { const b = e.target.closest('[data-tf]'); if (b) selectTf(b.dataset.tf); });
+const markTf = () => document.querySelectorAll('#tfs button').forEach(b => b.classList.toggle('sel', b.dataset.tf === String(cfg.tf)));
+markTf();
+function findSymbol(text) {
+  const t = ' ' + text.toLowerCase().replace(/[^a-z0-9/ ]/g, ' ').replace(/\s+/g, ' ') + ' ';
+  for (const [k, v] of Object.entries(ALIAS).sort((a, b) => b[0].length - a[0].length)) if (t.includes(' ' + k + ' ')) { const s = symbols.find(x => norm(x.name) === norm(v)); if (s) return s; }
+  const flat = norm(text);
+  return symbols.slice().sort((a, b) => b.name.length - a.name.length).find(s => norm(s.name).length >= 5 && flat.includes(norm(s.name))) || null;
+}
+async function selectPair(sym) { selSym = sym; renderPairs(); await loadMarket(sym, parseInt(cfg.tf, 10)); }
+async function selectTf(tf) { cfg.tf = String(tf); save(); markTf(); if (selSym) await loadMarket(selSym, parseInt(tf, 10)); }
+
+const toMin = d => { const m = /^(\d+)([smhd])$/.exec(d || ''); if (!m) return null; const v = +m[1]; return m[2] === 's' ? v / 60 : m[2] === 'm' ? v : m[2] === 'h' ? v * 60 : v * 1440; };
+async function loadMarket(sym, tf, force) {
+  disarm(true);
+  const key = sym + '|' + tf, info = symbols.find(s => s.symbol === sym) || {name: sym};
+  cfg.tf = String(tf);
+  const m = M[key] = (M[key] && !force) ? M[key] : {key, sym, tf, label: info.name, src: 'deriv', c: [], live: {w: 0, l: 0}, live2: {}, sinceBt: 0};
+  sel = m; renderSel('Loading history and testing strategies…');
+  try {
+    if (!m.c.length || force) {
+      await api({forget_all: 'candles'}).catch(() => {});
+      const r = await api({ticks_history: sym, style: 'candles', granularity: tf * 60, count: 1000, end: 'latest', adjust_start_time: 1, subscribe: 1});
+      const cs = r.candles.map(k => ({t: k.epoch * 1000, o: +k.open, h: +k.high, l: +k.low, c: +k.close, v: 0}));
+      m.cur = cs.pop(); m.c = cs; m.price = m.cur ? m.cur.c : null;
+      // which Rise/Fall durations Deriv allows on this pair
+      try {
+        const cf = await api({contracts_for: sym, currency: acct.currency});
+        const rf = cf.contracts_for.available.filter(a => a.contract_category === 'callput' && (a.contract_type === 'CALL' || a.contract_type === 'PUT') && String(a.barriers) === '0' && a.expiry_type !== 'tick');
+        const mins = rf.map(a => [toMin(a.min_contract_duration), toMin(a.max_contract_duration)]).filter(x => x[0] != null);
+        m.minDur = mins.length ? Math.min(...mins.map(x => x[0])) : null; m.maxDur = mins.length ? Math.max(...mins.map(x => x[1] || 1e9)) : null;
+        m.noRiseFall = !rf.length;
+      } catch (e) { m.minDur = null; m.maxDur = null; }
+      // Deriv's real payout on this pair → exact break-even for validation
+      try {
+        const d = Math.max(m.minDur || 1, tf);
+        const p = await api({proposal: 1, amount: cfg.stake, basis: 'stake', contract_type: 'CALL', currency: acct.currency, duration: Math.ceil(d), duration_unit: 'm', symbol: sym});
+        m.pay = Math.round(100 * (p.proposal.payout / p.proposal.ask_price - 1));
+      } catch (e) { m.pay = m.pay || 85; }
+    }
+    cfg.pay = m.pay || 85;
+    if (m.noRiseFall) { renderSel(); return reply(`${m.label} has no Rise/Fall contracts on Deriv right now, so I cannot trade it. Pick another pair.`); }
+    await tournament(m);
+    m.last = analyze(m.c, m.c.length - 1, false);
+    renderSel();
+    const e = edgeOf(m);
+    reply(e.ok ? `${m.label}, ${durTxt(tf)} chart: ${comboLabel(e.combo)} passed validation with ${(100 * e.combo.teWr).toFixed(0)}% wins on ${e.combo.nTest} unseen trades. Deriv pays ${m.pay}%, break-even ${beRate().toFixed(1)}%. Ready: say take trade.`
+                : `${m.label}, ${durTxt(tf)} chart: no strategy beat break-even on unseen history, so I will not trade it. Try another timeframe or pair.`,
+          e.ok ? `${m.label} is ready. ${STRATS[e.combo.key].name} passed validation. Say take trade.` : `${m.label} has no proven edge on this timeframe. I will not trade it.`);
+  } catch (e) { showErr(e.message); renderSel(); }
+}
+function onOhlc(o) {
+  const m = M[o.symbol + '|' + (o.granularity / 60)];
+  if (!m) return;
+  const t = o.open_time * 1000;
+  if (m.cur && t > m.cur.t) closeCandle(m, m.cur);
+  m.cur = {t, o: +o.open, h: +o.high, l: +o.low, c: +o.close, v: 0};
+  m.price = +o.close;
+  if (m === sel) $('kPrice').textContent = fmt(m.price);
+}
+function closeCandle(m, candle) {
+  const last = m.c[m.c.length - 1];
+  if (last && candle.t <= last.t) return;
+  m.c.push(candle); if (m.c.length > 1200) m.c.shift();
+  m.last = analyze(m.c, m.c.length - 1, false);
+  if (++m.sinceBt >= 100) tournament(m);
+  if (armed && armed.m === m) tryTrade(m, candle, 'watch');
+  scheduleRender();
+}
+
+// ───────────────────────── signal → trade ─────────────────────────
+let armed = null;                  // {m, left}
+const trades = [];
+const risk = {streak: 0, coolUntil: 0, day: '', pl: 0, n: 0};
+function riskBlock() {
+  const today = new Date().toISOString().slice(0, 10);
+  if (risk.day !== today) { risk.day = today; risk.pl = 0; risk.n = 0; }
+  if (!acct) return 'Connect your Deriv account first.';
+  if (!acct.is_virtual && !cfg.allowReal) return 'This is a real-money account and real trading is switched off in Settings.';
+  if (-risk.pl >= cfg.dayLoss) return `Daily loss limit reached (${risk.pl.toFixed(2)} ${acct.currency}). No more trades today.`;
+  if (risk.n >= cfg.maxDay) return `Maximum of ${cfg.maxDay} trades today reached.`;
+  if (Date.now() < risk.coolUntil) return `Paused after 3 losses in a row. Trading resumes at ${new Date(risk.coolUntil).toLocaleTimeString()}.`;
+  if (trades.some(t => !t.done && t.m === sel)) return 'A trade on this pair is still running.';
+  return null;
+}
+function currentSignal(m) {
+  const w = m.c.slice(-400), x = indicators(w), i = w.length - 1;
+  for (const combo of m.approved || []) {
+    if (killed(m, combo)) continue;
+    const r = STRATS[combo.key].fn(w, i, x, false);
+    if (!r) continue;
+    const q = quality(w, i, x, r.dir, m.src);
+    if (!q.ok) continue;
+    return {r, q, combo};
+  }
+  // nothing fired: show the checklist for the best idea so the user sees why
+  return null;
+}
+async function takeTrade() {
+  const m = sel;
+  if (!m) return reply('Tap a pair first, or say for example: trade euro dollar 5 minutes.');
+  const block = riskBlock(); if (block) return reply(block);
+  if (!m.approved) return reply('Still testing this pair. One moment.');
+  if (!m.approved.length) return reply(`I will not trade ${m.label} on the ${durTxt(m.tf)} chart: no strategy has a proven edge here. Try 15 minutes or another pair.`);
+  const sinceOpen = Date.now() - (m.cur ? m.cur.t : 0);
+  if (sinceOpen <= entryWin() * 1000 && await tryTrade(m, m.c[m.c.length - 1], 'now')) return;
+  armed = {m, left: 30};
+  $('cancelBtn').disabled = false; renderSel();
+  reply(`No valid setup on the last candle. I am watching ${m.label} on the ${durTxt(m.tf)} chart and will place the trade automatically at the next valid setup (up to 30 candles). Say stop to cancel.`,
+        `Watching ${m.label}. I will trade the next valid setup.`);
+}
+const entryWin = () => cfg.tf === '1' ? 10 : cfg.tf === '5' ? 20 : 30;
+async function tryTrade(m, candle, why) {
+  const s = currentSignal(m);
+  if (!s) {
+    if (why === 'watch' && armed && --armed.left <= 0) { disarm(); reply(`No valid setup appeared on ${m.label}. Stopped watching.`); }
+    return false;
+  }
+  const block = riskBlock(); if (block) { disarm(); reply(block); return false; }
+  const {r, q, combo} = s, dur = combo.exp * m.tf;
+  try {
+    const p = await api({proposal: 1, amount: cfg.stake, basis: 'stake', contract_type: r.dir, currency: acct.currency, duration: dur, duration_unit: 'm', symbol: m.sym});
+    const pr = p.proposal, payPct = 100 * (pr.payout / pr.ask_price - 1), be = 100 / (1 + payPct / 100);
+    if (100 * combo.teWr < be + 1) { reply(`Skipped ${m.label} ${r.dir}: Deriv pays ${payPct.toFixed(0)}% on this trade, so break-even is ${be.toFixed(1)}%, but the strategy tested at ${(100 * combo.teWr).toFixed(0)}%.`); return false; }
+    const b = await api({buy: pr.id, price: pr.ask_price});
+    const t = {id: b.buy.contract_id, m, dir: r.dir, stake: +b.buy.buy_price, payout: +b.buy.payout, dur, strat: STRATS[combo.key].name, cid: combo.id, t: Date.now(), done: false, profit: null};
+    trades.unshift(t); risk.n++;
+    disarm(true);
+    api({proposal_open_contract: 1, contract_id: t.id, subscribe: 1}).catch(() => {});
+    beep(r.dir === 'CALL');
+    const failed = q.checks.filter(z => z[2] === false).map(z => z[1]);
+    chat(`✅ Trade placed on ${m.label}: ${r.dir === 'CALL' ? '⬆ RISE (CALL)' : '⬇ FALL (PUT)'} · ${durTxt(dur)} · stake ${t.stake.toFixed(2)} → payout ${t.payout.toFixed(2)} ${acct.currency}\nStrategy: ${t.strat}, ${(100 * combo.teWr).toFixed(0)}% wins on ${combo.nTest} unseen trades · quality ${q.pass}/${q.total}\n• ${r.why.join('\n• ')}${failed.length ? '\nFailed checks: ' + failed.join('; ') : ''}`);
+    say(`Trade placed. ${m.label}, ${r.dir === 'CALL' ? 'rise' : 'fall'}, ${durTxt(dur)}, stake ${t.stake.toFixed(2)}.`, true);
+    renderChecks(q); renderTrades();
+    return true;
+  } catch (e) { reply(`Deriv refused the trade: ${e.message}`); disarm(true); return false; }
+}
+function onContract(c) {
+  const t = trades.find(x => x.id === c.contract_id);
+  if (!t || t.done) return;
+  t.profit = +c.profit;
+  if (c.is_sold || c.status === 'won' || c.status === 'lost') {
+    t.done = true; t.status = c.status === 'won' || t.profit > 0 ? 'won' : 'lost';
+    risk.pl += t.profit;
+    const m = t.m, l = (m.live2 = m.live2 || {})[t.cid] = (m.live2[t.cid] || {w: 0, n: 0, r: 0});
+    l.n++; l.r += t.status === 'won' ? cfg.pay / 100 : -1;
+    if (t.status === 'won') { l.w++; m.live.w++; risk.streak = 0; } else { m.live.l++; risk.streak++; }
+    reply(`${m.label} ${t.dir === 'CALL' ? 'rise' : 'fall'}: ${t.status === 'won' ? `✅ WON +${t.profit.toFixed(2)}` : `❌ LOST ${t.profit.toFixed(2)}`} ${acct.currency}.`,
+          `${m.label}, ${t.status === 'won' ? 'won' : 'lost'} ${Math.abs(t.profit).toFixed(2)}.`);
+    if (risk.streak >= 3) { risk.coolUntil = Date.now() + 30 * 60000; risk.streak = 0; reply('3 losses in a row. I am pausing all trading for 30 minutes so you do not chase losses.'); }
+    if (killed(m, {id: t.cid})) { m.approved = (m.approved || []).filter(o => o.id !== t.cid); reply(`${m.label}: the ${t.strat} strategy is below break-even live after ${l.n} trades, so I switched it off.`); }
+  }
+  renderTrades();
+}
+function disarm(silent) { if (armed && !silent) chat('Stopped watching.'); armed = null; $('cancelBtn').disabled = true; renderSel(); }
+$('takeBtn').onclick = takeTrade;
+$('cancelBtn').onclick = () => disarm();
+
+// ───────────────────────── rendering ─────────────────────────
+function renderSel(msg) {
+  const m = sel;
+  $('takeBtn').disabled = !m || !acct;
+  if (!m) return;
+  $('selName').textContent = `${m.label} · ${durTxt(m.tf)}`;
+  const e = m.combos ? edgeOf(m) : null, st = $('selState');
+  if (msg) { st.textContent = msg; st.className = 'state watch'; }
+  else if (armed && armed.m === m) { st.textContent = `👀 Watching for the next valid setup (${armed.left} candles left)`; st.className = 'state watch'; }
+  else if (!e) { st.textContent = '—'; st.className = 'state'; }
+  else if (e.ok) { st.textContent = '● Validated: ready to trade'; st.className = 'state ok'; }
+  else { st.textContent = '○ No proven edge: will not trade'; st.className = 'state no'; }
+  const c = e && e.combo;
+  $('kStrat').textContent = c ? comboLabel(c) : '—';
+  $('kWin').textContent = c ? `${(100 * c.teWr).toFixed(0)}% (${c.nTest})` : '—';
+  $('kWin').className = c ? (e.ok ? 'up' : 'down') : '';
+  $('kBe').textContent = m.pay ? `${beRate().toFixed(1)}% (pays ${m.pay}%)` : '—';
+  $('kPrice').textContent = fmt(m.price);
+}
+function renderChecks(q) {
+  $('checks').innerHTML = '';
+  for (const z of q.checks) { if (z[2] === null) continue; const s = document.createElement('span'); s.className = 'chip ' + (z[2] ? 'ok' : 'bad'); s.textContent = (z[2] ? '✓ ' : '✗ ') + z[1]; $('checks').appendChild(s); }
+}
+function renderTrades() {
+  $('trades').innerHTML = trades.slice(0, 100).map(t => `<tr><td>${new Date(t.t).toLocaleTimeString()}</td><td>${t.m.label}</td>
+    <td class="${t.dir === 'CALL' ? 'up' : 'down'}"><b>${t.dir === 'CALL' ? '⬆ RISE' : '⬇ FALL'}</b> · ${durTxt(t.dur)}</td><td>${t.strat}</td>
+    <td class="num">${t.stake.toFixed(2)}</td><td class="num ${t.done ? (t.status === 'won' ? 'up' : 'down') : 'muted'}">${t.done ? (t.profit >= 0 ? '+' : '') + t.profit.toFixed(2) : t.profit != null ? 'open ' + (t.profit >= 0 ? '+' : '') + t.profit.toFixed(2) : 'open'}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No trades yet.</td></tr>';
+  const done = trades.filter(t => t.done), w = done.filter(t => t.status === 'won').length, pl = done.reduce((a, t) => a + t.profit, 0);
+  $('stN').textContent = trades.length;
+  $('stW').textContent = done.length ? (100 * w / done.length).toFixed(0) + '%' : '—';
+  $('stPL').textContent = (pl >= 0 ? '+' : '') + pl.toFixed(2); $('stPL').className = pl >= 0 ? 'up' : 'down';
+  $('stOpen').textContent = trades.filter(t => !t.done).length;
+}
+let audio = null;
+function beep(up) {
+  if (!audio) return;
+  [up ? 880 : 520, up ? 1175 : 390].forEach((f, i) => {
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + i * 0.12;
+    o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.12);
+  });
+}
+
+// ───────────────────────── voice & text commands ─────────────────────────
+async function command(raw) {
+  const t = raw.toLowerCase().trim();
+  if (!t) return;
+  chat(raw, 'me');
+  if (/^(help|what can you do|commands)/.test(t)) return reply('Say: "trade euro dollar 5 minutes", "select gold", "timeframe 15 minutes", "take trade", "stop", "balance", "results", "status", "mute".', 'Say for example: trade euro dollar five minutes. Or: take trade, stop, balance, results, status.');
+  if (/\b(mute|quiet|silence)\b/.test(t)) { voiceOn = false; setMute(); return chat('Voice off.'); }
+  if (/\b(unmute|voice on)\b/.test(t)) { voiceOn = true; setMute(); return reply('Voice on.'); }
+  if (/\b(stop|cancel|don't|do not)\b/.test(t)) { disarm(); return reply('Stopped. No new trades until you say take trade.'); }
+  if (/\bbalance\b/.test(t)) return reply(acct ? `Balance ${(+acct.balance).toFixed(2)} ${acct.currency} on your ${acct.is_virtual ? 'demo' : 'real'} account.` : 'Not connected yet.');
+  if (/(result|win ?rate|profit|how.*doing)/.test(t)) {
+    const done = trades.filter(x => x.done), w = done.filter(x => x.status === 'won').length, pl = done.reduce((a, x) => a + x.profit, 0);
+    return reply(done.length ? `${w} won, ${done.length - w} lost today. ${pl >= 0 ? 'Profit' : 'Loss'} ${Math.abs(pl).toFixed(2)} ${acct ? acct.currency : ''}.` : 'No finished trades yet.');
+  }
+  if (!acct && /(trade|select|take|analy)/.test(t)) return reply('Connect your Deriv account first: paste the API token in Settings and tap Connect.');
+  const sym = findSymbol(t);
+  const tfm = /(\d+)\s*(minute|min|m\b|hour|hr|h\b)/.exec(t) || (/\b(one|five|fifteen|thirty)\s*(minute|min)/.exec(t));
+  let tf = null;
+  if (tfm) { const words = {one: 1, five: 5, fifteen: 15, thirty: 30}; const v = isNaN(+tfm[1]) ? words[tfm[1]] : +tfm[1]; tf = /h/.test(tfm[2]) ? v * 60 : v; if (![1, 5, 15, 30, 60].includes(tf)) { return reply('Timeframes available: 1, 5, 15 and 30 minutes, or 1 hour.'); } }
+  if (sym || tf) {
+    if (tf) { cfg.tf = String(tf); save(); markTf(); }
+    if (sym) { selSym = sym.symbol; renderPairs(); }
+    if (!selSym) return reply('Which pair? For example: euro dollar.');
+    await loadMarket(selSym, parseInt(cfg.tf, 10));
+    if (/(trade|take|enter|buy|sell|go)/.test(t)) await takeTrade();
+    return;
+  }
+  if (/(take|place|enter|open).*(trade|position)|^trade$|^go$|trade now/.test(t)) return takeTrade();
+  if (/(status|analy[sz]e|check)/.test(t)) {
+    if (!sel) return reply('No pair selected yet.');
+    const e = edgeOf(sel), r = sel.last;
+    return reply(`${sel.label} on ${durTxt(sel.tf)}: price ${fmt(sel.price)}, trend ${r ? r.trend : 'unknown'}. ${e.ok ? `Validated strategy ${comboLabel(e.combo)}, ${(100 * e.combo.teWr).toFixed(0)}% on unseen trades.` : 'No proven edge, I will not trade it.'}${armed ? ' Watching for the next setup.' : ''}`);
+  }
+  reply('Sorry, I did not get that. Say help to hear the commands.');
+}
+$('sendBtn').onclick = () => { command($('chatIn').value); $('chatIn').value = ''; };
+$('chatIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('sendBtn').click(); });
+let rec = null, listening = false;
+$('micBtn').onclick = () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return reply('Voice input needs Chrome or Edge. You can type commands instead.');
+  if (listening) { listening = false; rec && rec.stop(); $('micBtn').className = ''; $('micBtn').textContent = '🎤 Talk'; return; }
+  rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = false;
+  rec.onresult = e => { const r = e.results[e.results.length - 1]; if (r.isFinal) command(r[0].transcript); };
+  rec.onerror = e => { if (e.error === 'not-allowed') { listening = false; reply('Microphone permission is blocked. Allow the microphone for this page, or type commands.'); } };
+  rec.onend = () => { if (listening) try { rec.start(); } catch (e) {} else { $('micBtn').className = ''; $('micBtn').textContent = '🎤 Talk'; } };
+  listening = true; $('micBtn').className = 'mic-on'; $('micBtn').textContent = '🎙 Listening…';
+  try { rec.start(); } catch (e) {}
+};
+setInterval(() => { if (sel && sel === armed?.m) renderSel(); }, 5000);
+chat('Hi! I trade Rise/Fall on Deriv, but only after my analysis passes: a strategy must beat Deriv\'s payout break-even on history it never saw, and the current candle must pass the quality checklist. 1) Paste your Deriv DEMO API token in Settings and tap Connect. 2) Tap a pair and a timeframe. 3) Tap 🎯 Take trade or say "take trade".');
+})();
+</script>
+</body>
+</html>

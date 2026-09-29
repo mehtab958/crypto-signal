@@ -142,3 +142,21 @@ A signal must pass the set percentage (70 % by default) of the checks that apply
   - it is switched off if live profit per trade turns negative after 10+ trades
 
 In testing on 20 pure random-walk markets (480 combinations) nothing passed, while a market with a real repeating pattern was detected and traded correctly.
+
+## Deriv Auto Trader (browser, voice)
+
+File: [`web/deriv_autotrader.html`](web/deriv_autotrader.html)
+
+It places Rise/Fall (CALL/PUT) trades through Deriv's official WebSocket API (`wss://ws.derivws.com`, app_id configurable). You paste a Deriv API token (Read + Trade), tap a pair and a timeframe, then tap **Take trade** or say "trade euro dollar 5 minutes".
+
+- **Analysis:** the same engine as the Binary Signal Assistant. Six strategies × expiries are validated out-of-sample against Deriv's **actual payout** for that pair, and each signal must also pass the 30-check quality gate. Expiries are limited to the durations Deriv allows on the pair (`contracts_for`).
+- **Take trade:** if the last candle is a valid setup inside the entry window, it trades now. Otherwise it watches up to 30 candles and trades the next valid setup. Pairs with no proven edge are refused.
+- **Before buying:** it re-quotes the proposal and skips the trade if the validated win rate is not at least 1 % above the break-even implied by that exact payout. Results are tracked via `proposal_open_contract`.
+- **Safety:**
+  - demo accounts by default; real-money accounts are blocked unless you enable them
+  - daily loss limit
+  - max trades per day
+  - a 30-minute pause after 3 losses in a row
+  - a live kill-switch per strategy
+
+  Synthetic indices are hidden because their prices are random by design.

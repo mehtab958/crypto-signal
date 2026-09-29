@@ -160,3 +160,18 @@ It places Rise/Fall (CALL/PUT) trades through Deriv's official API. **New Deriv 
   - a live kill-switch per strategy
 
   Synthetic indices are hidden because their prices are random by design.
+
+## Pre-Pump Radar (Binance USDT-M futures, browser)
+
+File: [`web/prepump_radar.html`](web/prepump_radar.html). It uses public data only, with no API key.
+
+It ranks every liquid USDT perpetual by the footprints that often come **before** large moves. Scoring runs in two stages:
+- **Stage 1 (all coins, 4h candles):** Bollinger-bandwidth squeeze percentile, the tight 5-day range, 24h volume vs the 7-day average, taker-buy share, 7-day relative strength vs BTC, the HTF trend (≈ daily EMA20), and where price sits in its range. Funding comes from one `premiumIndex` call.
+- **Stage 2 (top N):** open-interest change over 24h/72h (`openInterestHist`), top-trader vs crowd long/short (`topLongShortPositionRatio` / `globalLongShortAccountRatio`), and taker buy/sell (`takerlongshortRatio`).
+
+Output:
+- **Potential:** 0–100 stored energy.
+- **Bias:** BUY or SELL, from funding skew, smart money vs crowd, taker absorption, relative strength, trend and range location.
+- **Trigger:** a 4h close outside the 5-day range on ≥ 1.5× volume.
+
+It gives an early "breaking out now" alert while the candle is forming and a confirmed BUY/SELL on the close, with a stop, a trailing stop (× 4h ATR, no fixed target), optional scale-outs and position sizing. A paper tracker records every triggered signal to its trailing-stop exit.

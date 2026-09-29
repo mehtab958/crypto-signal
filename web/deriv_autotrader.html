@@ -103,6 +103,7 @@ td.num,th.num{text-align:right}
       <label class="wide">Deriv API token (Read + Trade scope) <input id="cfgToken" type="password" placeholder="Deriv → Account settings → API token (create it while your Demo account is selected)" autocomplete="off"></label>
       <label>Remember token on this device <select id="cfgRemember"><option value="0">No</option><option value="1">Yes</option></select></label>
       <label>App ID <input id="cfgApp" type="number"></label>
+      <label>Server <select id="cfgServer"><option value="auto">Auto (try all)</option><option value="ws.derivws.com">ws.derivws.com</option><option value="ws.binaryws.com">ws.binaryws.com</option><option value="green.derivws.com">green.derivws.com</option><option value="blue.derivws.com">blue.derivws.com</option></select></label>
       <label>Stake per trade <input id="cfgStake" type="number" min="0.35" step="0.5"></label>
       <label>Longest expiry to test (candles) <input id="cfgExp" type="number" min="1" max="5" step="1"></label>
       <label>Min trades to validate <input id="cfgMinBt" type="number" min="10" max="200" step="5"></label>
@@ -162,14 +163,14 @@ const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ───────────────────────── settings ─────────────────────────
-const DEF = {appId: 1089, stake: 1, maxExp: 5, minVal: 20, qmin: 70, dayLoss: 20, maxDay: 10, allowReal: 0, remember: 0, voice: 1, tf: '5', min: 4, pay: 85, mode: 'binary'};
+const DEF = {server: 'auto', appId: 1089, stake: 1, maxExp: 5, minVal: 20, qmin: 70, dayLoss: 20, maxDay: 10, allowReal: 0, remember: 0, voice: 1, tf: '5', min: 4, pay: 85, mode: 'binary'};
 let cfg = {...DEF};
 try { Object.assign(cfg, JSON.parse(localStorage.getItem('derivCfg') || '{}')); } catch (e) {}
 let token = '';
 try { token = localStorage.getItem('derivToken') || ''; } catch (e) {}
 const save = () => { try { const c = {...cfg}; localStorage.setItem('derivCfg', JSON.stringify(c)); if (cfg.remember) localStorage.setItem('derivToken', token); else localStorage.removeItem('derivToken'); } catch (e) {} };
 const bind = (id, k, num) => { const el = $(id); el.value = cfg[k]; el.addEventListener('change', () => { cfg[k] = num ? (parseFloat(el.value) || DEF[k]) : el.value; save(); }); };
-bind('cfgApp', 'appId', 1); bind('cfgStake', 'stake', 1); bind('cfgExp', 'maxExp', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1);
+bind('cfgApp', 'appId', 1); bind('cfgServer', 'server'); bind('cfgStake', 'stake', 1); bind('cfgExp', 'maxExp', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1);
 bind('cfgDayLoss', 'dayLoss', 1); bind('cfgMaxDay', 'maxDay', 1); bind('cfgReal', 'allowReal', 1); bind('cfgRemember', 'remember', 1);
 $('cfgToken').value = token;
 $('cfgToken').addEventListener('change', () => { token = $('cfgToken').value.trim(); save(); });
@@ -508,15 +509,35 @@ function edgeOf(m) {
 let ws = null, reqId = 0, acct = null, wantConn = false;
 const pend = new Map();
 function setConn(ok, t) { $('connDot').classList.toggle('on', ok); $('connTxt').textContent = t; }
-function openWS() {
+const SERVERS = ['ws.derivws.com', 'ws.binaryws.com', 'green.derivws.com', 'blue.derivws.com'];
+let liveHost = null;
+function tryHost(host) {
   return new Promise((res, rej) => {
-    ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(cfg.appId)}`);
-    let opened = false;
-    ws.onopen = () => { opened = true; setConn(true, 'connected'); res(); };
-    ws.onerror = () => { if (!opened) rej(new Error('Cannot reach Deriv. Check your internet connection (Deriv may be blocked on this network).')); };
-    ws.onclose = () => { setConn(false, 'disconnected'); for (const p of pend.values()) p.rej(new Error('Connection closed')); pend.clear(); if (wantConn) setTimeout(reconnect, 3000); };
-    ws.onmessage = onMsg;
+    let sock, done = false;
+    try { sock = new WebSocket(`wss://${host}/websockets/v3?app_id=${encodeURIComponent(cfg.appId)}`); } catch (e) { return rej(e); }
+    const timer = setTimeout(() => { if (!done) { done = true; try { sock.close(); } catch (e) {} rej(new Error('timeout')); } }, 8000);
+    sock.onopen = () => { if (done) return; done = true; clearTimeout(timer); res(sock); };
+    sock.onerror = () => { if (done) return; done = true; clearTimeout(timer); rej(new Error('blocked or unreachable')); };
   });
+}
+async function openWS() {
+  const hosts = cfg.server && cfg.server !== 'auto' ? [cfg.server] : (liveHost ? [liveHost, ...SERVERS.filter(h => h !== liveHost)] : SERVERS);
+  const fails = [];
+  for (const h of hosts) {
+    setConn(false, `connecting to ${h}…`);
+    try {
+      ws = await tryHost(h);
+      liveHost = h;
+      setConn(true, 'connected');
+      ws.onmessage = onMsg;
+      ws.onclose = () => { setConn(false, 'disconnected'); for (const p of pend.values()) p.rej(new Error('Connection closed')); pend.clear(); if (wantConn) setTimeout(reconnect, 3000); };
+      return;
+    } catch (e) { fails.push(`${h}: ${e.message}`); }
+  }
+  const inApp = /FBAN|FBAV|Instagram|WhatsApp|Telegram|Line\//i.test(navigator.userAgent);
+  throw new Error(`Cannot reach Deriv's servers from this browser/network (${fails.join('; ')}). `
+    + (inApp ? 'You opened this page inside an app; open it in Chrome instead. ' : '')
+    + 'Check that deriv.com opens in this same browser. If it does not, your internet provider or Wi-Fi is blocking Deriv: try another network, e.g. mobile data instead of Wi-Fi.');
 }
 function api(req, timeout = 20000) {
   return new Promise((res, rej) => {

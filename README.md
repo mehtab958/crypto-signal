@@ -84,3 +84,20 @@ File: [`web/whale_tracker.html`](web/whale_tracker.html). Open it in Chrome or E
 - **Whale Finder:** loads today's biggest Solana winners from DexScreener's public API. For each winner it walks back through the token's history on-chain (Solana RPC) to its first transactions and collects the earliest buyers. Wallets that were early in *several* winners rank highest. You can add the top 100 to the watchlist in one click.
 - **Live tracking:** polls each tracked wallet and decodes new swaps into BUY/SELL, with the token, SOL/USD size, market cap and liquidity. Each trade pops up with a sound and a desktop notification. It sends a 🔥 alert when several tracked whales buy the same token within a time window.
 - A free private RPC (Helius/QuickNode) is recommended; the public RPC is heavily rate-limited.
+
+## Binary Signal Assistant (browser, voice)
+
+File: [`web/binary_signal_assistant.html`](web/binary_signal_assistant.html). Open it in Chrome or Edge.
+
+It checks every candle close on real markets: crypto from Binance (no key) and forex from Twelve Data (free key). A CALL/PUT needs a price-action confirmation (engulfing or pin bar) **and** a location (a key support/resistance zone with 2+ touches, or a liquidity sweep of the 20-bar low/high). It must also meet a minimum total from 7 confirmations:
+- trend (EMA 50/200)
+- support/resistance
+- liquidity sweep
+- candle pattern
+- RSI extreme or divergence
+- Bollinger re-entry
+- volume spike
+
+Counter-trend trades need one extra confirmation.
+
+Every market is backtested on load with the exact same logic (entry at the next open, exit after the expiry candles), and live results are tracked against the break-even win rate for your payout. It speaks each signal and result, and understands voice or typed commands: status, win rate, analyze <market>, best market, last signal, stop/start, mute. It deliberately does not support Quotex OTC (broker-generated prices) or martingale.

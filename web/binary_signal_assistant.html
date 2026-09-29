@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Binary Signal Assistant</title>
+<style>
+:root{--bg:#0b0e13;--panel:#121722;--panel2:#171d2a;--line:#232b3b;--text:#e6e9ef;--muted:#8b93a7;--green:#16c784;--red:#ea3943;--amber:#f5a623;--blue:#4c8dff;--violet:#a78bfa}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--blue)}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+h1{font-size:17px;margin:0}
+.status{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:12.5px}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:6px;vertical-align:middle}
+.dot.on{background:var(--green)}
+button{font:inherit;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:7px 12px;cursor:pointer}
+button.primary{background:var(--green);border-color:var(--green);color:#04130c;font-weight:600}
+button.mic-on{background:var(--red);border-color:var(--red);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+button:hover:not(:disabled){filter:brightness(1.12)}
+.wrap{padding:14px 16px;max-width:1500px;margin:0 auto}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+summary{cursor:pointer;color:var(--muted)}
+.settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px 16px;margin-top:10px}
+.settings label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+.settings input,.settings select{width:120px}
+.settings .wide{grid-column:1/-1}
+.settings .wide input{width:100%}
+.warn{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.35);color:#ffd9a0;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.err{background:rgba(234,57,67,.12);border:1px solid rgba(234,57,67,.4);color:#ffb3b8;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;display:none}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px}
+@media (max-width:980px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.panel h2{font-size:14px;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.panel h2 small{color:var(--muted);font-weight:400}
+.big{padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
+.big .dir{font-size:44px;font-weight:900;letter-spacing:1px}
+.big .dir.call{color:var(--green)} .big .dir.put{color:var(--red)} .big .dir.wait{color:var(--muted);font-size:28px}
+.big .asset{font-size:22px;font-weight:700}
+.big .sub{color:var(--muted);font-size:13px}
+.big .count{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums}
+.reasons{padding:0 18px 16px;display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12.5px}
+.chip.ok{border-color:rgba(22,199,132,.5);color:#9ff0cd}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--panel)}
+td.num,th.num{text-align:right}
+.scroll{max-height:360px;overflow:auto}
+.up{color:var(--green)} .down{color:var(--red)} .muted{color:var(--muted)} .amber{color:var(--amber)}
+#chat{height:300px;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:88%;padding:7px 11px;border-radius:10px;font-size:13.5px;white-space:pre-wrap}
+.msg.bot{background:var(--panel2);border:1px solid var(--line);align-self:flex-start}
+.msg.me{background:rgba(76,141,255,.18);border:1px solid rgba(76,141,255,.35);align-self:flex-end}
+.chatin{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+.chatin input{flex:1}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 14px}
+.stat{background:var(--panel2);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font-size:20px}
+.stat span{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎯 Binary Signal Assistant</h1>
+  <div class="status">
+    <span class="pill"><span class="dot" id="feedDot"></span><span id="feedTxt">not started</span></span>
+    <span class="pill" id="clock">--:--:--</span>
+    <button id="startBtn" class="primary">▶ Start</button>
+    <button id="micBtn">🎤 Talk</button>
+    <button id="muteBtn">🔊 Voice on</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="warn">⚠️ Binary options are extremely high-risk, and most traders lose. <b>Quotex OTC prices are generated by the broker</b>, so no outside tool can read them. This assistant analyses <b>real markets</b> (crypto from Binance, forex from Twelve Data). Use it only on matching non-OTC assets. The win rates shown are measured, not promised. Never use martingale. Not financial advice.</div>
+  <div class="err" id="errBox"></div>
+
+  <details>
+    <summary>Settings (saved in this browser)</summary>
+    <div class="settings">
+      <label>Candle timeframe <select id="cfgTf"><option value="1">1 minute</option><option value="5">5 minutes</option></select></label>
+      <label>Expiry (candles) <input id="cfgExp" type="number" min="1" max="5" step="1"></label>
+      <label>Min confirmations (of 7) <input id="cfgMin" type="number" min="3" max="7" step="1"></label>
+      <label>Broker payout % <input id="cfgPay" type="number" min="50" max="100" step="1"></label>
+      <label class="wide">Crypto (Binance symbols, comma-separated) <input id="cfgCrypto"></label>
+      <label class="wide">Twelve Data API key (free at twelvedata.com; needed for forex) <input id="cfgKey" placeholder="paste key to enable forex"></label>
+      <label class="wide">Forex pairs (max 4 on the free plan) <input id="cfgFx"></label>
+    </div>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Changes apply after you press Start again (reload the page).</p>
+  </details>
+
+  <div class="grid">
+    <div>
+      <section class="panel">
+        <h2>Current signal <small id="sigAge"></small></h2>
+        <div class="big">
+          <div><div class="asset" id="sigAsset">—</div><div class="sub" id="sigSub">Press Start. Signals are checked at every candle close.</div></div>
+          <div class="dir wait" id="sigDir">WAITING</div>
+          <div style="text-align:right"><div class="count" id="sigCount">--</div><div class="sub">seconds left to enter</div></div>
+        </div>
+        <div class="reasons" id="sigReasons"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Performance <small>live results of this session</small></h2>
+        <div class="stats">
+          <div class="stat"><b id="stTrades">0</b><span>signals</span></div>
+          <div class="stat"><b id="stWin">—</b><span>live win rate</span></div>
+          <div class="stat"><b id="stBe">—</b><span>break-even win rate</span></div>
+          <div class="stat"><b id="stPnl">0</b><span>net (stake units)</span></div>
+        </div>
+        <div class="scroll"><table><thead><tr><th>Time</th><th>Asset</th><th>Signal</th><th class="num">Conf.</th><th class="num">Entry</th><th class="num">Close</th><th>Result</th></tr></thead><tbody id="hist"><tr><td colspan="7" class="muted">No signals yet.</td></tr></tbody></table></div>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <h2>Assistant <small>say or type: status · win rate · analyze bitcoin · help</small></h2>
+        <div id="chat"></div>
+        <div class="chatin"><input id="chatIn" placeholder="Type a command, e.g. analyze EUR USD"><button id="sendBtn">Send</button></div>
+      </section>
+      <section class="panel">
+        <h2>Markets <small>backtest = win rate of this exact logic on recent history</small></h2>
+        <div class="scroll"><table><thead><tr><th>Asset</th><th class="num">Price</th><th>Trend</th><th class="num">RSI</th><th class="num">Backtest</th><th class="num">Live</th></tr></thead><tbody id="mkts"></tbody></table></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ───────────────────────── settings ─────────────────────────
+const DEF = {tf: '1', exp: 1, min: 4, pay: 85, crypto: 'BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,LTCUSDT', key: '', fx: 'EUR/USD,GBP/USD,USD/JPY,AUD/USD', voice: 1};
+let cfg = {...DEF};
+try { Object.assign(cfg, JSON.parse(localStorage.getItem('bsaCfg') || '{}')); } catch (e) {}
+const save = () => { try { localStorage.setItem('bsaCfg', JSON.stringify(cfg)); } catch (e) {} };
+const bind = (id, k, num) => { const el = $(id); el.value = cfg[k]; el.addEventListener('change', () => { cfg[k] = num ? (parseFloat(el.value) || DEF[k]) : el.value.trim(); save(); }); };
+bind('cfgTf', 'tf'); bind('cfgExp', 'exp', 1); bind('cfgMin', 'min', 1); bind('cfgPay', 'pay', 1); bind('cfgCrypto', 'crypto'); bind('cfgKey', 'key'); bind('cfgFx', 'fx');
+const TFMS = () => parseInt(cfg.tf, 10) * 60000;
+const showErr = m => { $('errBox').textContent = m || ''; $('errBox').style.display = m ? 'block' : 'none'; };
+
+// ───────────────────────── voice out ─────────────────────────
+let voiceOn = !!cfg.voice, voice = null;
+const pickVoice = () => { const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || []; voice = vs.find(v => /en[-_]US/i.test(v.lang) && /female|samantha|zira|google us/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang)) || null; };
+if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function say(text, urgent) {
+  if (!voiceOn || !window.speechSynthesis) return;
+  try {
+    if (urgent) speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/\//g, ' ').replace(/USDT/g, ''));
+    if (voice) u.voice = voice;
+    u.rate = 1.02; u.pitch = 1;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+const setMute = () => $('muteBtn').textContent = voiceOn ? '🔊 Voice on' : '🔇 Voice off';
+setMute();
+$('muteBtn').onclick = () => { voiceOn = !voiceOn; cfg.voice = voiceOn ? 1 : 0; save(); setMute(); if (voiceOn) say('Voice on.'); else if (window.speechSynthesis) speechSynthesis.cancel(); };
+let audio = null;
+function beep(up) {
+  if (!audio) return;
+  [up ? 880 : 520, up ? 1175 : 390].forEach((f, i) => {
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + i * 0.12;
+    o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.12);
+  });
+}
+
+// ───────────────────────── chat ─────────────────────────
+function chat(text, who) {
+  const el = document.createElement('div');
+  el.className = 'msg ' + (who || 'bot');
+  el.textContent = text;
+  $('chat').appendChild(el);
+  while ($('chat').children.length > 120) $('chat').firstChild.remove();
+  $('chat').scrollTop = $('chat').scrollHeight;
+}
+function reply(text, spoken) { chat(text); say(spoken || text); }
+
+// ───────────────────────── indicators ─────────────────────────
+function ema(a, p) { const k = 2 / (p + 1), o = new Array(a.length); let e = a[0]; for (let i = 0; i < a.length; i++) { e = i ? a[i] * k + e * (1 - k) : a[0]; o[i] = e; } return o; }
+function rsi(a, p = 14) {
+  const o = new Array(a.length).fill(50); let g = 0, l = 0;
+  for (let i = 1; i < a.length; i++) {
+    const d = a[i] - a[i - 1], up = Math.max(d, 0), dn = Math.max(-d, 0);
+    if (i <= p) { g += up / p; l += dn / p; } else { g = (g * (p - 1) + up) / p; l = (l * (p - 1) + dn) / p; }
+    if (i >= p) o[i] = l === 0 ? 100 : 100 - 100 / (1 + g / l);
+  }
+  return o;
+}
+function atr(c, p = 14) {
+  const o = new Array(c.length).fill(0); let v = 0;
+  for (let i = 1; i < c.length; i++) {
+    const tr = Math.max(c[i].h - c[i].l, Math.abs(c[i].h - c[i - 1].c), Math.abs(c[i].l - c[i - 1].c));
+    v = i <= p ? v + tr / p : (v * (p - 1) + tr) / p; o[i] = v;
+  }
+  return o;
+}
+const avg = a => a.reduce((s, x) => s + x, 0) / (a.length || 1);
+
+// ───────────────────────── strategy engine ─────────────────────────
+// Evaluates the candle at index i (closed). Returns a signal or a description of the market.
+function analyze(c, i, hasVol) {
+  if (i < 210) return null;
+  const s = c.slice(Math.max(0, i - 300), i + 1);          // work on a window ending at i
+  const n = s.length, L = s[n - 1], P = s[n - 2];
+  const cl = s.map(x => x.c);
+  const e50 = ema(cl, 50), e200 = ema(cl, 200), r = rsi(cl, 14), A = atr(s, 14);
+  const a = A[n - 1], avgA = avg(A.slice(-100));
+  const out = {price: L.c, rsi: r[n - 1], trend: 'sideways', dir: null, score: 0, max: hasVol ? 7 : 6, reasons: [], support: null, resistance: null, note: ''};
+  const trendUp = e50[n - 1] > e200[n - 1] && L.c > e200[n - 1];
+  const trendDn = e50[n - 1] < e200[n - 1] && L.c < e200[n - 1];
+  out.trend = trendUp ? 'up' : trendDn ? 'down' : 'sideways';
+
+  // Support / resistance zones from swing points (clustered, touches counted)
+  const tol = 0.5 * a, zones = [];
+  for (let j = Math.max(3, n - 200); j < n - 4; j++) {
+    const win = s.slice(j - 3, j + 4);
+    const isH = s[j].h >= Math.max(...win.map(x => x.h)), isL = s[j].l <= Math.min(...win.map(x => x.l));
+    for (const p of [isH ? s[j].h : null, isL ? s[j].l : null]) {
+      if (p == null) continue;
+      const z = zones.find(z => Math.abs(z.p - p) <= tol);
+      if (z) { z.p = (z.p * z.t + p) / (z.t + 1); z.t++; } else zones.push({p, t: 1});
+    }
+  }
+  const key = zones.filter(z => z.t >= 2);
+  const below = key.filter(z => z.p < L.c).sort((x, y) => y.p - x.p)[0];
+  const above = key.filter(z => z.p > L.c).sort((x, y) => x.p - y.p)[0];
+  out.support = below ? below.p : null; out.resistance = above ? above.p : null;
+
+  // Market-condition filters
+  if (a < 0.3 * avgA) { out.note = 'market too quiet'; return out; }
+  if (L.h - L.l > 3.5 * a) { out.note = 'news-size spike, skipping'; return out; }
+
+  const body = Math.abs(L.c - L.o), rng = L.h - L.l || 1e-12;
+  const lowWk = Math.min(L.o, L.c) - L.l, upWk = L.h - Math.max(L.o, L.c);
+  const lo20 = Math.min(...s.slice(n - 21, n - 1).map(x => x.l)), hi20 = Math.max(...s.slice(n - 21, n - 1).map(x => x.h));
+  const m20 = avg(cl.slice(-20)), sd = Math.sqrt(avg(cl.slice(-20).map(x => (x - m20) ** 2)));
+  const bbLo = m20 - 2 * sd, bbHi = m20 + 2 * sd;
+  const vAvg = avg(s.slice(n - 21, n - 1).map(x => x.v));
+  // divergence: compare with the extreme of 5–20 bars ago
+  const seg = s.slice(n - 20, n - 5);
+  const jLo = seg.reduce((b, x, k) => x.l < seg[b].l ? k : b, 0) + (n - 20);
+  const jHi = seg.reduce((b, x, k) => x.h > seg[b].h ? k : b, 0) + (n - 20);
+
+  const side = (d) => {
+    const R = [], up = d === 'CALL';
+    const at = up ? (below && L.l <= below.p + tol && L.c > below.p) : (above && L.h >= above.p - tol && L.c < above.p);
+    const sweep = up ? (L.l < lo20 && L.c > lo20) : (L.h > hi20 && L.c < hi20);
+    const eng = up ? (L.c > L.o && P.c < P.o && L.c >= P.o && L.o <= P.c) : (L.c < L.o && P.c > P.o && L.c <= P.o && L.o >= P.c);
+    const pin = up ? (lowWk >= 2 * body && lowWk >= 0.5 * rng && L.c - L.l >= 0.6 * rng) : (upWk >= 2 * body && upWk >= 0.5 * rng && L.h - L.c >= 0.6 * rng);
+    const pa = eng || pin;
+    const rs = up ? (r[n - 1] < 35 || (L.l < s[jLo].l && r[n - 1] > r[jLo])) : (r[n - 1] > 65 || (L.h > s[jHi].h && r[n - 1] < r[jHi]));
+    const bb = up ? (L.l < bbLo && L.c > bbLo) : (L.h > bbHi && L.c < bbHi);
+    const vol = hasVol && L.v > 1.5 * vAvg;
+    const tr = up ? trendUp : trendDn, counter = up ? trendDn : trendUp;
+    if (tr) R.push('Trend with you (EMA 50/200)');
+    if (at) R.push(up ? 'At key support' : 'At key resistance');
+    if (sweep) R.push(up ? 'Liquidity sweep of lows' : 'Liquidity sweep of highs');
+    if (pa) R.push(eng ? (up ? 'Bullish engulfing' : 'Bearish engulfing') : (up ? 'Bullish pin bar' : 'Bearish pin bar'));
+    if (rs) R.push(up ? 'RSI oversold / bullish divergence' : 'RSI overbought / bearish divergence');
+    if (bb) R.push(up ? 'Bollinger re-entry from below' : 'Bollinger re-entry from above');
+    if (vol) R.push('Volume spike on the reaction');
+    // mandatory: price-action confirmation AND a location (level or liquidity sweep)
+    const ok = pa && (at || sweep);
+    const need = cfg.min + (counter ? 1 : 0);
+    return {ok: ok && R.length >= need, score: R.length, R, counter};
+  };
+  const cs = side('CALL'), ps = side('PUT');
+  if (cs.ok && (!ps.ok || cs.score > ps.score)) { out.dir = 'CALL'; out.score = cs.score; out.reasons = cs.R; out.counter = cs.counter; }
+  else if (ps.ok) { out.dir = 'PUT'; out.score = ps.score; out.reasons = ps.R; out.counter = ps.counter; }
+  else {
+    const best = cs.score >= ps.score ? cs : ps;
+    out.note = best.score ? `${best.score} confirmation${best.score > 1 ? 's' : ''} for ${cs.score >= ps.score ? 'CALL' : 'PUT'}, waiting for ${best.R.some(x => /engulf|pin/i.test(x)) ? 'a key level or sweep' : 'a rejection candle'}` : 'no setup';
+    out.partial = best.R;
+  }
+  return out;
+}
+
+// Backtest: run the exact engine over history, entry = next candle open, exit = close after `exp` candles.
+function backtest(c, hasVol) {
+  let w = 0, l = 0, d = 0;
+  for (let i = 210; i < c.length - cfg.exp; i++) {
+    const r = analyze(c, i, hasVol);
+    if (!r || !r.dir) continue;
+    const entry = c[i + 1].o, exit = c[i + cfg.exp].c;
+    const win = r.dir === 'CALL' ? exit > entry : exit < entry;
+    if (exit === entry) d++; else if (win) w++; else l++;
+    i += cfg.exp;                                           // one trade at a time per asset
+  }
+  return {w, l, d, n: w + l + d};
+}
+
+// ───────────────────────── markets & data feeds ─────────────────────────
+const M = {};                   // id -> {id, label, src, sym, c:[], bt, live:{w,l}, last}
+const cryptoList = cfg.crypto.split(',').map(x => x.trim().toUpperCase()).filter(Boolean);
+const fxList = cfg.key ? cfg.fx.split(',').map(x => x.trim().toUpperCase()).filter(Boolean).slice(0, 4) : [];
+for (const s of cryptoList) M[s] = {id: s, label: s.replace(/USDT$/, '/USDT'), src: 'binance', sym: s, c: [], live: {w: 0, l: 0}};
+for (const s of fxList) M[s] = {id: s, label: s, src: 'twelve', sym: s, c: [], live: {w: 0, l: 0}};
+
+const ALIASES = {bitcoin: 'BTCUSDT', btc: 'BTCUSDT', ethereum: 'ETHUSDT', eth: 'ETHUSDT', ether: 'ETHUSDT', solana: 'SOLUSDT', sol: 'SOLUSDT', bnb: 'BNBUSDT', binance: 'BNBUSDT',
+  ripple: 'XRPUSDT', xrp: 'XRPUSDT', doge: 'DOGEUSDT', dogecoin: 'DOGEUSDT', litecoin: 'LTCUSDT', ltc: 'LTCUSDT',
+  'euro dollar': 'EUR/USD', 'eur usd': 'EUR/USD', euro: 'EUR/USD', eurusd: 'EUR/USD', 'pound dollar': 'GBP/USD', 'gbp usd': 'GBP/USD', pound: 'GBP/USD', gbpusd: 'GBP/USD', cable: 'GBP/USD',
+  'dollar yen': 'USD/JPY', 'usd jpy': 'USD/JPY', yen: 'USD/JPY', usdjpy: 'USD/JPY', 'aussie': 'AUD/USD', 'aud usd': 'AUD/USD', audusd: 'AUD/USD', 'euro yen': 'EUR/JPY', 'dollar cad': 'USD/CAD', 'pound yen': 'GBP/JPY'};
+function findAsset(text) {
+  const t = ' ' + text.toLowerCase().replace(/[^a-z0-9/ ]/g, ' ').replace(/\s+/g, ' ') + ' ';
+  for (const [k, v] of Object.entries(ALIASES).sort((a, b) => b[0].length - a[0].length)) if (t.includes(' ' + k + ' ') && M[v]) return M[v];
+  for (const m of Object.values(M)) { const b = m.id.replace(/USDT$/, '').replace('/', '').toLowerCase(); if (t.replace(/ /g, '').includes(b)) return m; }
+  return null;
+}
+
+async function loadBinance(m) {
+  const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${m.sym}&interval=${cfg.tf}m&limit=1000`);
+  if (!r.ok) throw new Error(`Binance ${m.sym}: HTTP ${r.status}`);
+  const rows = await r.json();
+  const now = Date.now();
+  m.c = rows.filter(x => x[6] < now).map(x => ({t: x[0], o: +x[1], h: +x[2], l: +x[3], c: +x[4], v: +x[5]}));
+}
+function openBinanceWS() {
+  const syms = Object.values(M).filter(m => m.src === 'binance');
+  if (!syms.length) return;
+  const url = 'wss://stream.binance.com:9443/stream?streams=' + syms.map(m => m.sym.toLowerCase() + '@kline_' + cfg.tf + 'm').join('/');
+  const ws = new WebSocket(url);
+  ws.onopen = () => setFeed(true, 'live');
+  ws.onmessage = e => {
+    try {
+      const k = JSON.parse(e.data).data.k, m = M[k.s];
+      if (!m) return;
+      m.price = +k.c;
+      if (k.x) onClose(m, {t: k.t, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v});
+    } catch (err) {}
+  };
+  ws.onclose = () => { setFeed(false, 'reconnecting…'); setTimeout(openBinanceWS, 3000); };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+}
+const tdInterval = () => cfg.tf === '5' ? '5min' : '1min';
+async function fetchTwelve(m, size) {
+  const r = await fetch(`https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(m.sym)}&interval=${tdInterval()}&outputsize=${size}&timezone=UTC&apikey=${encodeURIComponent(cfg.key)}`);
+  const j = await r.json();
+  if (j.status === 'error' || !j.values) throw new Error(`Twelve Data ${m.sym}: ${j.message || 'no data'}`);
+  const now = Date.now();
+  return j.values.map(v => ({t: Date.parse(v.datetime.replace(' ', 'T') + 'Z'), o: +v.open, h: +v.high, l: +v.low, c: +v.close, v: 0}))
+    .filter(x => x.t + TFMS() <= now).sort((a, b) => a.t - b.t);
+}
+async function pollTwelve() {
+  // run shortly after every candle close; stagger requests to respect the free limit (8/min)
+  const fx = Object.values(M).filter(m => m.src === 'twelve');
+  if (!fx.length) return;
+  const next = Math.ceil(Date.now() / TFMS()) * TFMS() + 2500;
+  await sleep(next - Date.now());
+  for (const m of fx) {
+    try {
+      const rows = await fetchTwelve(m, 3);
+      const lastT = m.c.length ? m.c[m.c.length - 1].t : 0;
+      for (const x of rows) if (x.t > lastT) {
+        m.price = x.c;
+        const late = Date.now() - (x.t + TFMS());
+        onClose(m, x, late > 20000);
+      }
+    } catch (e) { showErr(e.message); }
+    await sleep(7600);
+  }
+  pollTwelve();
+}
+function setFeed(ok, t) { $('feedDot').classList.toggle('on', ok); $('feedTxt').textContent = t; }
+
+// ───────────────────────── live signal flow ─────────────────────────
+const open = [];                 // trades waiting for result
+const history = [];
+let current = null;
+
+function onClose(m, candle, stale) {
+  const last = m.c[m.c.length - 1];
+  if (last && candle.t <= last.t) return;
+  m.c.push(candle); if (m.c.length > 1200) m.c.shift();
+  settle(m);
+  const r = analyze(m.c, m.c.length - 1, m.src === 'binance');
+  m.last = r;
+  renderMarkets();
+  if (!r || !r.dir || stale) return;
+  if (open.some(t => t.m === m)) return;                    // one open trade per asset
+  const sig = {m, dir: r.dir, score: r.score, max: r.max, reasons: r.reasons, t: Date.now(), candleT: candle.t, entryIdxT: candle.t + TFMS(), entry: null, result: null, counter: r.counter};
+  open.push(sig); history.unshift(sig);
+  current = sig;
+  showSignal(sig);
+  beep(sig.dir === 'CALL');
+  const mins = cfg.exp * parseInt(cfg.tf, 10);
+  say(`${m.label}. ${sig.dir === 'CALL' ? 'Call, up' : 'Put, down'}. ${mins} minute${mins > 1 ? 's' : ''}. ${sig.score} confirmations. Enter now.`, true);
+  chat(`📢 ${m.label}: ${sig.dir} (${sig.dir === 'CALL' ? '⬆ UP' : '⬇ DOWN'}), expiry ${mins} min, ${sig.score}/${sig.max} confirmations\n• ${sig.reasons.join('\n• ')}`);
+  renderHist();
+}
+
+function settle(m) {
+  for (const s of open.filter(x => x.m === m)) {
+    const entryC = m.c.find(x => x.t === s.entryIdxT);
+    if (entryC && s.entry == null) s.entry = entryC.o;
+    const exitT = s.entryIdxT + (cfg.exp - 1) * TFMS();
+    const exitC = m.c.find(x => x.t === exitT);
+    if (s.entry != null && exitC) {
+      s.close = exitC.c;
+      s.result = s.close === s.entry ? 'DRAW' : (s.dir === 'CALL' ? s.close > s.entry : s.close < s.entry) ? 'WIN' : 'LOSS';
+      if (s.result === 'WIN') m.live.w++; else if (s.result === 'LOSS') m.live.l++;
+      open.splice(open.indexOf(s), 1);
+      const txt = `${m.label} ${s.dir}: ${s.result === 'WIN' ? '✅ WIN' : s.result === 'LOSS' ? '❌ LOSS' : '➖ DRAW (refund)'}`;
+      chat(txt); say(`${m.label} ${s.dir.toLowerCase()}, ${s.result.toLowerCase()}.`);
+      renderHist(); renderStats();
+    }
+  }
+}
+
+function showSignal(s) {
+  $('sigAsset').textContent = s.m.label;
+  const mins = cfg.exp * parseInt(cfg.tf, 10);
+  $('sigSub').textContent = `Expiry ${mins} min · ${s.score}/${s.max} confirmations${s.counter ? ' · counter-trend (extra confirmation required)' : ''}`;
+  const d = $('sigDir'); d.className = 'dir ' + (s.dir === 'CALL' ? 'call' : 'put'); d.textContent = s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT';
+  $('sigReasons').innerHTML = '';
+  for (const r of s.reasons) { const c = document.createElement('span'); c.className = 'chip ok'; c.textContent = '✓ ' + r; $('sigReasons').appendChild(c); }
+}
+setInterval(() => {
+  const now = new Date();
+  $('clock').textContent = now.toLocaleTimeString();
+  if (current) {
+    const left = Math.max(0, Math.round((current.entryIdxT + 10000 - Date.now()) / 1000));
+    $('sigCount').textContent = left;
+    $('sigCount').style.color = left > 0 ? 'var(--green)' : 'var(--muted)';
+    $('sigAge').textContent = left > 0 ? 'enter within the first 10 seconds of the new candle' : 'entry window closed; waiting for result';
+    if (left === 0 && current.result) { $('sigDir').className = 'dir wait'; $('sigDir').textContent = current.result; }
+  }
+}, 250);
+
+function renderHist() {
+  $('hist').innerHTML = history.slice(0, 100).map(s => `<tr><td>${new Date(s.t).toLocaleTimeString()}</td><td>${s.m.label}</td>
+    <td class="${s.dir === 'CALL' ? 'up' : 'down'}"><b>${s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT'}</b></td><td class="num">${s.score}/${s.max}</td>
+    <td class="num">${s.entry != null ? fmt(s.entry) : '…'}</td><td class="num">${s.close != null ? fmt(s.close) : '…'}</td>
+    <td class="${s.result === 'WIN' ? 'up' : s.result === 'LOSS' ? 'down' : 'muted'}">${s.result || 'running'}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">No signals yet.</td></tr>';
+}
+const fmt = x => x >= 100 ? x.toFixed(2) : x >= 1 ? x.toFixed(4) : x.toPrecision(5);
+function totals() {
+  const done = history.filter(s => s.result === 'WIN' || s.result === 'LOSS');
+  const w = done.filter(s => s.result === 'WIN').length;
+  return {n: history.length, done: done.length, w, l: done.length - w, pnl: w * cfg.pay / 100 - (done.length - w)};
+}
+function renderStats() {
+  const t = totals(), be = 100 / (1 + cfg.pay / 100);
+  $('stTrades').textContent = t.n;
+  $('stWin').textContent = t.done ? (100 * t.w / t.done).toFixed(1) + '%' : '—';
+  $('stWin').className = t.done ? (100 * t.w / t.done >= be ? 'up' : 'down') : '';
+  $('stBe').textContent = be.toFixed(1) + '%';
+  $('stPnl').textContent = (t.pnl >= 0 ? '+' : '') + t.pnl.toFixed(2);
+  $('stPnl').className = t.pnl >= 0 ? 'up' : 'down';
+}
+function renderMarkets() {
+  const be = 100 / (1 + cfg.pay / 100);
+  $('mkts').innerHTML = Object.values(M).map(m => {
+    const r = m.last, bt = m.bt, lv = m.live, ln = lv.w + lv.l;
+    const btPct = bt && (bt.w + bt.l) ? 100 * bt.w / (bt.w + bt.l) : null;
+    return `<tr><td><b>${m.label}</b></td><td class="num">${m.price != null ? fmt(m.price) : m.c.length ? fmt(m.c[m.c.length - 1].c) : '…'}</td>
+      <td class="${r && r.trend === 'up' ? 'up' : r && r.trend === 'down' ? 'down' : 'muted'}">${r ? r.trend : '…'}</td>
+      <td class="num">${r ? r.rsi.toFixed(0) : '…'}</td>
+      <td class="num ${btPct == null ? 'muted' : btPct >= be ? 'up' : 'down'}">${btPct == null ? (bt ? '0 trades' : '…') : btPct.toFixed(0) + '% (' + (bt.w + bt.l) + ')'}</td>
+      <td class="num">${ln ? (100 * lv.w / ln).toFixed(0) + '% (' + ln + ')' : '—'}</td></tr>`;
+  }).join('');
+}
+
+// ───────────────────────── voice & text commands ─────────────────────────
+function describe(m) {
+  const r = m.last || analyze(m.c, m.c.length - 1, m.src === 'binance');
+  if (!r) return {text: `${m.label}: still loading data.`};
+  const lv = [r.support ? `support ${fmt(r.support)}` : null, r.resistance ? `resistance ${fmt(r.resistance)}` : null].filter(Boolean).join(', ');
+  const bt = m.bt && (m.bt.w + m.bt.l) ? ` Backtest ${(100 * m.bt.w / (m.bt.w + m.bt.l)).toFixed(0)}% over ${m.bt.w + m.bt.l} trades.` : '';
+  const state = r.dir ? `${r.dir} signal with ${r.score} confirmations.` : (r.note ? r.note.charAt(0).toUpperCase() + r.note.slice(1) + '.' : 'No setup.');
+  const text = `${m.label} at ${fmt(r.price)}. Trend ${r.trend}. RSI ${r.rsi.toFixed(0)}.${lv ? ' Key levels: ' + lv + '.' : ''} ${state}${bt}`;
+  return {text};
+}
+function command(raw) {
+  const t = raw.toLowerCase().trim();
+  if (!t) return;
+  chat(raw, 'me');
+  if (/^(help|what can you do|commands)/.test(t)) return reply('You can say: status, win rate, analyze bitcoin, analyze euro dollar, best market, last signal, which markets, stop, start, mute, unmute, clear.', 'You can say: status, win rate, analyze and a market name, best market, last signal, which markets, stop, start, mute or clear.');
+  if (/\b(mute|quiet|silence|be quiet)\b/.test(t)) { voiceOn = false; setMute(); return chat('Voice off. Say or type "unmute" to turn it back on.'); }
+  if (/\b(unmute|voice on|speak)\b/.test(t)) { voiceOn = true; setMute(); return reply('Voice on.'); }
+  if (/\b(stop|pause)\b/.test(t)) { paused = true; return reply('Paused. I will not announce new signals until you say start.'); }
+  if (/\b(start|resume|continue)\b/.test(t)) { if (!started) { start(); return; } paused = false; return reply('Resumed. Watching all markets.'); }
+  if (/\bclear\b/.test(t)) { $('chat').innerHTML = ''; return; }
+  if (/(win ?rate|results|performance|score|how.*doing|profit)/.test(t)) {
+    const x = totals(), be = 100 / (1 + cfg.pay / 100);
+    if (!x.done) return reply(`No finished signals yet this session. Break-even at ${cfg.pay}% payout is ${be.toFixed(1)}% wins.`);
+    const wr = 100 * x.w / x.done;
+    return reply(`${x.w} wins, ${x.l} losses: ${wr.toFixed(1)}% win rate. Break-even is ${be.toFixed(1)}%. Net ${x.pnl >= 0 ? 'plus' : 'minus'} ${Math.abs(x.pnl).toFixed(2)} stakes.`);
+  }
+  if (/(last|latest|current) signal/.test(t)) {
+    const s = history[0];
+    return reply(s ? `Last signal: ${s.m.label} ${s.dir}, ${s.score} confirmations, ${s.result ? 'result ' + s.result : 'still running'}.` : 'No signals yet.');
+  }
+  if (/(which|what|list).*(market|pair|asset|coin)/.test(t)) return reply('Watching ' + Object.values(M).map(m => m.label).join(', ') + '.');
+  if (/(best|strongest|top)/.test(t)) {
+    const be = 100 / (1 + cfg.pay / 100);
+    const r = Object.values(M).filter(m => m.bt && m.bt.w + m.bt.l >= 5).sort((a, b) => b.bt.w / (b.bt.w + b.bt.l) - a.bt.w / (a.bt.w + a.bt.l))[0];
+    if (!r) return reply('Not enough backtest trades yet to rank markets.');
+    const p = 100 * r.bt.w / (r.bt.w + r.bt.l);
+    return reply(`Best backtest right now: ${r.label} at ${p.toFixed(0)}% over ${r.bt.w + r.bt.l} trades${p < be ? ', which is still below break-even, so be careful' : ''}.`);
+  }
+  if (/(status|what.*happening|market|analy[sz]e|check|how is|what about)/.test(t) || findAsset(t)) {
+    const m = findAsset(t);
+    if (m) return reply(describe(m).text);
+    const trending = Object.values(M).filter(m => m.last).map(m => `${m.label} ${m.last.trend}`).join(', ');
+    return reply(`${paused ? 'Paused. ' : ''}Watching ${Object.keys(M).length} markets. ${open.length} signal${open.length === 1 ? '' : 's'} running. ${trending ? 'Trends: ' + trending + '.' : ''}`);
+  }
+  reply(`Sorry, I didn't get that. Say "help" to hear what I can do.`);
+}
+$('sendBtn').onclick = () => { command($('chatIn').value); $('chatIn').value = ''; };
+$('chatIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('sendBtn').click(); });
+
+let rec = null, listening = false;
+$('micBtn').onclick = () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return reply('Voice input is not supported in this browser. Use Chrome or Edge, or type your command.');
+  if (listening) { listening = false; rec && rec.stop(); $('micBtn').className = ''; $('micBtn').textContent = '🎤 Talk'; return; }
+  rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = false;
+  rec.onresult = e => { const r = e.results[e.results.length - 1]; if (r.isFinal) command(r[0].transcript); };
+  rec.onerror = e => { if (e.error === 'not-allowed') { listening = false; reply('Microphone permission was blocked. Allow the microphone for this page and try again.'); } };
+  rec.onend = () => { if (listening) try { rec.start(); } catch (e) {} else { $('micBtn').className = ''; $('micBtn').textContent = '🎤 Talk'; } };
+  listening = true; $('micBtn').className = 'mic-on'; $('micBtn').textContent = '🎙 Listening…';
+  try { rec.start(); } catch (e) {}
+};
+
+// ───────────────────────── start ─────────────────────────
+let started = false, paused = false;
+const onCloseOrig = onClose;
+async function start() {
+  if (started) return;
+  started = true; $('startBtn').disabled = true; $('startBtn').textContent = 'Running';
+  try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  reply('Starting. Loading market history and backtesting every market. This takes a few seconds.', 'Starting. Loading market history.');
+  setFeed(false, 'loading…');
+  const errs = [];
+  for (const m of Object.values(M)) {
+    try {
+      if (m.src === 'binance') await loadBinance(m);
+      else { m.c = await fetchTwelve(m, 800); await sleep(7600); }
+      m.bt = backtest(m.c, m.src === 'binance');
+      m.last = analyze(m.c, m.c.length - 1, m.src === 'binance');
+      renderMarkets();
+    } catch (e) { errs.push(e.message); }
+  }
+  if (errs.length) showErr(errs.join(' · ') + (errs.some(e => /Binance/.test(e)) ? ' (Binance may be blocked in your country or network.)' : ''));
+  openBinanceWS();
+  if (Object.values(M).some(m => m.src === 'twelve')) { pollTwelve(); if (!Object.values(M).some(m => m.src === 'binance')) setFeed(true, 'live (forex)'); }
+  renderStats();
+  const be = 100 / (1 + cfg.pay / 100);
+  const tot = Object.values(M).reduce((a, m) => { if (m.bt) { a.w += m.bt.w; a.l += m.bt.l; } return a; }, {w: 0, l: 0});
+  const p = tot.w + tot.l ? 100 * tot.w / (tot.w + tot.l) : 0;
+  reply(`Ready. Watching ${Object.keys(M).length} markets on the ${cfg.tf} minute chart. Backtest on recent history: ${tot.w + tot.l} trades, ${p.toFixed(1)}% wins, break-even ${be.toFixed(1)}%. I will speak every signal. Say help for commands.`);
+  if (!cfg.key) chat('Tip: add a free Twelve Data API key in Settings to also get forex signals (EUR/USD, GBP/USD…).');
+}
+// pause gate: keep analysing and settling, but don't announce while paused
+onClose = function (m, c, stale) { return onCloseOrig(m, c, stale || paused); };
+$('startBtn').onclick = start;
+renderMarkets(); renderStats();
+chat('Hi! I analyse the markets with 7 confirmations: trend, support/resistance, liquidity sweeps, price-action candles, RSI, Bollinger Bands and volume. Press Start, then talk to me with the 🎤 button or type below.');
+})();
+</script>
+</body>
+</html>

@@ -155,6 +155,8 @@ const bind = (id, k, num) => { const el = $(id); el.value = cfg[k]; el.addEventL
 bind('cfgTf', 'tf'); bind('cfgExp', 'maxExp', 1); bind('cfgMin', 'min', 1); bind('cfgPay', 'pay', 1); bind('cfgCrypto', 'crypto'); bind('cfgKey', 'key'); bind('cfgFx', 'fx');
 bind('cfgMode', 'mode'); bind('cfgCMode', 'cmode'); bind('cfgTopN', 'topN', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1); bind('cfgDayLoss', 'dayLoss', 1); bind('cfgMaxOpen', 'maxOpen', 1); bind('cfgCpm', 'cpm', 1);
 // Ready-made futures preset: open the page with #futures → Forex/spot mode (entry, SL, TP), 4h candles, top 100 Binance coins.
+// Memecoin preset: #memes → SL/TP mode, 1h candles, Binance memecoins
+if (location.hash === '#memes') { Object.assign(cfg, {mode: 'forex', tf: '60', cmode: 'list', crypto: 'DOGEUSDT,SHIBUSDT,PEPEUSDT,WIFUSDT,BONKUSDT,FLOKIUSDT,BOMEUSDT,MEMEUSDT,NEIROUSDT,PNUTUSDT,TURBOUSDT,PENGUUSDT,TRUMPUSDT,ACTUSDT,1MBABYDOGEUSDT,PEOPLEUSDT,DOGSUSDT,NOTUSDT,1000SATSUSDT,1000CATUSDT,BANANAS31USDT,PUMPUSDT'}); save(); for (const [id, k] of [['cfgMode', 'mode'], ['cfgTf', 'tf'], ['cfgCMode', 'cmode'], ['cfgCrypto', 'crypto']]) $(id).value = cfg[k]; }
 if (location.hash === '#futures') { Object.assign(cfg, {mode: 'forex', tf: '240', cmode: 'top', topN: 100}); save(); for (const [id, k] of [['cfgMode', 'mode'], ['cfgTf', 'tf'], ['cfgCMode', 'cmode'], ['cfgTopN', 'topN']]) $(id).value = cfg[k]; }
 if (!['1', '5', '15', '30', '60', '240'].includes(String(cfg.tf))) cfg.tf = '1';
 const tfLabel = () => cfg.tf === '240' ? '4 hour' : cfg.tf === '60' ? '1 hour' : cfg.tf + ' minute';

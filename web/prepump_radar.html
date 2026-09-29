@@ -67,7 +67,7 @@ tbody tr{cursor:pointer} tbody tr:hover{background:var(--panel2)} tbody tr.sel{b
 </head>
 <body>
 <header>
-  <h1>🛰️ Pre-Pump Radar <span class="muted" style="font-size:12px;font-weight:400">Binance USDT-M futures</span></h1>
+  <h1>🛰️ Pre-Pump Radar <span class="muted" style="font-size:12px;font-weight:400" id="subTitle">Binance USDT-M futures</span></h1>
   <div class="status">
     <span class="pill"><span class="dot" id="dot"></span><span id="stTxt">not started</span></span>
     <span class="pill">scanned <b id="nScan">0</b></span>
@@ -83,6 +83,7 @@ tbody tr{cursor:pointer} tbody tr:hover{background:var(--panel2)} tbody tr.sel{b
   <details>
     <summary>Settings (saved in this browser)</summary>
     <div class="settings">
+      <label>Memecoins only (1/0) <input id="cMeme" type="number" min="0" max="1" step="1"></label>
       <label>Min 24h volume ($M) <input id="cMinVol" type="number" min="1" step="1"></label>
       <label>Deep-analyse top N coins <input id="cTopN" type="number" min="5" max="60" step="5"></label>
       <label>Rescan every (minutes) <input id="cEvery" type="number" min="10" max="240" step="5"></label>
@@ -125,13 +126,18 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const F = 'https://fapi.binance.com';
 
 // ───────── settings ─────────
-const DEF = {minVol: 10, topN: 30, every: 30, minPot: 60, bal: 1000, risk: 1, lev: 3, trail: 3, voice: 1};
+const DEF = {meme: 0, minVol: 10, topN: 30, every: 30, minPot: 60, bal: 1000, risk: 1, lev: 3, trail: 3, voice: 1};
 let cfg = {...DEF};
 try { Object.assign(cfg, JSON.parse(localStorage.getItem('radarCfg') || '{}')); } catch (e) {}
 const save = () => { try { localStorage.setItem('radarCfg', JSON.stringify(cfg)); } catch (e) {} };
-for (const [id, k] of [['cMinVol', 'minVol'], ['cTopN', 'topN'], ['cEvery', 'every'], ['cMinPot', 'minPot'], ['cBal', 'bal'], ['cRisk', 'risk'], ['cLev', 'lev'], ['cTrail', 'trail']]) {
+const MEMES = new Set('DOGEUSDT,1000SHIBUSDT,1000PEPEUSDT,WIFUSDT,1000BONKUSDT,1000FLOKIUSDT,BOMEUSDT,MEMEUSDT,NEIROUSDT,1000SATSUSDT,PNUTUSDT,TURBOUSDT,BRETTUSDT,POPCATUSDT,MEWUSDT,MOODENGUSDT,GOATUSDT,FARTCOINUSDT,TRUMPUSDT,PENGUUSDT,ACTUSDT,1MBABYDOGEUSDT,PEOPLEUSDT,DOGSUSDT,NOTUSDT,HIPPOUSDT,CHILLGUYUSDT,SPXUSDT,1000CATUSDT,BANUSDT,PONKEUSDT,MYROUSDT,SLERFUSDT,1000WHYUSDT,1000CHEEMSUSDT,1000RATSUSDT,1000XUSDT,ORDIUSDT,MELANIAUSDT,VINEUSDT,KOMAUSDT,SUNDOGUSDT,BABYUSDT,PUMPUSDT,USELESSUSDT'.split(','));
+// One-tap memecoin preset: open the page with #memes
+try { Object.assign(cfg, JSON.parse(localStorage.getItem('radarCfg') || '{}')); } catch (e) {}
+if (location.hash === '#memes') { Object.assign(cfg, {meme: 1, minVol: 3, topN: 60}); try { localStorage.setItem('radarCfg', JSON.stringify(cfg)); } catch (e) {} }
+for (const [id, k] of [['cMeme', 'meme'], ['cMinVol', 'minVol'], ['cTopN', 'topN'], ['cEvery', 'every'], ['cMinPot', 'minPot'], ['cBal', 'bal'], ['cRisk', 'risk'], ['cLev', 'lev'], ['cTrail', 'trail']]) {
   const el = $(id); el.value = cfg[k]; el.addEventListener('change', () => { const v = parseFloat(el.value); if (!isNaN(v)) { cfg[k] = v; save(); } });
 }
+if (cfg.meme) $('subTitle').textContent = 'Memecoins · Binance USDT-M futures';
 const showErr = m => { $('errBox').textContent = m || ''; $('errBox').style.display = m ? 'block' : 'none'; };
 const setSt = (on, t) => { $('dot').classList.toggle('on', on); $('stTxt').textContent = t; };
 
@@ -256,6 +262,9 @@ async function scan() {
     if (!universe.length) {
       const ex = await get('/fapi/v1/exchangeInfo');
       universe = ex.symbols.filter(s => s.contractType === 'PERPETUAL' && s.quoteAsset === 'USDT' && s.status === 'TRADING').map(s => s.symbol);
+    }
+    if (cfg.meme) {
+      universe = universe.filter(s => MEMES.has(s));
     }
     const [tick, prem] = await Promise.all([get('/fapi/v1/ticker/24hr'), get('/fapi/v1/premiumIndex')]);
     const vol = {}; for (const t of tick) vol[t.symbol] = +t.quoteVolume;

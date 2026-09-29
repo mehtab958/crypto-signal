@@ -175,3 +175,7 @@ Output:
 - **Trigger:** a 4h close outside the 5-day range on ≥ 1.5× volume.
 
 It gives an early "breaking out now" alert while the candle is forming and a confirmed BUY/SELL on the close, with a stop, a trailing stop (× 4h ATR, no fixed target), optional scale-outs and position sizing. A paper tracker records every triggered signal to its trailing-stop exit.
+
+### Memecoin presets
+- Pre-Pump Radar: open with `#memes` to rank only Binance-futures memecoins (DOGE, 1000PEPE, WIF, 1000BONK, 1000SHIB, 1000FLOKI, BOME, NEIRO, PNUT, POPCAT, FARTCOIN, TRUMP, PENGU and ~30 more).
+- Signal Assistant: open with `#memes` for entry/SL/TP signals on the Binance-spot memecoins on the 1h chart.

@@ -117,4 +117,21 @@ A strategy may signal only if all of these hold:
 
 Combinations that drop below break-even live after 10+ trades are switched off, and pairs are re-validated every 100 candles.
 
+**Quality checklist (30 checks, 7 groups):**
+- market condition
+- trend alignment, including the higher timeframe
+- momentum
+- candle quality
+- location
+- volume/taker flow (crypto)
+- session
+
+A signal must pass the set percentage (70 % by default) of the checks that apply. The tournament backtests with the checklist on, so it is validated too.
+
+**Risk rules:**
+- daily loss limit
+- max open trades
+- a 30-minute pause after 3 losses in a row
+- a 3-candle rest for a pair after a loss
+
 In testing on 20 pure random-walk markets (480 combinations) nothing passed, while a market with a real repeating pattern was detected and traded correctly.

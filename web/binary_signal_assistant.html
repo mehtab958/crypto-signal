@@ -45,6 +45,7 @@ input,select,textarea{background:var(--bg);color:var(--text);border:1px solid va
 .reasons{padding:0 18px 16px;display:flex;flex-wrap:wrap;gap:6px}
 .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12.5px}
 .chip.ok{border-color:rgba(22,199,132,.5);color:#9ff0cd}
+.chip.bad{border-color:rgba(234,57,67,.45);color:#ffb3b8}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--panel)}
@@ -89,12 +90,15 @@ td.num,th.num{text-align:right}
       <label>Crypto pairs <select id="cfgCMode"><option value="top">All (top by volume)</option><option value="list">Only my list</option></select></label>
       <label>How many top crypto pairs <input id="cfgTopN" type="number" min="5" max="200" step="5"></label>
       <label>Min trades to validate a strategy <input id="cfgMinBt" type="number" min="10" max="200" step="5"></label>
+      <label>Quality checks that must pass (%) <input id="cfgQ" type="number" min="50" max="100" step="5"></label>
+      <label>Daily loss limit (stakes) <input id="cfgDayLoss" type="number" min="1" max="50" step="1"></label>
+      <label>Max open trades at once <input id="cfgMaxOpen" type="number" min="1" max="10" step="1"></label>
       <label class="wide">My crypto list (Binance symbols, used with "Only my list") <input id="cfgCrypto"></label>
       <label class="wide">Twelve Data API key (free at twelvedata.com; needed for forex and gold) <input id="cfgKey" placeholder="paste key to enable forex"></label>
       <label>Twelve Data requests/min (free = 8) <input id="cfgCpm" type="number" min="8" step="1"></label>
       <label class="wide">Forex pairs ("ALL" = 29 majors, minors, gold and silver; comma-separated otherwise) <input id="cfgFx"></label>
     </div>
-    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Changes apply after you reload the page and press Start. Every pair runs a tournament of 6 strategies × expiries. A strategy may only give signals if it beat break-even on the first 60% of history AND again on the last 40% (which it never saw), with enough trades to be statistically convincing. Strategies that fall below break-even live are switched off.</p>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Changes apply after you reload the page and press Start. Every signal must also pass your % of 30 quality checks (market, trend, momentum, candle, location, volume, session); the tournament backtests with this checklist switched on. Risk rules: daily loss limit, max open trades, a 30-minute pause after 3 losses in a row, and a 3-candle rest for a pair after it loses. Every pair runs a tournament of 6 strategies × expiries. A strategy may only give signals if it beat break-even on the first 60% of history AND again on the last 40% (which it never saw), with enough trades to be statistically convincing. Strategies that fall below break-even live are switched off.</p>
   </details>
 
   <div class="grid">
@@ -142,13 +146,13 @@ const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ───────────────────────── settings ─────────────────────────
-const DEF = {tf: '1', exp: 1, min: 4, pay: 85, cmode: 'top', topN: 50, maxExp: 5, minVal: 20, crypto: 'BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,LTCUSDT', key: '', cpm: 8, fx: 'ALL', voice: 1};
+const DEF = {tf: '1', exp: 1, min: 4, pay: 85, cmode: 'top', topN: 50, maxExp: 5, minVal: 20, qmin: 70, dayLoss: 5, maxOpen: 3, crypto: 'BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,LTCUSDT', key: '', cpm: 8, fx: 'ALL', voice: 1};
 let cfg = {...DEF};
 try { Object.assign(cfg, JSON.parse(localStorage.getItem('bsaCfg') || '{}')); } catch (e) {}
 const save = () => { try { localStorage.setItem('bsaCfg', JSON.stringify(cfg)); } catch (e) {} };
 const bind = (id, k, num) => { const el = $(id); el.value = cfg[k]; el.addEventListener('change', () => { cfg[k] = num ? (parseFloat(el.value) || DEF[k]) : el.value.trim(); save(); }); };
 bind('cfgTf', 'tf'); bind('cfgExp', 'maxExp', 1); bind('cfgMin', 'min', 1); bind('cfgPay', 'pay', 1); bind('cfgCrypto', 'crypto'); bind('cfgKey', 'key'); bind('cfgFx', 'fx');
-bind('cfgCMode', 'cmode'); bind('cfgTopN', 'topN', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgCpm', 'cpm', 1);
+bind('cfgCMode', 'cmode'); bind('cfgTopN', 'topN', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1); bind('cfgDayLoss', 'dayLoss', 1); bind('cfgMaxOpen', 'maxOpen', 1); bind('cfgCpm', 'cpm', 1);
 if (!['1', '5', '15', '30', '60'].includes(String(cfg.tf))) cfg.tf = '1';
 const tfLabel = () => cfg.tf === '60' ? '1 hour' : cfg.tf + ' minute';
 const beRate = () => 100 / (1 + cfg.pay / 100);
@@ -299,13 +303,29 @@ function analyze(c, i, hasVol) {
 function indicators(c) {
   const n = c.length, cl = c.map(x => x.c);
   const x = {e50: ema(cl, 50), e200: ema(cl, 200), rsi: rsi(cl, 14), atr: atr(c, 14), bbLo: new Array(n).fill(NaN), bbHi: new Array(n).fill(NaN), lo20: new Array(n).fill(NaN), hi20: new Array(n).fill(NaN)};
+  x.e20 = ema(cl, 20);
+  const e12 = ema(cl, 12), e26 = ema(cl, 26), macd = cl.map((_, i) => e12[i] - e26[i]), sigl = ema(macd, 9);
+  x.hist = macd.map((v, i) => v - sigl[i]);
+  x.sma240 = new Array(n).fill(NaN); x.atrAvg = new Array(n).fill(NaN); x.bbw = new Array(n).fill(NaN); x.bbwAvg = new Array(n).fill(NaN);
+  x.stoch = new Array(n).fill(50); x.er = new Array(n).fill(0); x.hi50 = new Array(n).fill(NaN); x.lo50 = new Array(n).fill(NaN); x.vAvg = new Array(n).fill(NaN);
+  let s240 = 0, sA = 0;
+  for (let i = 0; i < n; i++) {
+    s240 += cl[i]; if (i >= 240) s240 -= cl[i - 240]; if (i >= 239) x.sma240[i] = s240 / 240;
+    sA += x.atr[i]; if (i >= 100) sA -= x.atr[i - 100]; if (i >= 99) x.atrAvg[i] = sA / 100;
+    if (i >= 14) { let lo = Infinity, hi = -Infinity; for (let k = i - 13; k <= i; k++) { lo = Math.min(lo, c[k].l); hi = Math.max(hi, c[k].h); } x.stoch[i] = hi > lo ? 100 * (cl[i] - lo) / (hi - lo) : 50; }
+    if (i >= 20) { let path = 0; for (let k = i - 19; k <= i; k++) path += Math.abs(cl[k] - cl[k - 1]); x.er[i] = path ? Math.abs(cl[i] - cl[i - 20]) / path : 0; }
+    if (i >= 50) { let lo = Infinity, hi = -Infinity, v = 0; for (let k = i - 50; k < i; k++) { lo = Math.min(lo, c[k].l); hi = Math.max(hi, c[k].h); } x.hi50[i] = hi; x.lo50[i] = lo; }
+    if (i >= 20) { let v = 0; for (let k = i - 20; k < i; k++) v += c[k].v || 0; x.vAvg[i] = v / 20; }
+  }
   for (let i = 20; i < n; i++) {
     let sum = 0, sq = 0, lo = Infinity, hi = -Infinity;
     for (let k = i - 19; k <= i; k++) { sum += cl[k]; sq += cl[k] * cl[k]; }
     for (let k = i - 20; k < i; k++) { if (c[k].l < lo) lo = c[k].l; if (c[k].h > hi) hi = c[k].h; }
     const m = sum / 20, sd = Math.sqrt(Math.max(0, sq / 20 - m * m));
-    x.bbLo[i] = m - 2 * sd; x.bbHi[i] = m + 2 * sd; x.lo20[i] = lo; x.hi20[i] = hi;
+    x.bbLo[i] = m - 2 * sd; x.bbHi[i] = m + 2 * sd; x.lo20[i] = lo; x.hi20[i] = hi; x.bbw[i] = m ? 4 * sd / m : 0;
   }
+  let sw = 0, cw = 0;
+  for (let i = 0; i < n; i++) { if (!isNaN(x.bbw[i])) { sw += x.bbw[i]; cw++; } if (i >= 120 && !isNaN(x.bbw[i - 100])) { sw -= x.bbw[i - 100]; cw--; } if (cw >= 50) x.bbwAvg[i] = sw / cw; }
   return x;
 }
 const bull = k => k.c > k.o, bear = k => k.c < k.o;
@@ -343,6 +363,55 @@ const STRATS = {
       if (k.h > x.hi20[i] && k.c < x.hi20[i] && k.h - k.c > 0.6 * rg) return {dir: 'PUT', why: ['Swept the 20-candle high', 'Closed back below it, in the bottom of the candle']};
       return null; }},
 };
+// ───────────── 30 quality checks (7 groups). A check that cannot be measured (no volume for forex) is skipped. ─────────────
+function quality(c, i, x, dir, src) {
+  const d = dir === 'CALL' ? 1 : -1, k = c[i], p = c[i - 1], rg = k.h - k.l || 1e-12, body = Math.abs(k.c - k.o), a = x.atr[i] || 1e-12;
+  const up = d === 1, hasV = src === 'binance' && k.v > 0, hasTaker = hasV && k.V != null;
+  const upWick = k.h - Math.max(k.o, k.c), dnWick = Math.min(k.o, k.c) - k.l, against = up ? upWick : dnWick;
+  let run = 0; for (let j = i; j > i - 8 && j > 0; j--) { if ((c[j].c - c[j].o) * d > 0) run++; else break; }
+  const hr = new Date(k.t + TFMS()).getUTCHours(), dow = new Date(k.t).getUTCDay();
+  const C = [
+    // Market condition
+    ['Market', 'Volatility not dead (ATR ≥ 0.5× its 100-candle average)', a >= 0.5 * x.atrAvg[i]],
+    ['Market', 'Volatility not extreme (ATR ≤ 2.5× average)', a <= 2.5 * x.atrAvg[i]],
+    ['Market', 'Signal candle is not a news spike (range ≤ 3 ATR)', rg <= 3 * a],
+    ['Market', 'Bollinger width not squeezed flat', !(x.bbw[i] < 0.5 * x.bbwAvg[i])],
+    ['Market', 'Price is actually moving (efficiency ratio ≥ 0.1)', x.er[i] >= 0.1],
+    // Trend alignment
+    ['Trend', 'Price on the right side of EMA 200', (k.c - x.e200[i]) * d > 0],
+    ['Trend', 'EMA 50 on the right side of EMA 200', (x.e50[i] - x.e200[i]) * d > 0],
+    ['Trend', 'EMA 20 sloping your way', (x.e20[i] - x.e20[i - 3]) * d > 0],
+    ['Trend', 'Higher timeframe agrees (price vs 240-candle average)', (k.c - x.sma240[i]) * d > 0],
+    ['Trend', 'Room to move: ≥ 1 ATR to the 50-candle extreme', up ? x.hi50[i] - k.c >= a : k.c - x.lo50[i] >= a],
+    // Momentum
+    ['Momentum', up ? 'RSI not overbought (< 70)' : 'RSI not oversold (> 30)', up ? x.rsi[i] < 70 : x.rsi[i] > 30],
+    ['Momentum', 'RSI turning your way', (x.rsi[i] - x.rsi[i - 1]) * d > 0],
+    ['Momentum', 'MACD histogram turning your way', (x.hist[i] - x.hist[i - 1]) * d > 0],
+    ['Momentum', up ? 'Stochastic not overbought (< 80)' : 'Stochastic not oversold (> 20)', up ? x.stoch[i] < 80 : x.stoch[i] > 20],
+    ['Momentum', 'Closed beyond the previous close', (k.c - p.c) * d > 0],
+    // Candle quality
+    ['Candle', 'Closed in the strong 40% of its range', up ? (k.c - k.l) / rg >= 0.6 : (k.h - k.c) / rg >= 0.6],
+    ['Candle', 'Decisive body (≥ 30% of range)', body >= 0.3 * rg],
+    ['Candle', 'No big rejection wick against you', against <= Math.max(body, 0.25 * rg)],
+    ['Candle', 'Not a doji (range ≥ 0.5 ATR)', rg >= 0.5 * a],
+    ['Candle', 'Not late: fewer than 5 candles already in your direction', run < 5],
+    ['Candle', 'Previous candle was not a huge move against you', !((p.c - p.o) * d < 0 && Math.abs(p.c - p.o) > 1.5 * a)],
+    // Location
+    ['Location', up ? 'Not buying right under the 20-candle high' : 'Not selling right above the 20-candle low', up ? x.hi20[i] - k.c >= 0.5 * a || k.c > x.hi20[i] : k.c - x.lo20[i] >= 0.5 * a || k.c < x.lo20[i]],
+    ['Location', 'Not over-extended (within 2 ATR of EMA 20)', Math.abs(k.c - x.e20[i]) <= 2 * a],
+    ['Location', 'Inside the Bollinger Bands or just re-entered', k.c <= x.bbHi[i] && k.c >= x.bbLo[i]],
+    // Volume (crypto only)
+    ['Volume', 'Volume at least average', hasV ? k.v >= x.vAvg[i] : null],
+    ['Volume', 'Volume rising vs the previous candle', hasV ? k.v > (p.v || 0) : null],
+    ['Volume', up ? 'Buyers in control (taker buy ≥ 50%)' : 'Sellers in control (taker buy ≤ 50%)', hasTaker ? (up ? k.V / k.v >= 0.5 : k.V / k.v <= 0.5) : null],
+    ['Volume', 'Volume not a climax (≤ 4× average)', hasV ? k.v <= 4 * x.vAvg[i] : null],
+    // Session
+    ['Session', 'Not in the thin rollover hour (21:00–22:00 UTC)', src === 'binance' ? null : !(hr === 21)],
+    ['Session', src === 'binance' ? 'Not a quiet weekend night (Sat/Sun 00–06 UTC)' : 'Market open (not the weekend)', src === 'binance' ? !((dow === 0 || dow === 6) && hr < 6) : !(dow === 6 || (dow === 0 && hr < 22))],
+  ];
+  const used = C.filter(q => q[2] !== null), passed = used.filter(q => q[2]);
+  return {pass: passed.length, total: used.length, pct: used.length ? 100 * passed.length / used.length : 0, ok: used.length && 100 * passed.length / used.length >= cfg.qmin, checks: C};
+}
 const EXPIRIES = () => [1, 2, 3, 5].filter(e => e <= Math.max(1, cfg.maxExp || 5));
 // Lower bound of the Wilson score interval: a win rate the strategy is very likely above.
 function wilsonLB(w, n, z = 1.0) { if (!n) return 0; const p = w / n, d = 1 + z * z / n; return (p + z * z / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / d; }
@@ -356,7 +425,7 @@ async function tournament(m) {
     const sig = new Array(n).fill(null);
     for (let i = 210, k = 0; i < n - 1; i++, k++) {
       if (key === 'confluence' && k % 40 === 39) await sleep(0);
-      const r = S.fn(c, i, x, hv); if (r) sig[i] = r.dir;
+      const r = S.fn(c, i, x, hv); if (r && quality(c, i, x, r.dir, m.src).ok) sig[i] = r.dir;
     }
     for (const exp of EXPIRIES()) {
       const tr = {w: 0, l: 0}, te = {w: 0, l: 0};
@@ -422,7 +491,7 @@ async function loadBinance(m, limit) {
   if (!r.ok) throw new Error(`Binance ${m.sym}: HTTP ${r.status}`);
   const rows = await r.json();
   const now = Date.now();
-  m.c = rows.filter(x => x[6] < now).map(x => ({t: x[0], o: +x[1], h: +x[2], l: +x[3], c: +x[4], v: +x[5]}));
+  m.c = rows.filter(x => x[6] < now).map(x => ({t: x[0], o: +x[1], h: +x[2], l: +x[3], c: +x[4], v: +x[5], V: x[9] != null ? +x[9] : undefined}));
 }
 const conns = [];
 function openBinanceWS(list, idx) {
@@ -436,7 +505,7 @@ function openBinanceWS(list, idx) {
       const k = JSON.parse(e.data).data.k, m = M[k.s];
       if (!m) return;
       m.price = +k.c;
-      if (k.x) onClose(m, {t: k.t, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v});
+      if (k.x) onClose(m, {t: k.t, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v, V: k.V != null ? +k.V : undefined});
     } catch (err) {}
   };
   ws.onclose = () => { conns[idx] = false; upd(); setTimeout(() => openBinanceWS(list, idx), 3000); };
@@ -485,6 +554,18 @@ const history = [];
 let current = null;
 
 let pendingSigs = [], flushT = null;
+// Risk rules: protect the balance even when signals look good.
+const risk = {streak: 0, coolUntil: 0, day: '', pnl: 0, said: ''};
+function riskOk(m, candle) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (risk.day !== today) { risk.day = today; risk.pnl = 0; }
+  const note = msg => { if (risk.said !== msg) { risk.said = msg; reply(msg); } };
+  if (risk.pnl <= -cfg.dayLoss) { note(`Daily loss limit reached (${risk.pnl.toFixed(2)} stakes). I will stop signalling until tomorrow. Protecting your balance matters more than the next trade.`); return false; }
+  if (Date.now() < risk.coolUntil) return false;
+  if (open.length >= cfg.maxOpen) return false;
+  if (m.lossUntil && candle.t < m.lossUntil) return false;
+  return true;
+}
 function onClose(m, candle, stale) {
   const last = m.c[m.c.length - 1];
   if (last && candle.t <= last.t) return;
@@ -494,12 +575,16 @@ function onClose(m, candle, stale) {
   if (++m.sinceBt >= 100) tournament(m);                   // re-validate every 100 candles
   scheduleRender();
   if (stale || !m.approved || !m.approved.length) return;  // no validated strategy → stay silent
+  if (!riskOk(m, candle)) return;
   if (open.some(t => t.m === m)) return;                    // one open trade per asset
   const w = m.c.slice(-400), x = indicators(w), i = w.length - 1, hv = m.src === 'binance';
   for (const combo of m.approved) {
     if (killed(m, combo)) continue;
     const r = STRATS[combo.key].fn(w, i, x, hv);
-    if (r) { pendingSigs.push({m, r, candle, combo}); break; }
+    if (!r) continue;
+    const q = quality(w, i, x, r.dir, m.src);
+    if (!q.ok) { m.qBlocked = (m.qBlocked || 0) + 1; continue; }
+    pendingSigs.push({m, r, candle, combo, q}); break;
   }
   if (pendingSigs.length && !flushT) flushT = setTimeout(flushSignals, 400);   // many pairs close at the same second
 }
@@ -510,12 +595,12 @@ function flushSignals() {
   const list = pendingSigs.sort((a, b) => b.combo.lb - a.combo.lb);
   pendingSigs = [];
   if (!list.length) return;
-  list.forEach(({m, r, candle, combo}, k) => {
-    const sig = {m, dir: r.dir, reasons: r.why, strat: STRATS[combo.key].name, key: combo.key, exp: combo.exp, val: 100 * combo.teWr, valN: combo.te.w + combo.te.l, lb: 100 * combo.lb,
+  list.forEach(({m, r, candle, combo, q}, k) => {
+    const sig = {m, dir: r.dir, reasons: r.why, q, strat: STRATS[combo.key].name, key: combo.key, exp: combo.exp, val: 100 * combo.teWr, valN: combo.te.w + combo.te.l, lb: 100 * combo.lb,
       t: Date.now(), candleT: candle.t, entryIdxT: candle.t + TFMS(), entry: null, result: null};
     open.push(sig); history.unshift(sig);
     if (k === 0) { current = sig; showSignal(sig); beep(sig.dir === 'CALL'); }
-    chat(`📢 ${m.label}: ${sig.dir} (${sig.dir === 'CALL' ? '⬆ UP' : '⬇ DOWN'}), expiry ${durTxt(minsOf(sig.exp))}\nStrategy: ${sig.strat}, won ${sig.val.toFixed(0)}% of ${sig.valN} unseen test trades (99% confidence floor ${sig.lb.toFixed(0)}%)\n• ${sig.reasons.join('\n• ')}`);
+    chat(`📢 ${m.label}: ${sig.dir} (${sig.dir === 'CALL' ? '⬆ UP' : '⬇ DOWN'}), expiry ${durTxt(minsOf(sig.exp))}\nStrategy: ${sig.strat}, won ${sig.val.toFixed(0)}% of ${sig.valN} unseen test trades (99% confidence floor ${sig.lb.toFixed(0)}%)\nQuality: ${q.pass}/${q.total} checks passed\n• ${sig.reasons.join('\n• ')}${q.checks.filter(z => z[2] === false).length ? '\nFailed checks: ' + q.checks.filter(z => z[2] === false).map(z => z[1]).join('; ') : ''}`);
   });
   const top = list.slice(0, 3).map(x => `${x.m.label}, ${x.r.dir === 'CALL' ? 'call, up' : 'put, down'}, ${durTxt(minsOf(x.combo.exp))}`);
   say(`${top.join('. Also ')}. Enter now.${list.length > 3 ? ` Plus ${list.length - 3} more on screen.` : ''}`, true);
@@ -532,7 +617,12 @@ function settle(m) {
       s.close = exitC.c;
       s.result = s.close === s.entry ? 'DRAW' : (s.dir === 'CALL' ? s.close > s.entry : s.close < s.entry) ? 'WIN' : 'LOSS';
       const lk = s.key + ':' + s.exp, l = (m.live2 = m.live2 || {})[lk] = (m.live2[lk] || {w: 0, l: 0});
-      if (s.result === 'WIN') { m.live.w++; l.w++; } else if (s.result === 'LOSS') { m.live.l++; l.l++; }
+      if (s.result === 'WIN') { m.live.w++; l.w++; risk.streak = 0; risk.pnl += cfg.pay / 100; }
+      else if (s.result === 'LOSS') {
+        m.live.l++; l.l++; risk.pnl -= 1; risk.streak++;
+        m.lossUntil = exitC.t + 3 * TFMS();                      // rest this pair for 3 candles after a loss
+        if (risk.streak >= 3) { risk.coolUntil = Date.now() + 30 * 60000; risk.streak = 0; setTimeout(() => reply('3 losses in a row. I am pausing all signals for 30 minutes so you do not chase losses.'), 1500); }
+      }
       open.splice(open.indexOf(s), 1);
       chat(`${m.label} ${s.dir}: ${s.result === 'WIN' ? '✅ WIN' : s.result === 'LOSS' ? '❌ LOSS' : '➖ DRAW (refund)'}`);
       say(`${m.label} ${s.dir.toLowerCase()}, ${s.result.toLowerCase()}.`);
@@ -547,10 +637,15 @@ function settle(m) {
 
 function showSignal(s) {
   $('sigAsset').textContent = s.m.label;
-  $('sigSub').textContent = `Expiry ${durTxt(minsOf(s.exp))} · ${s.strat} · won ${s.val.toFixed(0)}% of ${s.valN} unseen test trades`;
+  $('sigSub').textContent = `Expiry ${durTxt(minsOf(s.exp))} · ${s.strat} · won ${s.val.toFixed(0)}% of ${s.valN} unseen test trades · quality ${s.q.pass}/${s.q.total}`;
   const d = $('sigDir'); d.className = 'dir ' + (s.dir === 'CALL' ? 'call' : 'put'); d.textContent = s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT';
   $('sigReasons').innerHTML = '';
   for (const r of s.reasons) { const c = document.createElement('span'); c.className = 'chip ok'; c.textContent = '✓ ' + r; $('sigReasons').appendChild(c); }
+  for (const q of s.q.checks) {
+    if (q[2] === null) continue;
+    const c = document.createElement('span'); c.className = 'chip' + (q[2] ? ' ok' : ' bad');
+    c.textContent = (q[2] ? '✓ ' : '✗ ') + q[1]; c.title = q[0]; $('sigReasons').appendChild(c);
+  }
 }
 setInterval(() => {
   const now = new Date();

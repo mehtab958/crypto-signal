@@ -83,6 +83,7 @@ td.num,th.num{text-align:right}
   <details>
     <summary>Settings (saved in this browser)</summary>
     <div class="settings">
+      <label class="wide">Trading mode <select id="cfgMode" style="width:auto"><option value="binary">Binary options: CALL/PUT with expiry</option><option value="forex">Forex / spot: entry, stop-loss and take-profit</option></select></label>
       <label>Candle timeframe <select id="cfgTf"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select></label>
       <label>Longest expiry to test (candles) <input id="cfgExp" type="number" min="1" max="5" step="1"></label>
       <label>Min confirmations (of 7) <input id="cfgMin" type="number" min="3" max="7" step="1"></label>
@@ -118,8 +119,8 @@ td.num,th.num{text-align:right}
         <div class="stats">
           <div class="stat"><b id="stTrades">0</b><span>signals</span></div>
           <div class="stat"><b id="stWin">—</b><span>live win rate</span></div>
-          <div class="stat"><b id="stBe">—</b><span>break-even win rate</span></div>
-          <div class="stat"><b id="stPnl">0</b><span>net (stake units)</span></div>
+          <div class="stat"><b id="stBe">—</b><span id="stBeL">break-even win rate</span></div>
+          <div class="stat"><b id="stPnl">0</b><span id="stPnlL">net (stake units)</span></div>
         </div>
         <div class="scroll"><table><thead><tr><th>Time</th><th>Asset</th><th>Signal</th><th>Strategy</th><th class="num">Validated</th><th class="num">Entry</th><th class="num">Close</th><th>Result</th></tr></thead><tbody id="hist"><tr><td colspan="8" class="muted">No signals yet.</td></tr></tbody></table></div>
       </section>
@@ -146,16 +147,18 @@ const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ───────────────────────── settings ─────────────────────────
-const DEF = {tf: '1', exp: 1, min: 4, pay: 85, cmode: 'top', topN: 50, maxExp: 5, minVal: 20, qmin: 70, dayLoss: 5, maxOpen: 3, crypto: 'BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,LTCUSDT', key: '', cpm: 8, fx: 'ALL', voice: 1};
+const DEF = {mode: 'binary', tf: '1', exp: 1, min: 4, pay: 85, cmode: 'top', topN: 50, maxExp: 5, minVal: 20, qmin: 70, dayLoss: 5, maxOpen: 3, crypto: 'BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,LTCUSDT', key: '', cpm: 8, fx: 'ALL', voice: 1};
 let cfg = {...DEF};
 try { Object.assign(cfg, JSON.parse(localStorage.getItem('bsaCfg') || '{}')); } catch (e) {}
 const save = () => { try { localStorage.setItem('bsaCfg', JSON.stringify(cfg)); } catch (e) {} };
 const bind = (id, k, num) => { const el = $(id); el.value = cfg[k]; el.addEventListener('change', () => { cfg[k] = num ? (parseFloat(el.value) || DEF[k]) : el.value.trim(); save(); }); };
 bind('cfgTf', 'tf'); bind('cfgExp', 'maxExp', 1); bind('cfgMin', 'min', 1); bind('cfgPay', 'pay', 1); bind('cfgCrypto', 'crypto'); bind('cfgKey', 'key'); bind('cfgFx', 'fx');
-bind('cfgCMode', 'cmode'); bind('cfgTopN', 'topN', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1); bind('cfgDayLoss', 'dayLoss', 1); bind('cfgMaxOpen', 'maxOpen', 1); bind('cfgCpm', 'cpm', 1);
+bind('cfgMode', 'mode'); bind('cfgCMode', 'cmode'); bind('cfgTopN', 'topN', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1); bind('cfgDayLoss', 'dayLoss', 1); bind('cfgMaxOpen', 'maxOpen', 1); bind('cfgCpm', 'cpm', 1);
 if (!['1', '5', '15', '30', '60'].includes(String(cfg.tf))) cfg.tf = '1';
 const tfLabel = () => cfg.tf === '60' ? '1 hour' : cfg.tf + ' minute';
 const beRate = () => 100 / (1 + cfg.pay / 100);
+const FX = () => cfg.mode === 'forex';
+const RRS = [1.5, 2, 3], MAXH = 48, SLATR = 1.5;
 const entryWin = () => cfg.tf === '1' ? 10 : cfg.tf === '5' ? 20 : 30;
 const TFMS = () => parseInt(cfg.tf, 10) * 60000;
 const showErr = m => { $('errBox').textContent = m || ''; $('errBox').style.display = m ? 'block' : 'none'; };
@@ -427,6 +430,7 @@ async function tournament(m) {
       if (key === 'confluence' && k % 40 === 39) await sleep(0);
       const r = S.fn(c, i, x, hv); if (r && quality(c, i, x, r.dir, m.src).ok) sig[i] = r.dir;
     }
+    if (FX()) { for (const rr of RRS) out.push(fxCombo(key, rr, simForex(c, x, sig, rr, split, m.src))); continue; }
     for (const exp of EXPIRIES()) {
       const tr = {w: 0, l: 0}, te = {w: 0, l: 0};
       for (let i = 210; i < n - exp; i++) {
@@ -440,7 +444,7 @@ async function tournament(m) {
       const minTrain = Math.max(20, cfg.minVal), minTest = Math.max(12, Math.round(cfg.minVal * 0.6));
       const lb = wilsonLB(w, all, 2.33);                                 // 99% one-sided confidence floor
       const ok = tn >= minTrain && sn >= minTest && tr.w / tn >= be + 0.02 && te.w / sn >= be + 0.02 && lb >= be;
-      out.push({key, exp, tr, te, trWr: tn ? tr.w / tn : 0, teWr: sn ? te.w / sn : 0, n: all, lb, ok});
+      out.push({id: key + ':' + exp, key, exp, tr, te, nTest: sn, trWr: tn ? tr.w / tn : 0, teWr: sn ? te.w / sn : 0, n: all, lb, ok});
     }
   }
   m.combos = out;
@@ -449,12 +453,48 @@ async function tournament(m) {
   m.sinceBt = 0;
   scheduleRender();
 }
-function killed(m, o) { const l = m.live2 && m.live2[o.key + ':' + o.exp]; return !!(l && l.w + l.l >= 10 && l.w / (l.w + l.l) < beRate() / 100); }
+// Forex/spot simulation: entry next open, stop 1.5 ATR, target rr × stop, max 48 candles; spread/fees deducted.
+function simForex(c, x, sig, rr, split, src) {
+  const n = c.length, tr = [], te = [];
+  for (let i = 210; i < n - 2; i++) {
+    if (!sig[i]) continue;
+    const d = sig[i] === 'CALL' ? 1 : -1, en = c[i + 1].o, rk = SLATR * x.atr[i];
+    if (!(rk > 0)) continue;
+    const sl = en - d * rk, tp = en + d * rr * rk;
+    let R = null, j = i + 1;
+    for (; j < Math.min(n, i + 1 + MAXH); j++) {
+      const k = c[j];
+      if (d === 1 ? k.l <= sl : k.h >= sl) { R = -1; break; }          // stop first if both touched (conservative)
+      if (d === 1 ? k.h >= tp : k.l <= tp) { R = rr; break; }
+    }
+    if (R === null) { j = Math.min(n - 1, i + MAXH); R = (c[j].c - en) * d / rk; }
+    R -= (src === 'binance' ? 0.001 : 0.0001) * en / rk;                  // round-trip fee (crypto) or spread (forex)
+    (i < split ? tr : te).push(R);
+    i = j;
+  }
+  return {tr, te};
+}
+const meanOf = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+function fxCombo(key, rr, {tr, te}) {
+  const all = tr.concat(te), mu = meanOf(all), sd = Math.sqrt(meanOf(all.map(v => (v - mu) ** 2)));
+  const lb = all.length ? mu - 2.33 * sd / Math.sqrt(all.length) : -9;        // 99% one-sided floor on profit per trade
+  const minTrain = Math.max(20, cfg.minVal), minTest = Math.max(12, Math.round(cfg.minVal * 0.6));
+  const ok = tr.length >= minTrain && te.length >= minTest && meanOf(tr) >= 0.05 && meanOf(te) >= 0.05 && lb > 0;
+  return {id: key + ':rr' + rr, key, rr, nTest: te.length, n: all.length, teMean: meanOf(te), trMean: meanOf(tr), teWr: te.length ? te.filter(v => v > 0).length / te.length : 0, lb, ok};
+}
+const comboLabel = c => FX() ? `${STRATS[c.key].name} · 1:${c.rr}` : `${STRATS[c.key].name} · ${durTxt(minsOf(c.exp))}`;
+const comboMetric = c => FX() ? `${c.teMean >= 0 ? '+' : ''}${c.teMean.toFixed(2)}R/trade, ${(100 * c.teWr).toFixed(0)}% wins (${c.nTest})` : `${(100 * c.teWr).toFixed(0)}% (${c.nTest})`;
+const comboGood = c => FX() ? c.teMean > 0 : c.teWr * 100 >= beRate();
+function killed(m, o) {
+  const l = m.live2 && m.live2[o.id];
+  if (!l || l.n < 10) return false;
+  return FX() ? l.r / l.n < 0 : l.w / l.n < beRate() / 100;
+}
 function edgeOf(m) {
   const a = m.approved && m.approved[0];
-  if (a) return {ok: true, p: 100 * a.teWr, n: a.te.w + a.te.l, combo: a};
+  if (a) return {ok: true, p: 100 * a.teWr, n: a.nTest, combo: a};
   const best = (m.combos || []).slice().sort((x, y) => y.lb - x.lb)[0];
-  return {ok: false, p: best ? 100 * best.teWr : null, n: best ? best.te.w + best.te.l : 0, combo: best, why: best ? 'no strategy passed validation' : 'still testing'};
+  return {ok: false, p: best ? 100 * best.teWr : null, n: best ? best.nTest : 0, combo: best, why: best ? 'no strategy passed validation' : 'still testing'};
 }
 
 // ───────────────────────── markets & data feeds ─────────────────────────
@@ -584,7 +624,7 @@ function onClose(m, candle, stale) {
     if (!r) continue;
     const q = quality(w, i, x, r.dir, m.src);
     if (!q.ok) { m.qBlocked = (m.qBlocked || 0) + 1; continue; }
-    pendingSigs.push({m, r, candle, combo, q}); break;
+    pendingSigs.push({m, r, candle, combo, q, atr: x.atr[i]}); break;
   }
   if (pendingSigs.length && !flushT) flushT = setTimeout(flushSignals, 400);   // many pairs close at the same second
 }
@@ -595,50 +635,73 @@ function flushSignals() {
   const list = pendingSigs.sort((a, b) => b.combo.lb - a.combo.lb);
   pendingSigs = [];
   if (!list.length) return;
-  list.forEach(({m, r, candle, combo, q}, k) => {
-    const sig = {m, dir: r.dir, reasons: r.why, q, strat: STRATS[combo.key].name, key: combo.key, exp: combo.exp, val: 100 * combo.teWr, valN: combo.te.w + combo.te.l, lb: 100 * combo.lb,
+  list.forEach(({m, r, candle, combo, q, atr: a}, k) => {
+    const d = r.dir === 'CALL' ? 1 : -1;
+    const sig = {m, dir: r.dir, reasons: r.why, q, strat: STRATS[combo.key].name, key: combo.key, id: combo.id, exp: combo.exp, rr: combo.rr, val: 100 * combo.teWr, valN: combo.nTest, lb: combo.lb, metric: comboMetric(combo),
       t: Date.now(), candleT: candle.t, entryIdxT: candle.t + TFMS(), entry: null, result: null};
+    if (FX()) { const rk = SLATR * a; sig.entry = candle.c; sig.risk = rk; sig.sl = candle.c - d * rk; sig.tp = candle.c + d * combo.rr * rk; sig.bars = 0; }
     open.push(sig); history.unshift(sig);
     if (k === 0) { current = sig; showSignal(sig); beep(sig.dir === 'CALL'); }
-    chat(`📢 ${m.label}: ${sig.dir} (${sig.dir === 'CALL' ? '⬆ UP' : '⬇ DOWN'}), expiry ${durTxt(minsOf(sig.exp))}\nStrategy: ${sig.strat}, won ${sig.val.toFixed(0)}% of ${sig.valN} unseen test trades (99% confidence floor ${sig.lb.toFixed(0)}%)\nQuality: ${q.pass}/${q.total} checks passed\n• ${sig.reasons.join('\n• ')}${q.checks.filter(z => z[2] === false).length ? '\nFailed checks: ' + q.checks.filter(z => z[2] === false).map(z => z[1]).join('; ') : ''}`);
+    const head = FX() ? `📢 ${m.label}: ${d > 0 ? 'BUY' : 'SELL'} at ${fmt(sig.entry)}\nStop-loss ${fmt(sig.sl)} · Take-profit ${fmt(sig.tp)} (1:${sig.rr}) · close after ${MAXH} candles if neither is hit`
+                      : `📢 ${m.label}: ${sig.dir} (${sig.dir === 'CALL' ? '⬆ UP' : '⬇ DOWN'}), expiry ${durTxt(minsOf(sig.exp))}`;
+    chat(`${head}\nStrategy: ${sig.strat}, unseen test: ${sig.metric}\nQuality: ${q.pass}/${q.total} checks passed\n• ${sig.reasons.join('\n• ')}${q.checks.filter(z => z[2] === false).length ? '\nFailed checks: ' + q.checks.filter(z => z[2] === false).map(z => z[1]).join('; ') : ''}`);
   });
-  const top = list.slice(0, 3).map(x => `${x.m.label}, ${x.r.dir === 'CALL' ? 'call, up' : 'put, down'}, ${durTxt(minsOf(x.combo.exp))}`);
+  const top = list.slice(0, 3).map(x => FX()
+    ? `${x.m.label}, ${x.r.dir === 'CALL' ? 'buy' : 'sell'}. Stop ${fmt(open.find(o => o.m === x.m).sl)}. Target ${fmt(open.find(o => o.m === x.m).tp)}`
+    : `${x.m.label}, ${x.r.dir === 'CALL' ? 'call, up' : 'put, down'}, ${durTxt(minsOf(x.combo.exp))}`);
   say(`${top.join('. Also ')}. Enter now.${list.length > 3 ? ` Plus ${list.length - 3} more on screen.` : ''}`, true);
   renderHist();
 }
 
 function settle(m) {
   for (const s of open.filter(x => x.m === m)) {
+    if (s.rr) {                                                      // forex / spot trade
+      const d = s.dir === 'CALL' ? 1 : -1;
+      for (const k of m.c.filter(x => x.t >= s.entryIdxT && x.t > (s.lastT || 0))) {
+        s.lastT = k.t; s.bars++;
+        if (d === 1 ? k.l <= s.sl : k.h >= s.sl) { s.R = -1; s.close = s.sl; s.result = 'LOSS'; break; }
+        if (d === 1 ? k.h >= s.tp : k.l <= s.tp) { s.R = s.rr; s.close = s.tp; s.result = 'WIN'; break; }
+        if (s.bars >= MAXH) { s.close = k.c; s.R = (k.c - s.entry) * d / s.risk; s.result = s.R >= 0 ? 'WIN' : 'LOSS'; s.timed = true; break; }
+      }
+      if (s.result) finish(m, s, s.R);
+      continue;
+    }
     const entryC = m.c.find(x => x.t === s.entryIdxT);
     if (entryC && s.entry == null) s.entry = entryC.o;
-    const exitT = s.entryIdxT + (s.exp - 1) * TFMS();
-    const exitC = m.c.find(x => x.t === exitT);
+    const exitC = m.c.find(x => x.t === s.entryIdxT + (s.exp - 1) * TFMS());
     if (s.entry != null && exitC) {
       s.close = exitC.c;
       s.result = s.close === s.entry ? 'DRAW' : (s.dir === 'CALL' ? s.close > s.entry : s.close < s.entry) ? 'WIN' : 'LOSS';
-      const lk = s.key + ':' + s.exp, l = (m.live2 = m.live2 || {})[lk] = (m.live2[lk] || {w: 0, l: 0});
-      if (s.result === 'WIN') { m.live.w++; l.w++; risk.streak = 0; risk.pnl += cfg.pay / 100; }
-      else if (s.result === 'LOSS') {
-        m.live.l++; l.l++; risk.pnl -= 1; risk.streak++;
-        m.lossUntil = exitC.t + 3 * TFMS();                      // rest this pair for 3 candles after a loss
-        if (risk.streak >= 3) { risk.coolUntil = Date.now() + 30 * 60000; risk.streak = 0; setTimeout(() => reply('3 losses in a row. I am pausing all signals for 30 minutes so you do not chase losses.'), 1500); }
-      }
-      open.splice(open.indexOf(s), 1);
-      chat(`${m.label} ${s.dir}: ${s.result === 'WIN' ? '✅ WIN' : s.result === 'LOSS' ? '❌ LOSS' : '➖ DRAW (refund)'}`);
-      say(`${m.label} ${s.dir.toLowerCase()}, ${s.result.toLowerCase()}.`);
-      if (killed(m, {key: s.key, exp: s.exp})) {
-        m.approved = (m.approved || []).filter(o => !(o.key === s.key && o.exp === s.exp));
-        reply(`${m.label}: the ${s.strat} strategy is below break-even live after ${l.w + l.l} trades, so I switched it off.`);
-      }
-      renderHist(); renderStats(); scheduleRender();
+      finish(m, s, s.result === 'WIN' ? cfg.pay / 100 : s.result === 'LOSS' ? -1 : 0);
     }
   }
+}
+function finish(m, s, pnl) {
+  const l = (m.live2 = m.live2 || {})[s.id] = (m.live2[s.id] || {w: 0, n: 0, r: 0});
+  if (s.result !== 'DRAW') { l.n++; l.r += pnl; if (s.result === 'WIN') l.w++; }
+  s.pnl = pnl; risk.pnl += pnl;
+  if (s.result === 'WIN') { m.live.w++; risk.streak = 0; }
+  else if (s.result === 'LOSS') {
+    m.live.l++; risk.streak++;
+    m.lossUntil = (s.lastT || Date.now()) + 3 * TFMS();            // rest this pair for 3 candles after a loss
+    if (risk.streak >= 3) { risk.coolUntil = Date.now() + 30 * 60000; risk.streak = 0; setTimeout(() => reply('3 losses in a row. I am pausing all signals for 30 minutes so you do not chase losses.'), 1500); }
+  }
+  open.splice(open.indexOf(s), 1);
+  const res = s.rr ? (s.timed ? `⏱ closed at time limit, ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}R` : s.result === 'WIN' ? `✅ take-profit hit, +${pnl.toFixed(1)}R` : '❌ stop-loss hit, −1R')
+                   : s.result === 'WIN' ? '✅ WIN' : s.result === 'LOSS' ? '❌ LOSS' : '➖ DRAW (refund)';
+  chat(`${m.label} ${s.rr ? (s.dir === 'CALL' ? 'BUY' : 'SELL') : s.dir}: ${res}`);
+  say(s.rr ? `${m.label}: ${s.timed ? 'closed on time' : s.result === 'WIN' ? 'target hit' : 'stopped out'}.` : `${m.label} ${s.dir.toLowerCase()}, ${s.result.toLowerCase()}.`);
+  if (killed(m, s)) {
+    m.approved = (m.approved || []).filter(o => o.id !== s.id);
+    reply(`${m.label}: the ${s.strat} strategy is losing money live after ${l.n} trades, so I switched it off.`);
+  }
+  renderHist(); renderStats(); scheduleRender();
 }
 
 function showSignal(s) {
   $('sigAsset').textContent = s.m.label;
-  $('sigSub').textContent = `Expiry ${durTxt(minsOf(s.exp))} · ${s.strat} · won ${s.val.toFixed(0)}% of ${s.valN} unseen test trades · quality ${s.q.pass}/${s.q.total}`;
-  const d = $('sigDir'); d.className = 'dir ' + (s.dir === 'CALL' ? 'call' : 'put'); d.textContent = s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT';
+  $('sigSub').textContent = (s.rr ? `Entry ${fmt(s.entry)} · SL ${fmt(s.sl)} · TP ${fmt(s.tp)} (1:${s.rr})` : `Expiry ${durTxt(minsOf(s.exp))}`) + ` · ${s.strat} · unseen test ${s.metric} · quality ${s.q.pass}/${s.q.total}`;
+  const d = $('sigDir'); d.className = 'dir ' + (s.dir === 'CALL' ? 'call' : 'put'); d.textContent = s.rr ? (s.dir === 'CALL' ? '⬆ BUY' : '⬇ SELL') : (s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT');
   $('sigReasons').innerHTML = '';
   for (const r of s.reasons) { const c = document.createElement('span'); c.className = 'chip ok'; c.textContent = '✓ ' + r; $('sigReasons').appendChild(c); }
   for (const q of s.q.checks) {
@@ -661,22 +724,23 @@ setInterval(() => {
 
 function renderHist() {
   $('hist').innerHTML = history.slice(0, 100).map(s => `<tr><td>${new Date(s.t).toLocaleTimeString()}</td><td>${s.m.label}</td>
-    <td class="${s.dir === 'CALL' ? 'up' : 'down'}"><b>${s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT'}</b></td><td>${s.strat} · ${durTxt(minsOf(s.exp))}</td><td class="num">${s.val.toFixed(0)}%</td>
+    <td class="${s.dir === 'CALL' ? 'up' : 'down'}"><b>${s.rr ? (s.dir === 'CALL' ? '⬆ BUY' : '⬇ SELL') : (s.dir === 'CALL' ? '⬆ CALL' : '⬇ PUT')}</b></td><td>${s.strat} · ${s.rr ? '1:' + s.rr : durTxt(minsOf(s.exp))}</td><td class="num">${s.rr ? (s.lb >= 0 ? '+' : '') + s.lb.toFixed(2) + 'R' : s.val.toFixed(0) + '%'}</td>
     <td class="num">${s.entry != null ? fmt(s.entry) : '…'}</td><td class="num">${s.close != null ? fmt(s.close) : '…'}</td>
-    <td class="${s.result === 'WIN' ? 'up' : s.result === 'LOSS' ? 'down' : 'muted'}">${s.result || 'running'}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">No signals yet.</td></tr>';
+    <td class="${s.result === 'WIN' ? 'up' : s.result === 'LOSS' ? 'down' : 'muted'}">${s.result ? s.result + (s.rr ? ` (${s.pnl >= 0 ? '+' : ''}${s.pnl.toFixed(2)}R)` : '') : 'running'}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">No signals yet.</td></tr>';
 }
 const fmt = x => x >= 100 ? x.toFixed(2) : x >= 1 ? x.toFixed(4) : x.toPrecision(5);
 function totals() {
   const done = history.filter(s => s.result === 'WIN' || s.result === 'LOSS');
   const w = done.filter(s => s.result === 'WIN').length;
-  return {n: history.length, done: done.length, w, l: done.length - w, pnl: w * cfg.pay / 100 - (done.length - w)};
+  return {n: history.length, done: done.length, w, l: done.length - w, pnl: done.reduce((a, s) => a + (s.pnl || 0), 0)};
 }
 function renderStats() {
   const t = totals(), be = 100 / (1 + cfg.pay / 100);
   $('stTrades').textContent = t.n;
   $('stWin').textContent = t.done ? (100 * t.w / t.done).toFixed(1) + '%' : '—';
   $('stWin').className = t.done ? (100 * t.w / t.done >= be ? 'up' : 'down') : '';
-  $('stBe').textContent = be.toFixed(1) + '%';
+  if (FX()) { $('stBeL').textContent = 'average profit per trade'; $('stPnlL').textContent = 'net (R = risk units)'; $('stBe').textContent = t.done ? (t.pnl / t.done >= 0 ? '+' : '') + (t.pnl / t.done).toFixed(2) + 'R' : '—'; $('stBe').className = t.done ? (t.pnl >= 0 ? 'up' : 'down') : ''; $('stWin').className = t.done ? (t.pnl >= 0 ? 'up' : 'down') : ''; }
+  else $('stBe').textContent = be.toFixed(1) + '%';
   $('stPnl').textContent = (t.pnl >= 0 ? '+' : '') + t.pnl.toFixed(2);
   $('stPnl').className = t.pnl >= 0 ? 'up' : 'down';
 }
@@ -685,12 +749,12 @@ function renderMarkets() {
   const rows = Object.values(M).map(m => ({m, e: edgeOf(m)})).sort((a, b) => (b.e.ok - a.e.ok) || ((b.e.combo ? b.e.combo.lb : -1) - (a.e.combo ? a.e.combo.lb : -1)));
   $('mkts').innerHTML = rows.map(({m, e}) => {
     const r = m.last, lv = m.live, ln = lv.w + lv.l, c = e.combo;
-    const strat = c ? `${STRATS[c.key].name} · ${durTxt(minsOf(c.exp))}` : (m.combos ? 'none qualifies' : 'testing…');
+    const strat = c ? comboLabel(c) : (m.combos ? 'none qualifies' : 'testing…');
     return `<tr><td><b>${m.label}</b> ${e.ok ? '<span class="up" title="validated strategy: signals ON">●</span>' : '<span class="muted" title="' + (e.why || '') + ': signals off">○</span>'}</td>
       <td class="num">${m.price != null ? fmt(m.price) : m.c.length ? fmt(m.c[m.c.length - 1].c) : '…'}</td>
       <td class="${r && r.trend === 'up' ? 'up' : r && r.trend === 'down' ? 'down' : 'muted'}">${r ? r.trend : '…'}</td>
       <td class="${e.ok ? '' : 'muted'}">${strat}</td>
-      <td class="num ${c ? (c.teWr * 100 >= be && e.ok ? 'up' : 'down') : 'muted'}">${c && e.n ? (100 * c.teWr).toFixed(0) + '% (' + e.n + ')' : '—'}</td>
+      <td class="num ${c ? (comboGood(c) && e.ok ? 'up' : 'down') : 'muted'}">${c && e.n ? comboMetric(c) : '—'}</td>
       <td class="num">${ln ? (100 * lv.w / ln).toFixed(0) + '% (' + ln + ')' : '—'}</td></tr>`;
   }).join('') || '<tr><td colspan="6" class="muted">Press Start.</td></tr>';
 }
@@ -701,7 +765,7 @@ function describe(m) {
   if (!r) return {text: `${m.label}: still loading data.`};
   const lv = [r.support ? `support ${fmt(r.support)}` : null, r.resistance ? `resistance ${fmt(r.resistance)}` : null].filter(Boolean).join(', ');
   const e = edgeOf(m);
-  const bt = e.ok ? ` Validated strategy: ${STRATS[e.combo.key].name}, ${durTxt(minsOf(e.combo.exp))} expiry, ${e.p.toFixed(0)}% on ${e.n} unseen test trades.` : ' No strategy has passed validation on this pair, so I will not signal it.';
+  const bt = e.ok ? ` Validated strategy: ${comboLabel(e.combo)}, unseen test ${comboMetric(e.combo)}.` : ' No strategy has passed validation on this pair, so I will not signal it.';
   const state = r.dir ? `Confluence setup: ${r.dir}.` : '';
   const text = `${m.label} at ${fmt(r.price)}. Trend ${r.trend}. RSI ${r.rsi.toFixed(0)}.${lv ? ' Key levels: ' + lv + '.' : ''} ${state}${bt}`;
   return {text};
@@ -720,17 +784,18 @@ function command(raw) {
     const x = totals(), be = 100 / (1 + cfg.pay / 100);
     if (!x.done) return reply(`No finished signals yet this session. Break-even at ${cfg.pay}% payout is ${be.toFixed(1)}% wins.`);
     const wr = 100 * x.w / x.done;
+    if (FX()) return reply(`${x.w} wins, ${x.l} losses: ${wr.toFixed(1)}% win rate. Net ${x.pnl >= 0 ? 'plus' : 'minus'} ${Math.abs(x.pnl).toFixed(2)} R, ${(x.pnl / x.done).toFixed(2)} R per trade.`);
     return reply(`${x.w} wins, ${x.l} losses: ${wr.toFixed(1)}% win rate. Break-even is ${be.toFixed(1)}%. Net ${x.pnl >= 0 ? 'plus' : 'minus'} ${Math.abs(x.pnl).toFixed(2)} stakes.`);
   }
   if (/(last|latest|current) signal/.test(t)) {
     const s = history[0];
-    return reply(s ? `Last signal: ${s.m.label} ${s.dir}, ${s.strat}, ${durTxt(minsOf(s.exp))}, ${s.result ? 'result ' + s.result : 'still running'}.` : 'No signals yet.');
+    return reply(s ? `Last signal: ${s.m.label} ${s.rr ? (s.dir === 'CALL' ? 'buy' : 'sell') : s.dir}, ${s.strat}, ${s.result ? 'result ' + s.result : 'still running'}.` : 'No signals yet.');
   }
   if (/(which|what|list).*(market|pair|asset|coin)/.test(t)) { const on = Object.values(M).filter(m => edgeOf(m).ok); return reply(`Watching ${Object.keys(M).length} markets. ${on.length} have a validated strategy and can give signals${on.length ? ': ' + on.slice(0, 12).map(m => m.label).join(', ') + (on.length > 12 ? ' and more' : '') : ''}.`); }
   if (/(best|strongest|top)/.test(t)) {
     const r = Object.values(M).map(m => ({m, e: edgeOf(m)})).filter(x => x.e.ok).sort((a, b) => b.e.combo.lb - a.e.combo.lb)[0];
     if (!r) return reply('No pair has a validated strategy right now. Try the 5 or 15 minute timeframe, or more pairs.');
-    return reply(`Best right now: ${r.m.label} with ${STRATS[r.e.combo.key].name}, ${durTxt(minsOf(r.e.combo.exp))} expiry. It won ${r.e.p.toFixed(0)}% of ${r.e.n} unseen test trades; 99% confidence floor ${(100 * r.e.combo.lb).toFixed(0)}%.`);
+    return reply(`Best right now: ${r.m.label} with ${comboLabel(r.e.combo)}. Unseen test: ${comboMetric(r.e.combo)}.`);
   }
   if (/(status|what.*happening|market|analy[sz]e|check|how is|what about)/.test(t) || findAsset(t)) {
     const m = findAsset(t);
@@ -809,8 +874,8 @@ async function start() {
   renderMarkets(); renderStats();
   const ms = Object.values(M), on = ms.filter(m => edgeOf(m).ok);
   const tested = ms.reduce((a, m) => a + (m.combos ? m.combos.length : 0), 0);
-  reply(`Ready. ${ms.length} pairs on the ${tfLabel()} chart, ${tested} strategy and expiry combinations tested. ${on.length} pair${on.length === 1 ? '' : 's'} passed validation and will give signals${on.length ? ': ' + on.slice(0, 8).map(m => m.label).join(', ') + (on.length > 8 ? ' and more' : '') : ''}. Break-even is ${beRate().toFixed(1)}%. I will speak every signal. Say help for commands.`);
-  if (!on.length) chat('No strategy passed validation on this timeframe, so I will stay silent rather than give weak signals. Short timeframes are close to a coin flip. Try 5 or 15 minutes, raise "Longest expiry", or scan more pairs.');
+  reply(`Ready. ${FX() ? 'Forex mode' : 'Binary mode'}, ${ms.length} pairs on the ${tfLabel()} chart, ${tested} strategy and ${FX() ? 'target' : 'expiry'} combinations tested. ${on.length} pair${on.length === 1 ? '' : 's'} passed validation and will give signals${on.length ? ': ' + on.slice(0, 8).map(m => m.label).join(', ') + (on.length > 8 ? ' and more' : '') : ''}. ${FX() ? 'Every approved strategy made money per trade after costs on unseen history.' : `Break-even is ${beRate().toFixed(1)}%.`} I will speak every signal. Say help for commands.`);
+  if (!on.length) chat(`No strategy passed validation on this timeframe, so I will stay silent rather than give weak signals. Short timeframes are close to a coin flip. Try 5 or 15 minutes, ${FX() ? 'or 30 minutes to 1 hour for forex mode' : 'raise "Longest expiry"'}, or scan more pairs.`);
   if (!cfg.key) chat('Tip: add a free Twelve Data API key in Settings to also get forex and gold signals.');
 }
 // pause gate: keep analysing and settling, but don't announce while paused

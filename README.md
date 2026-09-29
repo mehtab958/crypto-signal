@@ -134,4 +134,11 @@ A signal must pass the set percentage (70 % by default) of the checks that apply
 - a 30-minute pause after 3 losses in a row
 - a 3-candle rest for a pair after a loss
 
+**Two modes:**
+- **Binary:** CALL/PUT with an expiry, validated on win rate against the payout's break-even.
+- **Forex/spot:** entry, stop-loss (1.5 ATR) and take-profit (1:1.5, 1:2 or 1:3), with a 48-candle time limit. It is validated on profit per trade after spread/fees:
+  - average ≥ +0.05R on both the first 60 % and the unseen last 40 %
+  - a 99 % one-sided lower bound on profit per trade above 0
+  - it is switched off if live profit per trade turns negative after 10+ trades
+
 In testing on 20 pure random-walk markets (480 combinations) nothing passed, while a market with a real repeating pattern was detected and traded correctly.

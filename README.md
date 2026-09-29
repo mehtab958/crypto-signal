@@ -147,7 +147,7 @@ In testing on 20 pure random-walk markets (480 combinations) nothing passed, whi
 
 File: [`web/deriv_autotrader.html`](web/deriv_autotrader.html)
 
-It places Rise/Fall (CALL/PUT) trades through Deriv's official WebSocket API (`wss://ws.derivws.com`, app_id configurable). You paste a Deriv API token (Read + Trade), tap a pair and a timeframe, then tap **Take trade** or say "trade euro dollar 5 minutes".
+It places Rise/Fall (CALL/PUT) trades through Deriv's official API. **New Deriv tokens (`pat_…`)** use `GET https://api.derivws.com/trading/v1/options/accounts`, then `POST …/accounts/{id}/otp` (with `Authorization: Bearer` and `Deriv-App-ID` headers), then the returned `wss://api.derivws.com/trading/v1/options/ws/demo|real?otp=…` WebSocket. Classic tokens still use `authorize` on the legacy servers, with automatic fallback across `ws.derivws.com`, `ws.binaryws.com`, `green.derivws.com` and `blue.derivws.com`. You paste a Deriv API token (Read + Trade), tap a pair and a timeframe, then tap **Take trade** or say "trade euro dollar 5 minutes".
 
 - **Analysis:** the same engine as the Binary Signal Assistant. Six strategies × expiries are validated out-of-sample against Deriv's **actual payout** for that pair, and each signal must also pass the 30-check quality gate. Expiries are limited to the durations Deriv allows on the pair (`contracts_for`).
 - **Take trade:** if the last candle is a valid setup inside the entry window, it trades now. Otherwise it watches up to 30 candles and trades the next valid setup. Pairs with no proven edge are refused.

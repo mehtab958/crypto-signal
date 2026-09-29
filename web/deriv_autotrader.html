@@ -100,9 +100,10 @@ td.num,th.num{text-align:right}
   <details id="setBox" open>
     <summary>Settings (saved in this browser)</summary>
     <div class="settings">
-      <label class="wide">Deriv API token (Read + Trade scope) <input id="cfgToken" type="password" placeholder="Deriv → Account settings → API token (create it while your Demo account is selected)" autocomplete="off"></label>
+      <label class="wide">Deriv API token (Read + Trade scope) <input id="cfgToken" type="password" placeholder="pat_… token from developers.deriv.com (or a classic Deriv API token)" autocomplete="off"></label>
       <label>Remember token on this device <select id="cfgRemember"><option value="0">No</option><option value="1">Yes</option></select></label>
-      <label>App ID <input id="cfgApp" type="number"></label>
+      <label>App ID (from developers.deriv.com) <input id="cfgApp" type="number"></label>
+      <label>Account to use <select id="cfgAcct"><option value="demo">Demo</option><option value="real">Real</option></select></label>
       <label>Server <select id="cfgServer"><option value="auto">Auto (try all)</option><option value="ws.derivws.com">ws.derivws.com</option><option value="ws.binaryws.com">ws.binaryws.com</option><option value="green.derivws.com">green.derivws.com</option><option value="blue.derivws.com">blue.derivws.com</option></select></label>
       <label>Stake per trade <input id="cfgStake" type="number" min="0.35" step="0.5"></label>
       <label>Longest expiry to test (candles) <input id="cfgExp" type="number" min="1" max="5" step="1"></label>
@@ -163,14 +164,14 @@ const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ───────────────────────── settings ─────────────────────────
-const DEF = {server: 'auto', appId: 1089, stake: 1, maxExp: 5, minVal: 20, qmin: 70, dayLoss: 20, maxDay: 10, allowReal: 0, remember: 0, voice: 1, tf: '5', min: 4, pay: 85, mode: 'binary'};
+const DEF = {acctType: 'demo', server: 'auto', appId: 1089, stake: 1, maxExp: 5, minVal: 20, qmin: 70, dayLoss: 20, maxDay: 10, allowReal: 0, remember: 0, voice: 1, tf: '5', min: 4, pay: 85, mode: 'binary'};
 let cfg = {...DEF};
 try { Object.assign(cfg, JSON.parse(localStorage.getItem('derivCfg') || '{}')); } catch (e) {}
 let token = '';
 try { token = localStorage.getItem('derivToken') || ''; } catch (e) {}
 const save = () => { try { const c = {...cfg}; localStorage.setItem('derivCfg', JSON.stringify(c)); if (cfg.remember) localStorage.setItem('derivToken', token); else localStorage.removeItem('derivToken'); } catch (e) {} };
 const bind = (id, k, num) => { const el = $(id); el.value = cfg[k]; el.addEventListener('change', () => { cfg[k] = num ? (parseFloat(el.value) || DEF[k]) : el.value; save(); }); };
-bind('cfgApp', 'appId', 1); bind('cfgServer', 'server'); bind('cfgStake', 'stake', 1); bind('cfgExp', 'maxExp', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1);
+bind('cfgApp', 'appId', 1); bind('cfgServer', 'server'); bind('cfgAcct', 'acctType'); bind('cfgStake', 'stake', 1); bind('cfgExp', 'maxExp', 1); bind('cfgMinBt', 'minVal', 1); bind('cfgQ', 'qmin', 1);
 bind('cfgDayLoss', 'dayLoss', 1); bind('cfgMaxDay', 'maxDay', 1); bind('cfgReal', 'allowReal', 1); bind('cfgRemember', 'remember', 1);
 $('cfgToken').value = token;
 $('cfgToken').addEventListener('change', () => { token = $('cfgToken').value.trim(); save(); });
@@ -511,10 +512,17 @@ const pend = new Map();
 function setConn(ok, t) { $('connDot').classList.toggle('on', ok); $('connTxt').textContent = t; }
 const SERVERS = ['ws.derivws.com', 'ws.binaryws.com', 'green.derivws.com', 'blue.derivws.com'];
 let liveHost = null;
-function tryHost(host) {
+const tryHost = host => tryUrl(`wss://${host}/websockets/v3?app_id=${encodeURIComponent(cfg.appId)}`);
+function attach(sock) {
+  ws = sock;
+  setConn(true, 'connected');
+  ws.onmessage = onMsg;
+  ws.onclose = () => { setConn(false, 'disconnected'); for (const p of pend.values()) p.rej(new Error('Connection closed')); pend.clear(); if (wantConn) setTimeout(reconnect, 3000); };
+}
+function tryUrl(url) {
   return new Promise((res, rej) => {
     let sock, done = false;
-    try { sock = new WebSocket(`wss://${host}/websockets/v3?app_id=${encodeURIComponent(cfg.appId)}`); } catch (e) { return rej(e); }
+    try { sock = new WebSocket(url); } catch (e) { return rej(e); }
     const timer = setTimeout(() => { if (!done) { done = true; try { sock.close(); } catch (e) {} rej(new Error('timeout')); } }, 8000);
     sock.onopen = () => { if (done) return; done = true; clearTimeout(timer); res(sock); };
     sock.onerror = () => { if (done) return; done = true; clearTimeout(timer); rej(new Error('blocked or unreachable')); };
@@ -526,11 +534,8 @@ async function openWS() {
   for (const h of hosts) {
     setConn(false, `connecting to ${h}…`);
     try {
-      ws = await tryHost(h);
+      attach(await tryHost(h));
       liveHost = h;
-      setConn(true, 'connected');
-      ws.onmessage = onMsg;
-      ws.onclose = () => { setConn(false, 'disconnected'); for (const p of pend.values()) p.rej(new Error('Connection closed')); pend.clear(); if (wantConn) setTimeout(reconnect, 3000); };
       return;
     } catch (e) { fails.push(`${h}: ${e.message}`); }
   }
@@ -558,21 +563,66 @@ function onMsg(e) {
 }
 setInterval(() => { if (ws && ws.readyState === 1) api({ping: 1}).catch(() => {}); }, 30000);
 
+// New Deriv API (2025+): personal access tokens start with "pat_".
+const isPAT = t => /^pat_/i.test(t || '');
+const REST = 'https://api.derivws.com';
+async function rest(method, path) {
+  let r;
+  try {
+    r = await fetch(REST + path, {method, headers: Object.assign({Authorization: 'Bearer ' + token, 'Deriv-App-ID': String(cfg.appId), Accept: 'application/json'}, method === 'POST' ? {'Content-Type': 'application/json'} : {}), body: method === 'POST' ? '{}' : undefined});
+  } catch (e) {
+    throw new Error('This browser could not reach Deriv\'s API (api.derivws.com). Either your network blocks it, or Deriv does not accept requests from web pages. Check that developers.deriv.com opens in this same browser, or try another network.');
+  }
+  let j = null; try { j = await r.json(); } catch (e) {}
+  if (!r.ok) {
+    const msg = (j && ((j.error && (j.error.message || j.error.code)) || j.message || (j.errors && j.errors[0] && (j.errors[0].message || j.errors[0].detail)))) || r.statusText || 'error';
+    throw new Error(`Deriv API ${r.status}: ${msg}.` + (r.status === 401 || r.status === 403 ? ' Check the token, and that "App ID" is the ID of the app you created this token in on developers.deriv.com.' : ''));
+  }
+  return j || {};
+}
+async function patLogin() {
+  const res = await rest('GET', '/trading/v1/options/accounts');
+  const list = res.data || res.accounts || (Array.isArray(res) ? res : []);
+  if (!list.length) throw new Error('Deriv returned no Options accounts for this token.');
+  const accts = list.map(a => {
+    const id = a.account_id || a.id || a.loginid, ty = String(a.account_type || a.type || '').toLowerCase();
+    return {id, demo: /demo|virtual/.test(ty) || /^VR/i.test(String(id)) || a.is_virtual === 1 || a.is_virtual === true, currency: a.currency || 'USD', balance: +(a.balance != null ? a.balance : 0)};
+  });
+  const a = (cfg.acctType === 'real' ? accts.find(x => !x.demo) : accts.find(x => x.demo)) || accts[0];
+  if (cfg.acctType !== 'real' && !a.demo) chat('No demo Options account was found for this token, so I connected to the account Deriv returned. Trading stays blocked unless real trading is allowed in Settings.');
+  const o = await rest('POST', `/trading/v1/options/accounts/${encodeURIComponent(a.id)}/otp`);
+  const d = o.data || o;
+  const url = d.url || d.websocket_url || d.ws_url || (d.otp ? `wss://api.derivws.com/trading/v1/options/ws/${a.demo ? 'demo' : 'real'}?otp=${encodeURIComponent(d.otp)}` : null);
+  if (!url) throw new Error('Deriv did not return a WebSocket address for the one-time password.');
+  return {url, acct: {loginid: a.id, is_virtual: a.demo ? 1 : 0, currency: a.currency, balance: a.balance}};
+}
+async function login() {
+  if (isPAT(token)) {
+    if (!cfg.appId || +cfg.appId === 1089) throw new Error('New Deriv tokens (pat_…) need your own App ID. On developers.deriv.com open the app you created the token in, copy its App ID, and enter it in Settings → App ID.');
+    setConn(false, 'logging in to Deriv…');
+    const {url, acct: a} = await patLogin();
+    setConn(false, 'opening trading connection…');
+    try { attach(await tryUrl(url)); } catch (e) { throw new Error('Deriv approved the login, but the trading connection (api.derivws.com) was blocked by this network. Try another network.'); }
+    acct = a;
+    try { const b = await api({balance: 1, subscribe: 1}); if (b.balance) { acct.balance = +b.balance.balance; acct.currency = b.balance.currency || acct.currency; } } catch (e) {}
+  } else {
+    await openWS();
+    acct = (await api({authorize: token})).authorize;
+    api({balance: 1, subscribe: 1}).catch(() => {});
+  }
+}
 async function connect() {
   showErr('');
   token = $('cfgToken').value.trim(); save();
-  if (!token) { showErr('Paste your Deriv API token in Settings first. Create it at Deriv → Account settings → API token with the Read and Trade scopes, while your Demo account is selected.'); $('setBox').open = true; return; }
+  if (!token) { showErr('Paste your Deriv token in Settings first. New accounts: on developers.deriv.com create an app, then create a personal access token (pat_…) in its API tokens section, and enter that app\'s App ID too.'); $('setBox').open = true; return; }
   try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
   $('connectBtn').disabled = true; setConn(false, 'connecting…');
   try {
     wantConn = true;
-    await openWS();
-    const a = await api({authorize: token});
-    acct = a.authorize;
+    await login();
     $('acctPill').textContent = `${acct.is_virtual ? 'DEMO' : 'REAL'} · ${acct.loginid}`;
     $('acctPill').className = 'pill ' + (acct.is_virtual ? 'demo' : 'real');
     $('bal').textContent = `${(+acct.balance).toFixed(2)} ${acct.currency}`;
-    api({balance: 1, subscribe: 1}).catch(() => {});
     await loadSymbols();
     $('connectBtn').textContent = 'Connected';
     reply(`Connected to your ${acct.is_virtual ? 'demo' : 'REAL'} account with ${(+acct.balance).toFixed(2)} ${acct.currency}. Tap a pair, choose a timeframe, then tap or say take trade.`,
@@ -583,7 +633,7 @@ async function connect() {
   }
 }
 async function reconnect() {
-  try { await openWS(); await api({authorize: token}); api({balance: 1, subscribe: 1}).catch(() => {}); if (sel) await loadMarket(sel.sym, sel.tf, true); }
+  try { await login(); if (sel) await loadMarket(sel.sym, sel.tf, true); }
   catch (e) { setTimeout(reconnect, 5000); }
 }
 $('connectBtn').onclick = connect;

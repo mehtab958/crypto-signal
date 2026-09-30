@@ -1,0 +1,120 @@
+//@version=6
+// Crypto Trend Ensemble
+//
+// Implements the ensemble Donchian trend-following model from:
+//   Zarattini, Pagani & Barbon (2025), "Catching Crypto Trends; A Tactical Approach
+//   for Bitcoin and Altcoins", SSRN 5209907 / Swiss Finance Institute RP No. 25-80.
+//   https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5209907
+//
+// Rules (designed for DAILY bars):
+//   1. Nine independent Donchian models, lookbacks 5/10/20/30/60/90/150/250/360.
+//   2. Each model goes long when the close makes a new n-bar closing high.
+//   3. Each model exits when the close falls below its trailing stop. The stop starts
+//      at the Donchian midpoint (n-bar highest high + lowest low) / 2 and only ratchets up.
+//   4. Ensemble signal = share of models that are long (0..1).
+//   5. Exposure = signal x min(target vol / realized vol, max leverage). Long-only.
+indicator("Crypto Trend Ensemble (SSRN 5209907)", shorttitle = "CTE", overlay = false, precision = 1)
+
+// ─── Inputs ────────────────────────────────────────────────────────────────────
+const string G_LB = "Donchian lookbacks (bars, use a Daily chart)"
+int lb1 = input.int(5,   "#1", minval = 2, group = G_LB, inline = "r1")
+int lb2 = input.int(10,  "#2", minval = 2, group = G_LB, inline = "r1")
+int lb3 = input.int(20,  "#3", minval = 2, group = G_LB, inline = "r1")
+int lb4 = input.int(30,  "#4", minval = 2, group = G_LB, inline = "r2")
+int lb5 = input.int(60,  "#5", minval = 2, group = G_LB, inline = "r2")
+int lb6 = input.int(90,  "#6", minval = 2, group = G_LB, inline = "r2")
+int lb7 = input.int(150, "#7", minval = 2, group = G_LB, inline = "r3")
+int lb8 = input.int(250, "#8", minval = 2, group = G_LB, inline = "r3")
+int lb9 = input.int(360, "#9", minval = 2, group = G_LB, inline = "r3")
+
+const string G_RISK = "Volatility targeting"
+float targetVol   = input.float(25.0, "Target annual volatility (%)", minval = 1, step = 1, group = G_RISK) / 100
+int   volLen      = input.int(90, "Volatility lookback (bars)", minval = 10, group = G_RISK)
+float maxLev      = input.float(1.0, "Max exposure (x)", minval = 0.1, step = 0.1, group = G_RISK)
+float daysPerYear = input.float(365, "Trading days per year", minval = 1, group = G_RISK, tooltip = "365 for crypto, 252 for stocks/futures")
+
+const string G_VIS = "Display"
+bool showStops   = input.bool(true, "Show trailing-stop levels on price chart", group = G_VIS)
+bool showSignals = input.bool(true, "Show LONG / FLAT markers on price chart", group = G_VIS)
+bool showTable   = input.bool(true, "Show status table", group = G_VIS)
+
+// ─── One Donchian trend model ─────────────────────────────────────────────────
+// Returns [1.0 if long else 0.0, current trailing stop or na].
+donchianModel(int n) =>
+    var bool  inPos = false
+    var float stop  = na
+    float upper = ta.highest(close, n)
+    float mid   = (ta.highest(high, n) + ta.lowest(low, n)) / 2
+    if inPos
+        if close < stop
+            inPos := false
+            stop  := na
+        else
+            stop := math.max(stop, mid)
+    else if bar_index >= n and close >= upper
+        inPos := true
+        stop  := mid
+    [inPos ? 1.0 : 0.0, stop]
+
+[s1, st1] = donchianModel(lb1)
+[s2, st2] = donchianModel(lb2)
+[s3, st3] = donchianModel(lb3)
+[s4, st4] = donchianModel(lb4)
+[s5, st5] = donchianModel(lb5)
+[s6, st6] = donchianModel(lb6)
+[s7, st7] = donchianModel(lb7)
+[s8, st8] = donchianModel(lb8)
+[s9, st9] = donchianModel(lb9)
+
+float signal = (s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9) / 9
+
+// Highest active stop = where the first model exits; lowest = where every active model exits.
+float hiStop = na
+float loStop = na
+for s in array.from(st1, st2, st3, st4, st5, st6, st7, st8, st9)
+    if not na(s)
+        hiStop := na(hiStop) ? s : math.max(hiStop, s)
+        loStop := na(loStop) ? s : math.min(loStop, s)
+
+// ─── Volatility-targeted exposure ─────────────────────────────────────────────
+float barsPerYear = daysPerYear * 86400 / timeframe.in_seconds()
+float annVol      = ta.stdev(close / close[1] - 1, volLen) * math.sqrt(barsPerYear)
+float volScale    = na(annVol) or annVol == 0 ? 0.0 : math.min(targetVol / annVol, maxLev)
+float exposure    = signal * volScale
+
+bool goLong = signal > 0 and nz(signal[1]) == 0
+bool goFlat = signal == 0 and nz(signal[1]) > 0
+
+// ─── Plots ────────────────────────────────────────────────────────────────────
+color C_BULL = #26a69a
+color C_BEAR = #ef5350
+
+plot(exposure * 100, "Exposure %", style = plot.style_columns, color = color.new(C_BULL, exposure >= nz(exposure[1]) ? 30 : 60))
+plot(signal * 100, "Ensemble signal %", color = #f7a600, linewidth = 2)
+hline(0,   "Zero", color = color.gray)
+hline(100, "100%", color = color.gray, linestyle = hline.style_dotted)
+
+plot(showStops ? hiStop : na, "Nearest stop (first model exits)", color = color.orange, style = plot.style_linebr, force_overlay = true)
+plot(showStops ? loStop : na, "Last stop (all models exit)", color = C_BEAR, style = plot.style_linebr, linewidth = 2, force_overlay = true)
+plotshape(showSignals and goLong, "LONG", shape.labelup, location.belowbar, C_BULL, text = "LONG", textcolor = color.white, size = size.small, force_overlay = true)
+plotshape(showSignals and goFlat, "FLAT", shape.labeldown, location.abovebar, C_BEAR, text = "FLAT", textcolor = color.white, size = size.small, force_overlay = true)
+
+// ─── Status table ─────────────────────────────────────────────────────────────
+var table tbl = table.new(position.top_right, 2, 5, bgcolor = color.new(color.black, 20), border_width = 1)
+if showTable and barstate.islast
+    table.cell(tbl, 0, 0, "Models long",       text_color = color.white, text_size = size.small)
+    table.cell(tbl, 1, 0, str.tostring(math.round(signal * 9)) + " / 9", text_color = color.white, text_size = size.small)
+    table.cell(tbl, 0, 1, "Ensemble signal",   text_color = color.white, text_size = size.small)
+    table.cell(tbl, 1, 1, str.tostring(signal * 100, "#.#") + "%", text_color = color.white, text_size = size.small)
+    table.cell(tbl, 0, 2, "Realized vol (ann)", text_color = color.white, text_size = size.small)
+    table.cell(tbl, 1, 2, str.tostring(annVol * 100, "#.#") + "%", text_color = color.white, text_size = size.small)
+    table.cell(tbl, 0, 3, "Target exposure",   text_color = color.white, text_size = size.small)
+    table.cell(tbl, 1, 3, str.tostring(exposure * 100, "#.#") + "%", text_color = exposure > 0 ? C_BULL : C_BEAR, text_size = size.small)
+    if not timeframe.isdaily
+        table.cell(tbl, 0, 4, "Warning", text_color = color.yellow, text_size = size.small)
+        table.cell(tbl, 1, 4, "Paper uses Daily bars", text_color = color.yellow, text_size = size.small)
+
+// ─── Alerts ───────────────────────────────────────────────────────────────────
+alertcondition(goLong, "CTE: turned LONG", "{{ticker}} trend ensemble turned LONG")
+alertcondition(goFlat, "CTE: turned FLAT", "{{ticker}} trend ensemble turned FLAT (all models exited)")
+alertcondition(signal != signal[1], "CTE: signal changed", "{{ticker}} ensemble signal now {{plot(\"Ensemble signal %\")}}%, exposure {{plot(\"Exposure %\")}}%")

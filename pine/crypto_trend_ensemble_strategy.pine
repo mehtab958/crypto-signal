@@ -1,0 +1,90 @@
+//@version=6
+// Crypto Trend Ensemble: backtest version of crypto_trend_ensemble.pine.
+// Paper: Zarattini, Pagani & Barbon (2025), SSRN 5209907.
+// Orders are placed on the bar close and fill at the next bar's open.
+// margin_long = 0 disables TradingView margin checks so "Max exposure" > 1x works.
+strategy("Crypto Trend Ensemble Backtest (SSRN 5209907)", shorttitle = "CTE-BT", overlay = true,
+     initial_capital = 100000, commission_type = strategy.commission.percent, commission_value = 0.1,
+     margin_long = 0, process_orders_on_close = false)
+
+// ─── Inputs ────────────────────────────────────────────────────────────────────
+const string G_LB = "Donchian lookbacks (bars, use a Daily chart)"
+int lb1 = input.int(5,   "#1", minval = 2, group = G_LB, inline = "r1")
+int lb2 = input.int(10,  "#2", minval = 2, group = G_LB, inline = "r1")
+int lb3 = input.int(20,  "#3", minval = 2, group = G_LB, inline = "r1")
+int lb4 = input.int(30,  "#4", minval = 2, group = G_LB, inline = "r2")
+int lb5 = input.int(60,  "#5", minval = 2, group = G_LB, inline = "r2")
+int lb6 = input.int(90,  "#6", minval = 2, group = G_LB, inline = "r2")
+int lb7 = input.int(150, "#7", minval = 2, group = G_LB, inline = "r3")
+int lb8 = input.int(250, "#8", minval = 2, group = G_LB, inline = "r3")
+int lb9 = input.int(360, "#9", minval = 2, group = G_LB, inline = "r3")
+
+const string G_RISK = "Volatility targeting"
+float targetVol   = input.float(25.0, "Target annual volatility (%)", minval = 1, step = 1, group = G_RISK) / 100
+int   volLen      = input.int(90, "Volatility lookback (bars)", minval = 10, group = G_RISK)
+float maxLev      = input.float(1.0, "Max exposure (x)", minval = 0.1, step = 0.1, group = G_RISK)
+float daysPerYear = input.float(365, "Trading days per year", minval = 1, group = G_RISK, tooltip = "365 for crypto, 252 for stocks/futures")
+
+const string G_BT = "Backtest"
+float rebalBand = input.float(10, "Rebalance band (% of equity)", minval = 0, step = 1, group = G_BT, tooltip = "Only trade when target and actual position differ by more than this, to limit fees") / 100
+int   startTime = input.time(timestamp("2015-01-01"), "Start date", group = G_BT)
+
+// ─── One Donchian trend model ─────────────────────────────────────────────────
+// Returns [1.0 if long else 0.0, current trailing stop or na].
+donchianModel(int n) =>
+    var bool  inPos = false
+    var float stop  = na
+    float upper = ta.highest(close, n)
+    float mid   = (ta.highest(high, n) + ta.lowest(low, n)) / 2
+    if inPos
+        if close < stop
+            inPos := false
+            stop  := na
+        else
+            stop := math.max(stop, mid)
+    else if bar_index >= n and close >= upper
+        inPos := true
+        stop  := mid
+    [inPos ? 1.0 : 0.0, stop]
+
+[s1, st1] = donchianModel(lb1)
+[s2, st2] = donchianModel(lb2)
+[s3, st3] = donchianModel(lb3)
+[s4, st4] = donchianModel(lb4)
+[s5, st5] = donchianModel(lb5)
+[s6, st6] = donchianModel(lb6)
+[s7, st7] = donchianModel(lb7)
+[s8, st8] = donchianModel(lb8)
+[s9, st9] = donchianModel(lb9)
+
+float signal = (s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9) / 9
+
+// Highest active stop = where the first model exits; lowest = where every active model exits.
+float hiStop = na
+float loStop = na
+for s in array.from(st1, st2, st3, st4, st5, st6, st7, st8, st9)
+    if not na(s)
+        hiStop := na(hiStop) ? s : math.max(hiStop, s)
+        loStop := na(loStop) ? s : math.min(loStop, s)
+
+// ─── Volatility-targeted exposure ─────────────────────────────────────────────
+float barsPerYear = daysPerYear * 86400 / timeframe.in_seconds()
+float annVol      = ta.stdev(close / close[1] - 1, volLen) * math.sqrt(barsPerYear)
+float volScale    = na(annVol) or annVol == 0 ? 0.0 : math.min(targetVol / annVol, maxLev)
+float exposure    = signal * volScale
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+float targetQty = exposure * strategy.equity / close
+float curQty    = strategy.position_size
+float diff      = targetQty - curQty
+if time >= startTime
+    if signal == 0 and curQty > 0
+        strategy.close_all(comment = "Flat")
+    else if exposure > 0 and (curQty == 0 or math.abs(diff) * close > rebalBand * strategy.equity)
+        if diff > 0
+            strategy.order("Add", strategy.long, qty = diff)
+        else
+            strategy.order("Trim", strategy.short, qty = -diff)
+
+plot(hiStop, "Nearest stop", color = color.orange, style = plot.style_linebr)
+plot(loStop, "Last stop", color = #ef5350, style = plot.style_linebr, linewidth = 2)

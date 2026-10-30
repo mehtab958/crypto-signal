@@ -1,0 +1,8 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped        # keeps the bot running 24/7, restarts after crashes/reboots
+    env_file: .env                 # EXCHANGE_API_KEY=... / EXCHANGE_API_SECRET=... (live mode only)
+    volumes:
+      - ./config:/app/config
+      - ./state:/app/state

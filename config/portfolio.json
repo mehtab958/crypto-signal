@@ -1,0 +1,95 @@
+{
+  "selected_on": [
+    "2017-01-01",
+    "2023-01-01"
+  ],
+  "base_timeframe": "4h",
+  "members": [
+    {
+      "strategy": "ema_trend",
+      "timeframe": "4h",
+      "weight": 1.0,
+      "params": {
+        "fast": 10,
+        "slow": 200,
+        "adx_min": 25,
+        "atr_mult": 3.0
+      }
+    },
+    {
+      "strategy": "donchian_breakout",
+      "timeframe": "4h",
+      "weight": 1.0,
+      "params": {
+        "entry": 40,
+        "exit": 10,
+        "atr_mult": 6.0
+      }
+    },
+    {
+      "strategy": "bb_squeeze",
+      "timeframe": "4h",
+      "weight": 1.0,
+      "params": {
+        "length": 20,
+        "k": 1.5,
+        "lookback": 60,
+        "pct": 0.1,
+        "atr_mult": 3.0
+      }
+    },
+    {
+      "strategy": "vol_momentum",
+      "timeframe": "4h",
+      "weight": 1.0,
+      "params": {
+        "lookbacks": [
+          10,
+          30,
+          60
+        ],
+        "target_vol": 0.4,
+        "vol_days": 60,
+        "band": 0.1,
+        "bars_per_day": 6
+      }
+    },
+    {
+      "strategy": "ema_trend",
+      "timeframe": "1d",
+      "weight": 1.0,
+      "params": {
+        "fast": 10,
+        "slow": 50,
+        "adx_min": 25,
+        "atr_mult": 3.0
+      }
+    },
+    {
+      "strategy": "donchian_breakout",
+      "timeframe": "1d",
+      "weight": 1.0,
+      "params": {
+        "entry": 20,
+        "exit": 10,
+        "atr_mult": 6.0
+      }
+    },
+    {
+      "strategy": "vol_momentum",
+      "timeframe": "1d",
+      "weight": 1.0,
+      "params": {
+        "lookbacks": [
+          30,
+          90,
+          180
+        ],
+        "target_vol": 0.4,
+        "vol_days": 15,
+        "band": 0.1,
+        "bars_per_day": 1
+      }
+    }
+  ]
+}

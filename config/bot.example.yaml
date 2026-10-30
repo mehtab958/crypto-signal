@@ -1,0 +1,16 @@
+# Copy to config/bot.yaml and edit. API keys are read from environment variables
+# EXCHANGE_API_KEY / EXCHANGE_API_SECRET (/ EXCHANGE_API_PASSWORD), never from this file.
+exchange: binance          # any ccxt exchange id: binance, bybit, kraken, okx, coinbase, ...
+sandbox: false             # true = exchange testnet (if the exchange supports it)
+mode: paper                # paper (simulated) | live (real orders)
+symbols:                   # capital is split equally between symbols
+  - BTC/USDT
+portfolio: config/portfolio.json
+paper_capital: 10000
+fee: 0.001                 # paper-trading fee per side
+rebalance_threshold: 0.05  # only trade when target moves >5% of the slice
+min_order_value: 10        # quote currency
+max_drawdown: 0.40         # kill switch: flatten + halt if equity falls 40% from its peak
+poll_seconds: 60
+candle_delay_seconds: 30   # wait after candle close before acting
+state_file: state/bot_state.json

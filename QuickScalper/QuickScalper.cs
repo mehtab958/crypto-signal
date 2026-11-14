@@ -61,6 +61,15 @@ namespace cAlgo.Robots
         [Parameter("Strategies that must agree", DefaultValue = 2, MinValue = 1, MaxValue = 5, Group = "Strategies")]
         public int MinAgree { get; set; }
 
+        [Parameter("Fast scalping (1 strategy is enough)", DefaultValue = true, Group = "Strategies")]
+        public bool FastScalping { get; set; }
+
+        [Parameter("Volume climax reversal", DefaultValue = true, Group = "Strategies")]
+        public bool UseVolumeClimax { get; set; }
+
+        [Parameter("Volume breakout", DefaultValue = true, Group = "Strategies")]
+        public bool UseVolumeBreakout { get; set; }
+
         [Parameter("Trend pullback", DefaultValue = true, Group = "Strategies")]
         public bool UsePullback { get; set; }
 
@@ -233,7 +242,10 @@ namespace cAlgo.Robots
             if (!Vote(UseMacd, Macd(i), "macd", ref direction, ref votes, ref names)) return 0;
             if (!Vote(UseStochastic, Stochastic(i), "stoch", ref direction, ref votes, ref names)) return 0;
 
-            if (direction == 0 || votes < MinAgree)
+            if (!Vote(UseVolumeClimax, VolumeClimax(i), "volclimax", ref direction, ref votes, ref names)) return 0;
+            if (!Vote(UseVolumeBreakout, VolumeBreakout(i), "volbreak", ref direction, ref votes, ref names)) return 0;
+
+            if (direction == 0 || votes < (FastScalping ? 1 : MinAgree))
                 return 0;
             _signalNames = names;
             Print("Signal {0}: {1}", direction > 0 ? "BUY" : "SELL", names);
@@ -396,6 +408,34 @@ namespace cAlgo.Robots
             double was = _macd.MACD[i - 1] - _macd.Signal[i - 1], now = _macd.MACD[i] - _macd.Signal[i];
             if (was <= 0 && now > 0 && C(i) > _trend.Result[i]) return 1;
             if (was >= 0 && now < 0 && C(i) < _trend.Result[i]) return -1;
+            return 0;
+        }
+
+        private double AverageVolume(int end, int n)   // bars end-n .. end-1
+        {
+            double sum = 0;
+            for (int j = end - n; j < end; j++) sum += Bars.TickVolumes[j];
+            return sum / n;
+        }
+
+        // Very high volume bar with a long rejection wick: the move is exhausted
+        private int VolumeClimax(int i)
+        {
+            double avg = AverageVolume(i, 20), full = H(i) - L(i);
+            if (avg <= 0 || full <= 0 || Bars.TickVolumes[i] < 2 * avg) return 0;
+            double lowWick = Math.Min(O(i), C(i)) - L(i), upWick = H(i) - Math.Max(O(i), C(i));
+            if (lowWick >= 0.5 * full && L(i) <= LowestLow(i, 10)) return 1;
+            if (upWick >= 0.5 * full && H(i) >= HighestHigh(i, 10)) return -1;
+            return 0;
+        }
+
+        // Close beyond the 20-bar range on clearly higher volume: follow the break
+        private int VolumeBreakout(int i)
+        {
+            double avg = AverageVolume(i, 20);
+            if (avg <= 0 || Bars.TickVolumes[i] < 1.5 * avg) return 0;
+            if (C(i) > HighestHigh(i, 20) && C(i) > O(i)) return 1;
+            if (C(i) < LowestLow(i, 20) && C(i) < O(i)) return -1;
             return 0;
         }
 

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1-Minute Signal Tool</title>
+<style>
+  :root { --bg:#0e1116; --card:#171c24; --line:#262d38; --text:#e8ecf1; --dim:#8b96a5; --up:#22c55e; --down:#ef4444; --warn:#f59e0b; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  main { max-width:520px; margin:0 auto; padding:14px; }
+  h1 { font-size:18px; margin:4px 0 2px; }
+  .status { font-size:12px; color:var(--dim); margin-bottom:12px; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--warn); margin-right:6px; }
+  .dot.ok { background:var(--up); } .dot.bad { background:var(--down); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; }
+  .row { display:flex; gap:8px; }
+  .row > label { flex:1; font-size:12px; color:var(--dim); }
+  select, input, button { width:100%; margin-top:4px; padding:10px; border-radius:8px; border:1px solid var(--line); background:#0e1116; color:var(--text); font-size:15px; }
+  button { cursor:pointer; }
+  #signal { text-align:center; padding:22px 14px; }
+  #sigWord { font-size:40px; font-weight:800; letter-spacing:1px; }
+  #sigWord.up { color:var(--up); } #sigWord.down { color:var(--down); } #sigWord.wait { color:var(--dim); }
+  #sigNote { color:var(--dim); font-size:13px; min-height:20px; }
+  #price { font-size:20px; font-variant-numeric:tabular-nums; margin-top:8px; }
+  #count { font-size:12px; color:var(--dim); }
+  canvas { width:100%; height:110px; display:block; margin-top:10px; }
+  .stats { display:flex; gap:8px; text-align:center; }
+  .stats div { flex:1; } .stats b { display:block; font-size:20px; }
+  .stats span { font-size:11px; color:var(--dim); }
+  h2 { font-size:13px; color:var(--dim); margin:0 0 10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  #verdict { font-size:13px; margin-top:10px; }
+  ul { list-style:none; margin:0; padding:0; font-size:13px; }
+  li { display:flex; justify-content:space-between; padding:6px 0; border-top:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  li:first-child { border-top:0; }
+  .up { color:var(--up); } .down { color:var(--down); } .dim { color:var(--dim); }
+  .fine { font-size:12px; color:var(--dim); }
+  .st { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
+  .st:first-child { border-top:0; }
+  .st input { width:20px; height:20px; margin:0; flex:none; }
+  .st .nm { flex:1; font-size:14px; } .st .nm small { display:block; color:var(--dim); font-size:11px; }
+  .st .rs { text-align:right; font-size:14px; font-variant-numeric:tabular-nums; } .st .rs small { display:block; color:var(--dim); font-size:11px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>1-Minute Signal Tool</h1>
+  <div class="status"><span class="dot bad" id="dot"></span><span id="statusText">Not started. If this never changes, this app is not running the page: open the file in Chrome.</span><div id="diag" style="margin-top:4px;font-size:11px;opacity:.7"></div></div>
+
+  <div class="card">
+    <div class="row">
+      <label>Pair
+        <select id="pair">
+          <option value="frxEURUSD">EUR/USD</option>
+          <option value="frxGBPUSD">GBP/USD</option>
+          <option value="frxUSDJPY">USD/JPY</option>
+          <option value="frxAUDUSD">AUD/USD</option>
+          <option value="frxUSDCAD">USD/CAD</option>
+          <option value="frxEURJPY">EUR/JPY</option>
+          <option value="frxGBPJPY">GBP/JPY</option>
+          <option value="frxXAUUSD">Gold (XAU/USD)</option>
+          <option value="bn:BTCUSDT">BTC/USDT (open weekends)</option>
+          <option value="bn:ETHUSDT">ETH/USDT (open weekends)</option>
+        </select>
+      </label>
+      <label>Expiry
+        <select id="expiry">
+          <option value="1">1 min</option>
+          <option value="2" selected>2 min</option>
+          <option value="3">3 min</option>
+          <option value="5">5 min</option>
+        </select>
+      </label>
+      <label>Payout %
+        <input id="payout" type="number" inputmode="numeric" value="80" min="50" max="99">
+      </label>
+    </div>
+  </div>
+
+  <div class="card" id="signal">
+    <div id="sigWord" class="wait">WAIT</div>
+    <div id="sigNote">Loading candles…</div>
+    <div id="price">—</div>
+    <div id="count"></div>
+    <canvas id="chart" width="900" height="220"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>Strategies, tested on recent history</h2>
+    <div id="strats"></div>
+    <div class="stats" style="margin-top:12px">
+      <div><b id="btN">—</b><span>signals (ticked ones)</span></div>
+      <div><b id="btWin">—</b><span>win rate</span></div>
+      <div><b id="btNeed">—</b><span>needed to break even</span></div>
+    </div>
+    <div id="verdict" class="dim"></div>
+    <button id="best" style="margin-top:10px">Tick only strategies above break-even</button>
+  </div>
+
+  <div class="card">
+    <h2>Live signals this session <span id="liveSum"></span></h2>
+    <ul id="log"><li class="dim">No signals yet.</li></ul>
+    <button id="sound" style="margin-top:10px">Turn on sound alert</button>
+  </div>
+
+  <p class="fine">Forex prices come from Deriv's public market feed and crypto prices from Binance, not from Quotex, so they can differ by a few points. Use real pairs only: Quotex "OTC" pairs use Quotex's own prices and these signals do not apply to them. A signal is a rule firing, not a prediction. Test on a demo account first.</p>
+</main>
+
+<script>
+/* ===== LOGIC START ===== */
+function ema(v, n) {
+  var out = [], k = 2 / (n + 1), e = v[0];
+  for (var i = 0; i < v.length; i++) { e = i ? v[i] * k + e * (1 - k) : v[0]; out.push(e); }
+  return out;
+}
+function rsi(v, n) {
+  var out = [50], g = 0, l = 0;
+  for (var i = 1; i < v.length; i++) {
+    var d = v[i] - v[i - 1], up = d > 0 ? d : 0, dn = d < 0 ? -d : 0;
+    if (i <= n) { g += up / n; l += dn / n; }
+    else { g = (g * (n - 1) + up) / n; l = (l * (n - 1) + dn) / n; }
+    out.push(i < n ? 50 : (l === 0 ? (g === 0 ? 50 : 100) : 100 - 100 / (1 + g / l)));
+  }
+  return out;
+}
+function bands(v, n, mult) {
+  var up = [], lo = [], sum = 0, sq = 0;
+  for (var i = 0; i < v.length; i++) {
+    sum += v[i]; sq += v[i] * v[i];
+    if (i >= n) { sum -= v[i - n]; sq -= v[i - n] * v[i - n]; }
+    var m = Math.min(i + 1, n), mean = sum / m, sd = Math.sqrt(Math.max(0, sq / m - mean * mean));
+    up.push(mean + mult * sd); lo.push(mean - mult * sd);
+  }
+  return { up: up, lo: lo };
+}
+function indicators(c) {
+  var closes = c.map(function (x) { return x.c; }), bb = bands(closes, 20, 2);
+  return { e9: ema(closes, 9), e21: ema(closes, 21), e50: ema(closes, 50), r: rsi(closes, 7), r14: rsi(closes, 14), bbUp: bb.up, bbLo: bb.lo };
+}
+function range(c, i, n) {
+  var hi = -Infinity, lo = Infinity;
+  for (var j = i - n; j < i; j++) { if (c[j].h > hi) hi = c[j].h; if (c[j].l < lo) lo = c[j].l; }
+  return { hi: hi, lo: lo };
+}
+var STRATS = [
+  { id: 'pullback', name: 'Trend pullback', hint: 'With the EMA50 trend, after a short RSI dip',
+    fn: function (i, c, d) {
+      var k = c[i], r = d.r, lo = Math.min(r[i - 1], r[i - 2], r[i - 3]), hi = Math.max(r[i - 1], r[i - 2], r[i - 3]);
+      if (k.c > d.e50[i] && d.e21[i] > d.e50[i] && lo < 35 && k.c > k.o && k.c > d.e9[i] && r[i] > r[i - 1]) return 'UP';
+      if (k.c < d.e50[i] && d.e21[i] < d.e50[i] && hi > 65 && k.c < k.o && k.c < d.e9[i] && r[i] < r[i - 1]) return 'DOWN';
+      return null;
+    } },
+  { id: 'sweep', name: 'Liquidity sweep', hint: 'Wick takes out the 20-candle high or low, then closes back inside',
+    fn: function (i, c, d) {
+      var k = c[i], z = range(c, i, 20);
+      if (k.l < z.lo && k.c > z.lo && k.c > k.o) return 'UP';
+      if (k.h > z.hi && k.c < z.hi && k.c < k.o) return 'DOWN';
+      return null;
+    } },
+  { id: 'pinbar', name: 'Price action: rejection wick', hint: 'Pin bar at the edge of the 20-candle range',
+    fn: function (i, c, d) {
+      var k = c[i], body = Math.abs(k.c - k.o), full = k.h - k.l;
+      if (full <= 0) return null;
+      var lowW = Math.min(k.o, k.c) - k.l, upW = k.h - Math.max(k.o, k.c), z = range(c, i, 20), near = (z.hi - z.lo) * 0.15;
+      if (lowW >= 2 * body && lowW >= 0.6 * full && k.l <= z.lo + near) return 'UP';
+      if (upW >= 2 * body && upW >= 0.6 * full && k.h >= z.hi - near) return 'DOWN';
+      return null;
+    } },
+  { id: 'engulf', name: 'Price action: engulfing', hint: 'Engulfing candle in the direction of the EMA50 trend',
+    fn: function (i, c, d) {
+      var k = c[i], p = c[i - 1];
+      if (p.c < p.o && k.c > k.o && k.c >= p.o && k.o <= p.c && k.c > d.e50[i]) return 'UP';
+      if (p.c > p.o && k.c < k.o && k.c <= p.o && k.o >= p.c && k.c < d.e50[i]) return 'DOWN';
+      return null;
+    } },
+  { id: 'bb', name: 'Bollinger reversal', hint: 'Closes back inside the bands with RSI stretched',
+    fn: function (i, c, d) {
+      var k = c[i], p = c[i - 1];
+      if (p.c < d.bbLo[i - 1] && k.c > d.bbLo[i] && d.r14[i - 1] < 30) return 'UP';
+      if (p.c > d.bbUp[i - 1] && k.c < d.bbUp[i] && d.r14[i - 1] > 70) return 'DOWN';
+      return null;
+    } },
+  { id: 'cross', name: 'EMA 9/21 cross', hint: 'Momentum cross on the side of the EMA50',
+    fn: function (i, c, d) {
+      var was = d.e9[i - 1] - d.e21[i - 1], now = d.e9[i] - d.e21[i];
+      if (was <= 0 && now > 0 && c[i].c > d.e50[i]) return 'UP';
+      if (was >= 0 && now < 0 && c[i].c < d.e50[i]) return 'DOWN';
+      return null;
+    } }
+];
+/* Combined signal from the enabled strategies; opposite directions cancel out. */
+function signalAt(i, c, ind, enabled) {
+  if (i < 60) return null;
+  var dir = null, names = [];
+  for (var s = 0; s < STRATS.length; s++) {
+    if (enabled && !enabled[STRATS[s].id]) continue;
+    var r = STRATS[s].fn(i, c, ind);
+    if (!r) continue;
+    if (dir && r !== dir) return null;
+    dir = r; names.push(STRATS[s].name);
+  }
+  return dir ? { dir: dir, names: names } : null;
+}
+function backtest(c, expiry, enabled, ind) {
+  ind = ind || indicators(c);
+  var res = [], next = 0;
+  for (var i = 60; i + expiry < c.length; i++) {
+    if (i < next) continue;
+    var s = signalAt(i, c, ind, enabled);
+    if (!s) continue;
+    var a = c[i].c, b = c[i + expiry].c;
+    res.push({ t: c[i].t, dir: s.dir, result: a === b ? 'tie' : ((s.dir === 'UP') === (b > a) ? 'win' : 'loss') });
+    next = i + expiry;
+  }
+  return res;
+}
+function summarize(res) {
+  var w = 0, l = 0;
+  res.forEach(function (x) { if (x.result === 'win') w++; else if (x.result === 'loss') l++; });
+  return { wins: w, losses: l, n: w + l, rate: w + l ? w / (w + l) : null };
+}
+function breakEven(payoutPct) { return 1 / (1 + payoutPct / 100); }
+/* ===== LOGIC END ===== */
+
+var URLS = ['wss://api.derivws.com/trading/v1/options/ws/public', 'wss://ws.derivws.com/websockets/v3?app_id=1089', 'wss://ws.binaryws.com/websockets/v3?app_id=1089'];
+var urlIdx = 0, fails = 0, attempt = 0, ws = null, watchdog = null, retryT = null, candles = [], forming = null, live = [], lastMsg = 0, soundOn = false, audio = null, cooldownUntil = 0, current = null, enabled = {};
+STRATS.forEach(function (x) { enabled[x.id] = true; });
+var $ = function (id) { return document.getElementById(id); };
+
+function setStatus(kind, text) { $('dot').className = 'dot ' + kind; $('statusText').textContent = text; }
+function diag(t) { var d = $('diag'); d.textContent = (d.textContent ? d.textContent + ' → ' : '') + t; }
+
+function pushCandle(k) {
+  if (forming && k.t > forming.t) { candles.push(forming); if (candles.length > 1500) candles.shift(); forming = k; onClose(); }
+  else forming = k;
+  lastMsg = Date.now(); setStatus('ok', 'Live'); render();
+}
+function loadHistory(all) {
+  var nowMin = Math.floor(Date.now() / 60000) * 60;
+  forming = (all.length && all[all.length - 1].t >= nowMin) ? all.pop() : null;
+  candles = all; lastMsg = Date.now(); fails = 0;
+  setStatus('ok', 'Live · ' + candles.length + ' candles loaded');
+  render(); renderBacktest();
+}
+function stop() {
+  clearTimeout(watchdog); clearTimeout(retryT);
+  if (ws) { ws.onclose = ws.onmessage = ws.onerror = ws.onopen = null; try { ws.close(); } catch (e) {} ws = null; }
+}
+function retry(why, delay) {
+  stop(); diag(why);
+  setStatus('bad', why + ' Retrying…');
+  retryT = setTimeout(connect, delay || 3000);
+}
+
+function connect() {
+  stop(); attempt++;
+  candles = []; forming = null; current = null; cooldownUntil = 0;
+  var sym = $('pair').value, me = attempt;
+  if (sym.indexOf('bn:') === 0) return connectBinance(sym.slice(3), me);
+  var n = urlIdx + 1;
+  setStatus('', 'Connecting to forex feed ' + n + ' of ' + URLS.length + '…');
+  try { ws = new WebSocket(URLS[urlIdx]); }
+  catch (e) { setStatus('bad', 'This app blocks live prices. Open the file in Chrome itself.'); diag('socket blocked'); return; }
+  var opened = false, got = false, triedPlain = false;
+  function next(why) {
+    urlIdx = (urlIdx + 1) % URLS.length; fails++;
+    if (fails >= URLS.length) {
+      fails = 0; stop(); diag(why);
+      setStatus('bad', 'Forex feed unreachable from this network. Switch the pair to BTC/USDT, which uses a different feed.');
+      retryT = setTimeout(connect, 20000);
+    } else retry(why, 500);
+  }
+  watchdog = setTimeout(function () { next('feed ' + n + (opened ? ' opened but sent nothing' : ' did not open')); }, 8000);
+  ws.onopen = function () {
+    opened = true;
+    ws.send(JSON.stringify({ ticks_history: sym, style: 'candles', granularity: 60, end: 'latest', count: 1000, subscribe: 1 }));
+  };
+  ws.onmessage = function (ev) {
+    var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+    if (m.error) {
+      if (!got && !triedPlain) { /* closed markets refuse live updates: ask for history only */
+        triedPlain = true; diag('feed said: ' + (m.error.code || m.error.message));
+        ws.send(JSON.stringify({ ticks_history: sym, style: 'candles', granularity: 60, end: 'latest', count: 1000 }));
+        return;
+      }
+      clearTimeout(watchdog);
+      setStatus('bad', (m.error.message || 'Feed error') + ' Try another pair.'); return;
+    }
+    if (m.msg_type === 'candles' && m.candles) {
+      got = true; clearTimeout(watchdog);
+      loadHistory(m.candles.map(function (k) { return { t: +k.epoch, o: +k.open, h: +k.high, l: +k.low, c: +k.close }; }));
+      if (triedPlain) setStatus('', 'This market is closed now (forex closes on weekends). Showing history only.');
+    } else if (m.msg_type === 'ohlc' && m.ohlc) {
+      var o = m.ohlc;
+      pushCandle({ t: +(o.open_time || Math.floor(+o.epoch / 60) * 60), o: +o.open, h: +o.high, l: +o.low, c: +o.close });
+    }
+  };
+  ws.onclose = function () {
+    if (me !== attempt) return;
+    if (got) retry('Connection dropped.', 3000); else { clearTimeout(watchdog); next('feed ' + n + (opened ? ' closed early' : ' refused')); }
+  };
+}
+
+var BN_REST = ['https://data-api.binance.vision', 'https://api.binance.com'], BN_WS = ['wss://data-stream.binance.vision/ws/', 'wss://stream.binance.com:9443/ws/'], bnIdx = 0;
+function connectBinance(sym, me) {
+  setStatus('', 'Connecting to crypto feed…');
+  var ctl = window.AbortController ? new AbortController() : null;
+  watchdog = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
+  fetch(BN_REST[bnIdx] + '/api/v3/klines?symbol=' + sym + '&interval=1m&limit=1000', ctl ? { signal: ctl.signal } : {})
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (rows) {
+      if (me !== attempt) return;
+      clearTimeout(watchdog);
+      loadHistory(rows.map(function (k) { return { t: k[0] / 1000, o: +k[1], h: +k[2], l: +k[3], c: +k[4] }; }));
+      ws = new WebSocket(BN_WS[bnIdx] + sym.toLowerCase() + '@kline_1m');
+      ws.onmessage = function (ev) {
+        var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+        if (m.k) pushCandle({ t: m.k.t / 1000, o: +m.k.o, h: +m.k.h, l: +m.k.l, c: +m.k.c });
+      };
+      ws.onclose = function () { if (me === attempt) retry('Connection dropped.', 3000); };
+    })
+    .catch(function (e) {
+      if (me !== attempt) return;
+      bnIdx = (bnIdx + 1) % BN_REST.length;
+      retry('crypto feed failed (' + (e && e.message || 'blocked') + ')', 4000);
+    });
+}
+
+function onClose() {
+  var i = candles.length - 1, k = candles[i], expiry = +$('expiry').value;
+  live.forEach(function (s) {
+    if (s.result === 'open' && k.t >= s.dueT) {
+      s.result = k.c === s.entry ? 'tie' : ((s.dir === 'UP') === (k.c > s.entry) ? 'win' : 'loss');
+    }
+  });
+  current = null;
+  if (k.t >= cooldownUntil) {
+    var s = signalAt(i, candles, indicators(candles), enabled);
+    if (s) {
+      current = { dir: s.dir, t: k.t, names: s.names };
+      cooldownUntil = k.t + expiry * 60;
+      live.unshift({ t: k.t + 60, dir: s.dir, why: s.names.join(' + '), entry: k.c, dueT: k.t + expiry * 60, result: 'open', pair: $('pair').selectedOptions[0].text, expiry: expiry });
+      alertUser();
+    }
+  }
+  renderLog(); renderBacktest();
+}
+
+function alertUser() {
+  try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+  if (!soundOn || !audio) return;
+  try {
+    var o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = 880; o.connect(g); g.connect(audio.destination);
+    g.gain.setValueAtTime(0.25, audio.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.6);
+    o.start(); o.stop(audio.currentTime + 0.6);
+  } catch (e) {}
+}
+
+function fmt(p) { return p >= 100 ? p.toFixed(2) : p >= 10 ? p.toFixed(3) : p.toFixed(5); }
+function clock(t) { var d = new Date(t * 1000); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+
+function render() {
+  var w = $('sigWord'), last = forming || candles[candles.length - 1];
+  if (last) $('price').textContent = fmt(last.c);
+  if (candles.length < 61) { w.textContent = 'WAIT'; w.className = 'wait'; $('sigNote').textContent = 'Need more candles for this pair.'; }
+  else if (current) {
+    w.textContent = current.dir === 'UP' ? 'BUY ▲' : 'SELL ▼'; w.className = current.dir === 'UP' ? 'up' : 'down';
+    $('sigNote').textContent = current.names.join(' + ') + ' · enter now · expiry ' + $('expiry').value + ' min';
+  } else { w.textContent = 'WAIT'; w.className = 'wait'; $('sigNote').textContent = 'No setup. Most minutes have none.'; }
+  drawChart();
+}
+
+var lastRates = {};
+function renderBacktest() {
+  var expiry = +$('expiry').value, pay = Math.min(99, Math.max(50, +$('payout').value || 80)), need = breakEven(pay);
+  var ind = candles.length ? indicators(candles) : null, hours = (candles.length / 60).toFixed(0);
+  $('strats').innerHTML = STRATS.map(function (x) {
+    var only = {}; only[x.id] = true;
+    var s = ind ? summarize(backtest(candles, expiry, only, ind)) : { n: 0, rate: null };
+    lastRates[x.id] = s;
+    var cls = s.n < 20 ? 'dim' : s.rate > need ? 'up' : 'down';
+    return '<label class="st"><input type="checkbox" data-id="' + x.id + '"' + (enabled[x.id] ? ' checked' : '') + '>' +
+      '<span class="nm">' + x.name + '<small>' + x.hint + '</small></span>' +
+      '<span class="rs ' + cls + '">' + (s.rate === null ? '—' : (s.rate * 100).toFixed(0) + '%') + '<small>' + s.n + ' signals</small></span></label>';
+  }).join('');
+  var s = ind ? summarize(backtest(candles, expiry, enabled, ind)) : { n: 0, rate: null };
+  $('btN').textContent = s.n; $('btNeed').textContent = (need * 100).toFixed(1) + '%';
+  $('btWin').textContent = s.rate === null ? '—' : (s.rate * 100).toFixed(0) + '%';
+  var v = $('verdict');
+  if (s.n < 20) { v.className = 'dim'; v.textContent = 'Only ' + s.n + ' signals in the last ' + hours + ' hours: too few to judge.'; }
+  else if (s.rate > need) { v.className = 'up'; v.textContent = 'Above break-even over the last ' + hours + ' hours. A short sample like this can still be luck.'; }
+  else { v.className = 'down'; v.textContent = 'Below break-even over the last ' + hours + ' hours. Trading these signals on this pair would have lost money.'; }
+}
+$('strats').onchange = function (e) {
+  var id = e.target.getAttribute('data-id'); if (!id) return;
+  enabled[id] = e.target.checked; renderBacktest();
+};
+$('best').onclick = function () {
+  var need = breakEven(Math.min(99, Math.max(50, +$('payout').value || 80)));
+  STRATS.forEach(function (x) { var s = lastRates[x.id]; enabled[x.id] = !!s && s.n >= 20 && s.rate > need; });
+  renderBacktest();
+};
+
+function renderLog() {
+  var s = summarize(live);
+  $('liveSum').textContent = s.n ? '· ' + s.wins + ' won / ' + s.losses + ' lost' : '';
+  if (!live.length) return;
+  $('log').innerHTML = live.slice(0, 30).map(function (x) {
+    var cls = x.result === 'win' ? 'up' : x.result === 'loss' ? 'down' : 'dim';
+    return '<li><span>' + clock(x.t) + ' · ' + x.pair + ' · ' + (x.dir === 'UP' ? 'BUY' : 'SELL') + ' · ' + x.expiry + 'm<br><small class="dim">' + x.why + '</small></span><span class="' + cls + '">' + x.result.toUpperCase() + '</span></li>';
+  }).join('');
+}
+
+function drawChart() {
+  var cv = $('chart'), g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  g.clearRect(0, 0, W, H);
+  var all = forming ? candles.concat([forming]) : candles, n = Math.min(90, all.length);
+  if (n < 2) return;
+  var e = ema(all.map(function (x) { return x.c; }), 21).slice(-n), c = all.slice(-n).map(function (x) { return x.c; });
+  var min = Math.min.apply(null, c.concat(e)), max = Math.max.apply(null, c.concat(e)), span = (max - min) || 1;
+  function line(v, color, width) {
+    g.beginPath(); g.strokeStyle = color; g.lineWidth = width;
+    v.forEach(function (p, i) { var x = i / (n - 1) * W, y = H - 8 - (p - min) / span * (H - 16); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.stroke();
+  }
+  line(e, '#f59e0b', 2); line(c, '#e8ecf1', 3);
+}
+
+setInterval(function () {
+  var left = 60 - Math.floor(Date.now() / 1000) % 60;
+  if (lastMsg && Date.now() - lastMsg > 90000) {
+    setStatus('', 'No new prices. This market may be closed (forex closes on weekends).');
+    $('count').textContent = '';
+  } else if (forming) $('count').textContent = 'Candle closes in ' + left + 's';
+}, 1000);
+
+$('pair').onchange = connect;
+$('expiry').onchange = function () { renderBacktest(); render(); };
+$('payout').oninput = renderBacktest;
+$('sound').onclick = function () {
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); soundOn = !soundOn; } catch (e) { soundOn = false; }
+  this.textContent = soundOn ? 'Sound alert is on' : 'Turn on sound alert';
+  if (soundOn) alertUser();
+};
+var wd = new Date().getUTCDay(), hr = new Date().getUTCHours();
+if (wd === 6 || (wd === 5 && hr >= 21) || (wd === 0 && hr < 21)) $('pair').value = 'bn:BTCUSDT';
+connect();
+</script>
+</body>
+</html>

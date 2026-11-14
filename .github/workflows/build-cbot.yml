@@ -1,0 +1,40 @@
+name: Build cTrader bot
+
+on:
+  push:
+    branches: [cbot]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            6.0.x
+            8.0.x
+      - name: Build
+        run: dotnet build QuickScalper/QuickScalper.csproj --configuration Release -p:IncludeSource=True
+      - name: Collect .algo file
+        shell: bash
+        run: |
+          mkdir -p out
+          found=$(find QuickScalper/bin -name "*.algo" | head -n 1)
+          if [ -z "$found" ]; then found=$(find "$USERPROFILE/Documents" -name "QuickScalper*.algo" | head -n 1); fi
+          if [ -z "$found" ]; then echo "No .algo file was produced"; exit 1; fi
+          cp "$found" out/QuickScalper.algo
+          ls -l out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuickScalper
+          path: out/QuickScalper.algo
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "cbot-${{ github.run_number }}" out/QuickScalper.algo --title "QuickScalper cTrader bot (build ${{ github.run_number }})" --notes "Open QuickScalper.algo on your phone with the cTrader app. Test on a demo account first." --target "${{ github.sha }}"

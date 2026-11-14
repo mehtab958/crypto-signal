@@ -89,11 +89,14 @@
     <h2>Strategies, tested on recent history</h2>
     <div id="strats"></div>
     <div class="stats" style="margin-top:12px">
-      <div><b id="btN">—</b><span>signals (ticked ones)</span></div>
+      <div><b id="btN">—</b><span>signals (your setup)</span></div>
       <div><b id="btWin">—</b><span>win rate</span></div>
       <div><b id="btNeed">—</b><span>needed to break even</span></div>
     </div>
     <div id="verdict" class="dim"></div>
+    <label class="fine" style="display:block;margin-top:12px">Only signal when this many ticked strategies agree
+      <select id="agree"><option value="1">1 (more signals)</option><option value="2">2 (confluence)</option><option value="3">3 (rare, strict)</option></select>
+    </label>
     <button id="best" style="margin-top:10px">Tick only strategies above break-even</button>
   </div>
 
@@ -135,7 +138,15 @@ function bands(v, n, mult) {
 }
 function indicators(c) {
   var closes = c.map(function (x) { return x.c; }), bb = bands(closes, 20, 2);
-  return { e9: ema(closes, 9), e21: ema(closes, 21), e50: ema(closes, 50), r: rsi(closes, 7), r14: rsi(closes, 14), bbUp: bb.up, bbLo: bb.lo };
+  var e12 = ema(closes, 12), e26 = ema(closes, 26), macd = e12.map(function (x, i) { return x - e26[i]; }), sig = ema(macd, 9);
+  var kRaw = c.map(function (x, i) {
+    var hi = -Infinity, lo = Infinity;
+    for (var j = Math.max(0, i - 13); j <= i; j++) { if (c[j].h > hi) hi = c[j].h; if (c[j].l < lo) lo = c[j].l; }
+    return hi === lo ? 50 : (x.c - lo) / (hi - lo) * 100;
+  });
+  var stK = kRaw.map(function (x, i) { return i < 2 ? x : (kRaw[i] + kRaw[i - 1] + kRaw[i - 2]) / 3; });
+  var stD = stK.map(function (x, i) { return i < 2 ? x : (stK[i] + stK[i - 1] + stK[i - 2]) / 3; });
+  return { e9: ema(closes, 9), e21: ema(closes, 21), e50: ema(closes, 50), r: rsi(closes, 7), r14: rsi(closes, 14), bbUp: bb.up, bbLo: bb.lo, macd: macd, sig: sig, stK: stK, stD: stD };
 }
 function range(c, i, n) {
   var hi = -Infinity, lo = Infinity;
@@ -186,11 +197,68 @@ var STRATS = [
       if (was <= 0 && now > 0 && c[i].c > d.e50[i]) return 'UP';
       if (was >= 0 && now < 0 && c[i].c < d.e50[i]) return 'DOWN';
       return null;
+    } },
+  { id: 'snr', name: 'Raja Banks style SnR', hint: 'Wick taps a fresh level drawn on closes (A / V shape) and closes back',
+    fn: function (i, c, d) {
+      var k = c[i], from = Math.max(2, i - 100);
+      for (var j = i - 4; j >= from; j--) {
+        var L = c[j].c, m, fresh = true;
+        if (L > c[j - 1].c && L > c[j - 2].c && L > c[j + 1].c && L > c[j + 2].c) {        /* A shape: resistance */
+          if (!(k.h >= L && k.c < L && k.c < k.o)) continue;
+          for (m = j + 2; m < i; m++) if (c[m].h >= L) { fresh = false; break; }
+          if (fresh) return 'DOWN';
+        } else if (L < c[j - 1].c && L < c[j - 2].c && L < c[j + 1].c && L < c[j + 2].c) { /* V shape: support */
+          if (!(k.l <= L && k.c > L && k.c > k.o)) continue;
+          for (m = j + 2; m < i; m++) if (c[m].l <= L) { fresh = false; break; }
+          if (fresh) return 'UP';
+        }
+      }
+      return null;
+    } },
+  { id: 'fvg', name: 'Fair value gap retest', hint: 'Price dips back into a recent unfilled 3-candle gap and holds',
+    fn: function (i, c, d) {
+      var k = c[i];
+      for (var a = i - 1; a >= i - 12; a--) {
+        var top, bot, m, ok = true;
+        if (c[a].l > c[a - 2].h) {                 /* bullish gap */
+          top = c[a].l; bot = c[a - 2].h;
+          for (m = a + 1; m < i; m++) if (c[m].l <= top) { ok = false; break; }
+          if (ok && k.l <= top && k.c > bot && k.c > k.o) return 'UP';
+        } else if (c[a].h < c[a - 2].l) {          /* bearish gap */
+          bot = c[a].h; top = c[a - 2].l;
+          for (m = a + 1; m < i; m++) if (c[m].h >= bot) { ok = false; break; }
+          if (ok && k.h >= bot && k.c < top && k.c < k.o) return 'DOWN';
+        }
+      }
+      return null;
+    } },
+  { id: 'retest', name: 'Break and retest', hint: 'Closes through the 20-candle range, comes back to the level and holds',
+    fn: function (i, c, d) {
+      var k = c[i], z = range(c, i - 5, 20), up = false, dn = false;
+      for (var j = i - 5; j < i; j++) { if (c[j].c > z.hi) up = true; if (c[j].c < z.lo) dn = true; }
+      if (up && !dn && k.l <= z.hi && k.c > z.hi && k.c > k.o) return 'UP';
+      if (dn && !up && k.h >= z.lo && k.c < z.lo && k.c < k.o) return 'DOWN';
+      return null;
+    } },
+  { id: 'macd', name: 'MACD cross', hint: 'MACD crosses its signal line on the side of the EMA50',
+    fn: function (i, c, d) {
+      var was = d.macd[i - 1] - d.sig[i - 1], now = d.macd[i] - d.sig[i];
+      if (was <= 0 && now > 0 && c[i].c > d.e50[i]) return 'UP';
+      if (was >= 0 && now < 0 && c[i].c < d.e50[i]) return 'DOWN';
+      return null;
+    } },
+  { id: 'stoch', name: 'Stochastic turn', hint: '%K crosses %D from below 20 or above 80',
+    fn: function (i, c, d) {
+      var was = d.stK[i - 1] - d.stD[i - 1], now = d.stK[i] - d.stD[i];
+      if (was <= 0 && now > 0 && d.stK[i - 1] < 20) return 'UP';
+      if (was >= 0 && now < 0 && d.stK[i - 1] > 80) return 'DOWN';
+      return null;
     } }
 ];
 /* Combined signal from the enabled strategies; opposite directions cancel out. */
-function signalAt(i, c, ind, enabled) {
-  if (i < 60) return null;
+var minAgree = 1;
+function signalAt(i, c, ind, enabled, need) {
+  if (i < 110) return null;
   var dir = null, names = [];
   for (var s = 0; s < STRATS.length; s++) {
     if (enabled && !enabled[STRATS[s].id]) continue;
@@ -199,14 +267,14 @@ function signalAt(i, c, ind, enabled) {
     if (dir && r !== dir) return null;
     dir = r; names.push(STRATS[s].name);
   }
-  return dir ? { dir: dir, names: names } : null;
+  return dir && names.length >= (need || 1) ? { dir: dir, names: names } : null;
 }
-function backtest(c, expiry, enabled, ind) {
+function backtest(c, expiry, enabled, ind, need) {
   ind = ind || indicators(c);
   var res = [], next = 0;
-  for (var i = 60; i + expiry < c.length; i++) {
+  for (var i = 110; i + expiry < c.length; i++) {
     if (i < next) continue;
-    var s = signalAt(i, c, ind, enabled);
+    var s = signalAt(i, c, ind, enabled, need);
     if (!s) continue;
     var a = c[i].c, b = c[i + expiry].c;
     res.push({ t: c[i].t, dir: s.dir, result: a === b ? 'tie' : ((s.dir === 'UP') === (b > a) ? 'win' : 'loss') });
@@ -335,7 +403,7 @@ function onClose() {
   });
   current = null;
   if (k.t >= cooldownUntil) {
-    var s = signalAt(i, candles, indicators(candles), enabled);
+    var s = signalAt(i, candles, indicators(candles), enabled, minAgree);
     if (s) {
       current = { dir: s.dir, t: k.t, names: s.names };
       cooldownUntil = k.t + expiry * 60;
@@ -363,7 +431,7 @@ function clock(t) { var d = new Date(t * 1000); return ('0' + d.getHours()).slic
 function render() {
   var w = $('sigWord'), last = forming || candles[candles.length - 1];
   if (last) $('price').textContent = fmt(last.c);
-  if (candles.length < 61) { w.textContent = 'WAIT'; w.className = 'wait'; $('sigNote').textContent = 'Need more candles for this pair.'; }
+  if (candles.length < 111) { w.textContent = 'WAIT'; w.className = 'wait'; $('sigNote').textContent = 'Need more candles for this pair.'; }
   else if (current) {
     w.textContent = current.dir === 'UP' ? 'BUY ▲' : 'SELL ▼'; w.className = current.dir === 'UP' ? 'up' : 'down';
     $('sigNote').textContent = current.names.join(' + ') + ' · enter now · expiry ' + $('expiry').value + ' min';
@@ -384,7 +452,7 @@ function renderBacktest() {
       '<span class="nm">' + x.name + '<small>' + x.hint + '</small></span>' +
       '<span class="rs ' + cls + '">' + (s.rate === null ? '—' : (s.rate * 100).toFixed(0) + '%') + '<small>' + s.n + ' signals</small></span></label>';
   }).join('');
-  var s = ind ? summarize(backtest(candles, expiry, enabled, ind)) : { n: 0, rate: null };
+  var s = ind ? summarize(backtest(candles, expiry, enabled, ind, minAgree)) : { n: 0, rate: null };
   $('btN').textContent = s.n; $('btNeed').textContent = (need * 100).toFixed(1) + '%';
   $('btWin').textContent = s.rate === null ? '—' : (s.rate * 100).toFixed(0) + '%';
   var v = $('verdict');
@@ -396,6 +464,7 @@ $('strats').onchange = function (e) {
   var id = e.target.getAttribute('data-id'); if (!id) return;
   enabled[id] = e.target.checked; renderBacktest();
 };
+$('agree').onchange = function () { minAgree = +this.value; renderBacktest(); };
 $('best').onclick = function () {
   var need = breakEven(Math.min(99, Math.max(50, +$('payout').value || 80)));
   STRATS.forEach(function (x) { var s = lastRates[x.id]; enabled[x.id] = !!s && s.n >= 20 && s.rate > need; });

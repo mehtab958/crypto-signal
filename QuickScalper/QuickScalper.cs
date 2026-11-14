@@ -9,6 +9,13 @@ using cAlgo.API.Indicators;
 
 namespace cAlgo.Robots
 {
+    public enum NewsMode
+    {
+        Off,
+        PauseOnly,
+        TradeSpike
+    }
+
     [Robot(AccessRights = AccessRights.None)]
     public class QuickScalper : Robot
     {
@@ -87,6 +94,15 @@ namespace cAlgo.Robots
         [Parameter("Stochastic turn", DefaultValue = true, Group = "Strategies")]
         public bool UseStochastic { get; set; }
 
+        [Parameter("News mode", DefaultValue = NewsMode.TradeSpike, Group = "News")]
+        public NewsMode News { get; set; }
+
+        [Parameter("Spike size (x average candle)", DefaultValue = 3.0, MinValue = 1.5, Step = 0.5, Group = "News")]
+        public double NewsSpikeMultiple { get; set; }
+
+        [Parameter("Pause other strategies after spike (min)", DefaultValue = 10, MinValue = 0, Group = "News")]
+        public int NewsPauseMinutes { get; set; }
+
         private const string Label = "QuickScalper";
 
         private ExponentialMovingAverage _fast;
@@ -98,6 +114,8 @@ namespace cAlgo.Robots
         private MacdCrossOver _macd;
         private StochasticOscillator _stoch;
         private string _signalNames = "";
+        private AverageTrueRange _atr;
+        private DateTime _pauseUntil = DateTime.MinValue;
         private DateTime _lastOpen = DateTime.MinValue;
         private int _signal;   // +1 buy, -1 sell, 0 none; set once per closed bar
 
@@ -108,6 +126,7 @@ namespace cAlgo.Robots
             _trend = Indicators.ExponentialMovingAverage(Bars.ClosePrices, TrendPeriod);
             _rsi = Indicators.RelativeStrengthIndex(Bars.ClosePrices, RsiPeriod);
             _rsi14 = Indicators.RelativeStrengthIndex(Bars.ClosePrices, 14);
+            _atr = Indicators.AverageTrueRange(14, MovingAverageType.Simple);
             _bb = Indicators.BollingerBands(Bars.ClosePrices, 20, 2, MovingAverageType.Simple);
             _macd = Indicators.MacdCrossOver(26, 12, 9);
             _stoch = Indicators.StochasticOscillator(14, 3, 3, MovingAverageType.Simple);
@@ -180,6 +199,27 @@ namespace cAlgo.Robots
             int i = Bars.Count - 2;   // last closed bar
             int direction = 0, votes = 0;
             string names = "";
+
+            // News handling: a news release shows up as a candle several times
+            // larger than normal. Trade with it and/or pause the other strategies.
+            if (News != NewsMode.Off)
+            {
+                double normal = _atr.Result[i - 1];
+                double size = H(i) - L(i);
+                if (normal > 0 && size >= NewsSpikeMultiple * normal)
+                {
+                    _pauseUntil = Server.Time.AddMinutes(NewsPauseMinutes);
+                    Print("News spike: candle is {0:0.0}x normal size", size / normal);
+                    if (News == NewsMode.TradeSpike && Math.Abs(C(i) - O(i)) >= 0.6 * size)
+                    {
+                        _signalNames = "news";
+                        return C(i) > O(i) ? 1 : -1;
+                    }
+                    return 0;
+                }
+                if (Server.Time < _pauseUntil)
+                    return 0;
+            }
 
             if (!Vote(UsePullback, Pullback(i), "pullback", ref direction, ref votes, ref names)) return 0;
             if (!Vote(UseSweep, Sweep(i), "sweep", ref direction, ref votes, ref names)) return 0;

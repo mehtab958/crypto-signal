@@ -28,10 +28,10 @@ namespace cAlgo.Robots
         [Parameter("Max open trades", DefaultValue = 6, MinValue = 1, MaxValue = 10)]
         public int MaxPositions { get; set; }
 
-        [Parameter("Close at profit (money)", DefaultValue = 1.0, MinValue = 0.1)]
+        [Parameter("Close at profit (money)", DefaultValue = 0.35, MinValue = 0.05)]
         public double ProfitTarget { get; set; }
 
-        [Parameter("Close at loss (money)", DefaultValue = 2.0, MinValue = 0.1)]
+        [Parameter("Close at loss (money)", DefaultValue = 1.0, MinValue = 0.1)]
         public double StopLoss { get; set; }
 
         [Parameter("Daily loss limit (money, 0 = off)", DefaultValue = 20.0, MinValue = 0)]

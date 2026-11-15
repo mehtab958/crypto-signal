@@ -25,22 +25,22 @@ namespace cAlgo.Robots
         [Parameter("Largest lot (3+ strategies agree)", DefaultValue = 0.03, MinValue = 0.01, Step = 0.01)]
         public double MaxLots { get; set; }
 
-        [Parameter("Max open trades", DefaultValue = 3, MinValue = 1, MaxValue = 10)]
+        [Parameter("Max open trades", DefaultValue = 6, MinValue = 1, MaxValue = 10)]
         public int MaxPositions { get; set; }
 
         [Parameter("Close at profit (money)", DefaultValue = 1.0, MinValue = 0.1)]
         public double ProfitTarget { get; set; }
 
-        [Parameter("Close at loss (money)", DefaultValue = 20.0, MinValue = 0.1)]
+        [Parameter("Close at loss (money)", DefaultValue = 2.0, MinValue = 0.1)]
         public double StopLoss { get; set; }
 
-        [Parameter("Daily loss limit (money)", DefaultValue = 60.0, MinValue = 1)]
+        [Parameter("Daily loss limit (money)", DefaultValue = 20.0, MinValue = 1)]
         public double DailyLossLimit { get; set; }
 
         [Parameter("Max spread cost (% of profit target)", DefaultValue = 25, MinValue = 1, MaxValue = 100)]
         public double MaxSpreadPercent { get; set; }
 
-        [Parameter("Seconds between new trades", DefaultValue = 30, MinValue = 0)]
+        [Parameter("Seconds between new trades", DefaultValue = 10, MinValue = 0)]
         public int SecondsBetweenOpen { get; set; }
 
         [Parameter("Fast EMA", DefaultValue = 9, MinValue = 2)]

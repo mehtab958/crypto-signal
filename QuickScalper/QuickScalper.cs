@@ -119,6 +119,18 @@ namespace cAlgo.Robots
         [Parameter("Pause other strategies after spike (min)", DefaultValue = 10, MinValue = 0, Group = "News")]
         public int NewsPauseMinutes { get; set; }
 
+        [Parameter("Basket mode (open a group, close together)", DefaultValue = true, Group = "Basket")]
+        public bool BasketMode { get; set; }
+
+        [Parameter("Trades opened together", DefaultValue = 5, MinValue = 1, MaxValue = 10, Group = "Basket")]
+        public int BasketSize { get; set; }
+
+        [Parameter("Close all at total profit (money)", DefaultValue = 5.0, MinValue = 0.1, Group = "Basket")]
+        public double BasketProfit { get; set; }
+
+        [Parameter("Close all at total loss (money)", DefaultValue = 5.0, MinValue = 0.1, Group = "Basket")]
+        public double BasketLoss { get; set; }
+
         private const string Label = "QuickScalper";
 
         private ExponentialMovingAverage _fast;
@@ -157,6 +169,12 @@ namespace cAlgo.Robots
 
         protected override void OnTick()
         {
+            if (BasketMode)
+            {
+                BasketTick();
+                return;
+            }
+
             double floating = 0;
             int open = 0;
 
@@ -213,6 +231,64 @@ namespace cAlgo.Robots
                 _lastOpen = Server.Time;
             else
                 Print("Order failed: {0}", order.Error);
+        }
+
+        // Basket mode: on a signal, open several trades together in the same direction,
+        // then close them all when their total profit or total loss reaches the limit.
+        private void BasketTick()
+        {
+            var positions = Positions.FindAll(Label, SymbolName);
+            if (positions.Length > 0)
+            {
+                double total = positions.Sum(p => p.NetProfit);
+                if (total >= BasketProfit || total <= -BasketLoss)
+                {
+                    Print("Basket closed at {0:0.00}", total);
+                    foreach (var position in positions)
+                    {
+                        var closed = ClosePosition(position);
+                        if (!closed.IsSuccessful)
+                            Print("Close failed: {0}", closed.Error);
+                    }
+                }
+                return;   // one basket at a time
+            }
+
+            if (_signal == 0)
+                return;
+            if ((Server.Time - Bars.OpenTimes.LastValue).TotalSeconds > 20)
+                return;
+            if (DailyLossLimit > 0 && TodayClosedProfit() <= -DailyLossLimit)
+            {
+                Skip("daily loss limit reached");
+                return;
+            }
+
+            double volume = Symbol.NormalizeVolumeInUnits(Symbol.QuantityToVolumeInUnits(MinLots), RoundingMode.Down);
+            if (volume < Symbol.VolumeInUnitsMin)
+                volume = Symbol.VolumeInUnitsMin;
+            double pipMoney = Symbol.PipValue * volume;
+            if (pipMoney <= 0)
+                return;
+
+            // Safety stop and target on the server for each trade, set wide (2x its share),
+            // in case the bot is not running; the basket limits normally act first
+            double slPips = Math.Max(1, Math.Round(2 * BasketLoss / BasketSize / pipMoney, 1));
+            double tpPips = Math.Max(1, Math.Round(2 * BasketProfit / BasketSize / pipMoney, 1));
+
+            var tradeType = _signal > 0 ? TradeType.Buy : TradeType.Sell;
+            string comment = _signalNames + "|basket";
+            int opened = 0;
+            for (int n = 0; n < BasketSize; n++)
+            {
+                var order = ExecuteMarketOrder(tradeType, SymbolName, volume, Label, slPips, tpPips, comment);
+                if (order.IsSuccessful)
+                    opened++;
+                else
+                    Print("Order failed: {0}", order.Error);
+            }
+            Print("Basket opened: {0} x {1} ({2})", opened, tradeType, _signalNames);
+            _signal = 0;
         }
 
         // Each trade carries its own profit target and loss limit at the end of

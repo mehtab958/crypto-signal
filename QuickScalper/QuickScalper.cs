@@ -3,6 +3,7 @@
 // small money profit or a fixed money loss. Start it on an m1 chart.
 // Test on a demo account first.
 using System;
+using System.Globalization;
 using System.Linq;
 using cAlgo.API;
 using cAlgo.API.Indicators;
@@ -31,13 +32,16 @@ namespace cAlgo.Robots
         [Parameter("Close at profit (money)", DefaultValue = 0.35, MinValue = 0.05)]
         public double ProfitTarget { get; set; }
 
+        [Parameter("Close at profit when spread is high (money)", DefaultValue = 0.70, MinValue = 0.05)]
+        public double HighSpreadProfitTarget { get; set; }
+
         [Parameter("Close at loss (money)", DefaultValue = 1.0, MinValue = 0.1)]
         public double StopLoss { get; set; }
 
         [Parameter("Daily loss limit (money, 0 = off)", DefaultValue = 20.0, MinValue = 0)]
         public double DailyLossLimit { get; set; }
 
-        [Parameter("Max spread cost (% of profit target)", DefaultValue = 25, MinValue = 1, MaxValue = 100)]
+        [Parameter("Max spread cost (% of profit target)", DefaultValue = 50, MinValue = 1, MaxValue = 100)]
         public double MaxSpreadPercent { get; set; }
 
         [Parameter("Seconds between new trades", DefaultValue = 10, MinValue = 0)]
@@ -159,7 +163,7 @@ namespace cAlgo.Robots
             // Close trades that reached the money target or the money stop
             foreach (var position in Positions.FindAll(Label, SymbolName))
             {
-                if (position.NetProfit >= ProfitTarget || position.NetProfit <= -StopLoss)
+                if (position.NetProfit >= TargetOf(position) || position.NetProfit <= -StopLoss)
                 {
                     var result = ClosePosition(position);
                     if (result.IsSuccessful)
@@ -193,22 +197,40 @@ namespace cAlgo.Robots
             if (pipMoney <= 0)
                 return;
 
-            // Works on any symbol: compare what the spread costs in money with the profit target
+            // Works on any symbol: compare what the spread costs in money with the profit target.
+            // If the spread is too big for the normal target, use the larger target instead of skipping.
             double spreadCost = Symbol.Spread / Symbol.PipSize * pipMoney;
-            if (spreadCost > ProfitTarget * MaxSpreadPercent / 100)
+            double target = ProfitTarget;
+            if (spreadCost > target * MaxSpreadPercent / 100)
             {
-                Skip(string.Format("spread costs {0:0.00}, more than {1}% of the profit target", spreadCost, MaxSpreadPercent));
-                return;
+                target = Math.Max(ProfitTarget, HighSpreadProfitTarget);
+                if (spreadCost > target * MaxSpreadPercent / 100)
+                {
+                    Skip(string.Format("spread costs {0:0.00}, more than {1}% of the {2:0.00} profit target", spreadCost, MaxSpreadPercent, target));
+                    return;
+                }
             }
             double slPips = Math.Max(1, Math.Round(StopLoss / pipMoney, 1));
-            double tpPips = Math.Max(1, Math.Round(ProfitTarget / pipMoney, 1));
+            double tpPips = Math.Max(1, Math.Round(target / pipMoney, 1));
+            string comment = _signalNames + "|" + target.ToString("0.00", CultureInfo.InvariantCulture);
 
             var tradeType = _signal > 0 ? TradeType.Buy : TradeType.Sell;
-            var order = ExecuteMarketOrder(tradeType, SymbolName, volume, Label, slPips, tpPips, _signalNames);
+            var order = ExecuteMarketOrder(tradeType, SymbolName, volume, Label, slPips, tpPips, comment);
             if (order.IsSuccessful)
                 _lastOpen = Server.Time;
             else
                 Print("Order failed: {0}", order.Error);
+        }
+
+        // Each trade carries its own profit target at the end of its comment, e.g. "sweep|0.70"
+        private double TargetOf(Position position)
+        {
+            string comment = position.Comment ?? "";
+            int cut = comment.LastIndexOf('|');
+            double value;
+            if (cut >= 0 && double.TryParse(comment.Substring(cut + 1), NumberStyles.Float, CultureInfo.InvariantCulture, out value) && value > 0)
+                return value;
+            return ProfitTarget;
         }
 
         // Log why a signal was not traded, once per bar

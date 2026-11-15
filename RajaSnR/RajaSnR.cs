@@ -54,6 +54,9 @@ namespace cAlgo.Robots
         [Parameter("Use gap levels", DefaultValue = true, Group = "Levels")]
         public bool UseGapLevels { get; set; }
 
+        [Parameter("Fixed reward : risk (0 = aim for the next level)", DefaultValue = 3.0, MinValue = 0, Step = 0.5, Group = "Exits")]
+        public double FixedRewardRisk { get; set; }
+
         [Parameter("Minimum reward : risk", DefaultValue = 1.5, MinValue = 0.5, Step = 0.1, Group = "Exits")]
         public double MinRewardRisk { get; set; }
 
@@ -224,7 +227,12 @@ namespace cAlgo.Robots
                 .FirstOrDefault();
             double reward;
             string targetText;
-            if (ahead == null)
+            if (FixedRewardRisk > 0)
+            {
+                reward = risk * FixedRewardRisk;
+                targetText = string.Format(CultureInfo.InvariantCulture, "target {0}x the risk", FixedRewardRisk);
+            }
+            else if (ahead == null)
             {
                 reward = risk * FallbackRewardRisk;
                 targetText = "no level ahead, using fixed reward";

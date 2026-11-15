@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memecoin Paper Bot</title>
+<style>
+  :root { --bg:#0e1116; --card:#171c24; --line:#262d38; --text:#e8ecf1; --dim:#8b96a5; --up:#22c55e; --down:#ef4444; --warn:#f59e0b; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  main { max-width:560px; margin:0 auto; padding:14px; }
+  h1 { font-size:18px; margin:4px 0 2px; }
+  .sub { font-size:12px; color:var(--dim); margin-bottom:12px; }
+  .banner { background:#3b2f0b; border:1px solid #6b5514; color:#fde68a; border-radius:10px; padding:8px 12px; font-size:13px; margin-bottom:12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; }
+  h2 { font-size:13px; color:var(--dim); margin:0 0 10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .big { font-size:34px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .stats { display:flex; gap:8px; text-align:center; margin-top:10px; }
+  .stats div { flex:1; } .stats b { display:block; font-size:18px; font-variant-numeric:tabular-nums; } .stats span { font-size:11px; color:var(--dim); }
+  canvas { width:100%; height:120px; display:block; margin-top:10px; }
+  .row { display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid var(--line); font-size:14px; }
+  .row:first-of-type { border-top:0; }
+  .row small { display:block; color:var(--dim); font-size:11px; }
+  .row .r { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  a { color:#7cb7ff; text-decoration:none; }
+  .up { color:var(--up); } .down { color:var(--down); } .dim { color:var(--dim); }
+  .fine { font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Memecoin Paper Bot</h1>
+  <div class="sub" id="updated">Loading…</div>
+  <div class="banner">Paper trading only. These are pretend dollars; no real money or wallet is involved.</div>
+
+  <div class="card">
+    <h2>Account</h2>
+    <div class="big" id="equity">—</div>
+    <div id="pnl" class="dim"></div>
+    <canvas id="chart" width="1000" height="240"></canvas>
+    <div class="stats">
+      <div><b id="trades">—</b><span>closed trades</span></div>
+      <div><b id="winrate">—</b><span>win rate</span></div>
+      <div><b id="cash">—</b><span>cash</span></div>
+    </div>
+  </div>
+
+  <div class="card"><h2>Open positions</h2><div id="open"><div class="dim">None.</div></div></div>
+  <div class="card"><h2>Last scan</h2><div id="scan" class="fine"></div></div>
+  <div class="card"><h2>Closed trades</h2><div id="closed"><div class="dim">None yet.</div></div></div>
+
+  <p class="fine" id="rules"></p>
+</main>
+<script>
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function money(v) { return (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2); }
+function ago(t) { var m = Math.max(0, Math.round((Date.now() / 1000 - t) / 60)); return m < 60 ? m + ' min ago' : m < 1440 ? (m / 60).toFixed(1) + ' h ago' : (m / 1440).toFixed(1) + ' days ago'; }
+function when(t) { var d = new Date(t * 1000); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
+function safeUrl(u) { return /^https:\/\/dexscreener\.com\//.test(u || '') ? u : '#'; }
+function $(id) { return document.getElementById(id); }
+
+function draw(points, start) {
+  var cv = $('chart'), g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  g.clearRect(0, 0, W, H);
+  if (points.length < 2) return;
+  var vals = points.map(function (p) { return p[1]; }).concat([start]);
+  var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), span = (max - min) || 1;
+  function y(v) { return H - 10 - (v - min) / span * (H - 20); }
+  g.strokeStyle = '#3a4352'; g.lineWidth = 2; g.setLineDash([8, 8]);
+  g.beginPath(); g.moveTo(0, y(start)); g.lineTo(W, y(start)); g.stroke(); g.setLineDash([]);
+  g.strokeStyle = points[points.length - 1][1] >= start ? '#22c55e' : '#ef4444'; g.lineWidth = 4;
+  g.beginPath();
+  points.forEach(function (p, i) { var x = i / (points.length - 1) * W; i ? g.lineTo(x, y(p[1])) : g.moveTo(x, y(p[1])); });
+  g.stroke();
+}
+
+function render(d) {
+  var s = d.summary || {}, start = s.start_cash || 200, pnl = (s.equity || 0) - start;
+  $('updated').textContent = 'Chain: ' + (s.chain || '?') + ' · updated ' + ago(s.updated) + (s.api_ok === false ? ' · data feed was unreachable on the last run' : '');
+  $('equity').textContent = money(s.equity || 0);
+  $('pnl').className = pnl >= 0 ? 'up' : 'down';
+  $('pnl').textContent = (pnl >= 0 ? '+' : '') + money(pnl).replace('$-', '-$') + ' (' + (pnl / start * 100).toFixed(1) + '%) from ' + money(start) + ' start';
+  $('trades').textContent = s.trades || 0;
+  $('winrate').textContent = s.win_rate == null ? '—' : s.win_rate + '%';
+  $('cash').textContent = money(s.cash || 0);
+  draw(d.equity || [], start);
+
+  var open = d.positions || [];
+  $('open').innerHTML = open.length ? open.map(function (p) {
+    var ch = (p.last_price / p.entry_price - 1) * 100;
+    return '<div class="row"><div><a href="' + esc(safeUrl(p.url)) + '" target="_blank" rel="noopener">' + esc(p.symbol) + '</a><small>' + esc(p.reason) + '</small><small>bought ' + ago(p.entry_time) + '</small></div>' +
+      '<div class="r ' + (ch >= 0 ? 'up' : 'down') + '">' + (ch >= 0 ? '+' : '') + ch.toFixed(1) + '%<small>' + money(p.cost) + ' in</small></div></div>';
+  }).join('') : '<div class="dim">None.</div>';
+
+  var rej = (s.rejected || []).map(function (r) { return esc(r[0]) + ': ' + r[1]; }).join(' · ');
+  $('scan').innerHTML = 'Checked ' + (s.scanned || 0) + ' new or promoted coins; ' + (s.passed || 0) + ' passed every rule.' + (rej ? '<br>Rejected for: ' + rej : '');
+
+  var closed = d.closed || [];
+  $('closed').innerHTML = closed.length ? closed.slice(0, 60).map(function (t) {
+    return '<div class="row"><div><a href="' + esc(safeUrl(t.url)) + '" target="_blank" rel="noopener">' + esc(t.symbol) + '</a><small>' + esc(t.why) + ' · ' + when(t.exit_time) + '</small></div>' +
+      '<div class="r ' + (t.pnl >= 0 ? 'up' : 'down') + '">' + (t.pnl >= 0 ? '+' : '') + money(t.pnl).replace('$-', '-$') + '<small>' + (t.pnl_pct >= 0 ? '+' : '') + t.pnl_pct + '%</small></div></div>';
+  }).join('') : '<div class="dim">None yet.</div>';
+
+  var c = d.config || {};
+  $('rules').textContent = 'Rules: $' + c.stake + ' per trade, up to ' + c.max_open + ' at once. Buys coins ' + c.min_age_min + ' min to ' + c.max_age_h + ' h old with at least $' + (c.min_liquidity / 1000) + 'k liquidity, rising price and more buys than sells. Sells at +' + (c.take_profit * 100) + '%, -' + (c.stop_loss * 100) + '%, a ' + (c.trail_drop * 100) + '% drop from the peak once up ' + (c.trail_arm * 100) + '%, or after ' + c.max_hold_h + ' h. Every buy and sell is charged ' + (c.slippage * 100) + '% for slippage. Prices are checked about every 10 minutes, so real fills would differ. Data: DexScreener.';
+}
+
+function load() {
+  fetch('data.json?t=' + Date.now()).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(render)
+    .catch(function () { $('updated').textContent = 'No results yet. The bot writes its first results within about 10 minutes of being switched on.'; });
+}
+load(); setInterval(load, 60000);
+</script>
+</body>
+</html>

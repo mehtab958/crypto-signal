@@ -138,7 +138,7 @@ namespace cAlgo.Robots
         [Parameter("Only trade with the 15-min and 1-hour trend", DefaultValue = true, Group = "Filters")]
         public bool UseHtfFilter { get; set; }
 
-        [Parameter("Only trade in session hours", DefaultValue = true, Group = "Filters")]
+        [Parameter("Only trade in session hours", DefaultValue = false, Group = "Filters")]
         public bool UseSessionFilter { get; set; }
 
         [Parameter("Session start hour (UTC)", DefaultValue = 7, MinValue = 0, MaxValue = 23, Group = "Filters")]

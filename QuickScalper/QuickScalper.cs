@@ -34,8 +34,8 @@ namespace cAlgo.Robots
         [Parameter("Daily loss limit (money)", DefaultValue = 10.0, MinValue = 1)]
         public double DailyLossLimit { get; set; }
 
-        [Parameter("Max spread (pips)", DefaultValue = 2.0, MinValue = 0.1)]
-        public double MaxSpreadPips { get; set; }
+        [Parameter("Max spread cost (% of profit target)", DefaultValue = 25, MinValue = 1, MaxValue = 100)]
+        public double MaxSpreadPercent { get; set; }
 
         [Parameter("Seconds between new trades", DefaultValue = 30, MinValue = 0)]
         public int SecondsBetweenOpen { get; set; }
@@ -172,10 +172,11 @@ namespace cAlgo.Robots
                 return;
             if ((Server.Time - Bars.OpenTimes.LastValue).TotalSeconds > 20)   // only act early in the bar
                 return;
-            if (Symbol.Spread / Symbol.PipSize > MaxSpreadPips)
-                return;
             if (TodayClosedProfit() + floating <= -DailyLossLimit)
+            {
+                Skip("daily loss limit reached");
                 return;
+            }
 
             double volume = Symbol.NormalizeVolumeInUnits(Symbol.QuantityToVolumeInUnits(Lots), RoundingMode.Down);
             if (volume < Symbol.VolumeInUnitsMin)
@@ -185,6 +186,14 @@ namespace cAlgo.Robots
             double pipMoney = Symbol.PipValue * volume;
             if (pipMoney <= 0)
                 return;
+
+            // Works on any symbol: compare what the spread costs in money with the profit target
+            double spreadCost = Symbol.Spread / Symbol.PipSize * pipMoney;
+            if (spreadCost > ProfitTarget * MaxSpreadPercent / 100)
+            {
+                Skip(string.Format("spread costs {0:0.00}, more than {1}% of the profit target", spreadCost, MaxSpreadPercent));
+                return;
+            }
             double slPips = Math.Max(1, Math.Round(StopLoss / pipMoney, 1));
             double tpPips = Math.Max(1, Math.Round(ProfitTarget / pipMoney, 1));
 
@@ -194,6 +203,16 @@ namespace cAlgo.Robots
                 _lastOpen = Server.Time;
             else
                 Print("Order failed: {0}", order.Error);
+        }
+
+        // Log why a signal was not traded, once per bar
+        private DateTime _lastSkipBar = DateTime.MinValue;
+        private void Skip(string reason)
+        {
+            if (_lastSkipBar == Bars.OpenTimes.LastValue)
+                return;
+            _lastSkipBar = Bars.OpenTimes.LastValue;
+            Print("Signal skipped: {0}", reason);
         }
 
         // Combined signal from the last closed bar. Each enabled strategy votes

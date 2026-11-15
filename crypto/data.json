@@ -1,0 +1,83 @@
+{
+ "spot": {
+  "cash": 500.0,
+  "positions": []
+ },
+ "fut": {
+  "cash": 500.0,
+  "positions": []
+ },
+ "closed": [],
+ "equity": [
+  [
+   1794782609,
+   1000.0
+  ]
+ ],
+ "cooldown": {},
+ "runs": 1,
+ "summary": {
+  "updated": 1794782609,
+  "api_ok": true,
+  "coins": 57,
+  "studied": 45,
+  "signals": [
+   [
+    "AAVEUSDT",
+    1,
+    "breakout"
+   ],
+   [
+    "ARBUSDT",
+    1,
+    "pullback"
+   ]
+  ],
+  "mood": -1,
+  "paused": [],
+  "source": "https://data-api.binance.vision",
+  "spot": {
+   "start": 500.0,
+   "equity": 500.0,
+   "cash": 500.0,
+   "trades": 0,
+   "win_rate": null
+  },
+  "fut": {
+   "start": 500.0,
+   "equity": 500.0,
+   "cash": 500.0,
+   "trades": 0,
+   "win_rate": null
+  },
+  "strategies": []
+ },
+ "config": {
+  "min_quote_volume": 5000000,
+  "study_top": 45,
+  "interval": "15m",
+  "spot_start": 500.0,
+  "spot_stake": 50.0,
+  "spot_max_open": 5,
+  "spot_tp": 0.09,
+  "spot_sl": 0.03,
+  "spot_trail_arm": 0.04,
+  "spot_trail_drop": 0.025,
+  "spot_max_hold_h": 24,
+  "spot_fee": 0.001,
+  "fut_start": 500.0,
+  "fut_margin": 25.0,
+  "fut_leverage": 5,
+  "fut_max_open": 5,
+  "fut_tp": 0.09,
+  "fut_sl": 0.03,
+  "fut_trail_arm": 0.045,
+  "fut_trail_drop": 0.025,
+  "fut_max_hold_h": 12,
+  "fut_fee": 0.0005,
+  "slippage": 0.0005,
+  "cooldown_h": 6,
+  "score_trades": 15,
+  "pause_h": 24
+ }
+}

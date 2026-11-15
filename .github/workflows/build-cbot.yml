@@ -19,22 +19,27 @@ jobs:
             6.0.x
             8.0.x
       - name: Build
-        run: dotnet build QuickScalper/QuickScalper.csproj --configuration Release -p:IncludeSource=True
-      - name: Collect .algo file
+        shell: bash
+        run: |
+          dotnet build QuickScalper/QuickScalper.csproj --configuration Release -p:IncludeSource=True
+          dotnet build HedgeGrid/HedgeGrid.csproj --configuration Release -p:IncludeSource=True
+      - name: Collect .algo files
         shell: bash
         run: |
           mkdir -p out
-          found=$(find QuickScalper/bin -name "*.algo" | head -n 1)
-          if [ -z "$found" ]; then found=$(find "$USERPROFILE/Documents" -name "QuickScalper*.algo" | head -n 1); fi
-          if [ -z "$found" ]; then echo "No .algo file was produced"; exit 1; fi
-          cp "$found" out/QuickScalper.algo
+          for bot in QuickScalper HedgeGrid; do
+            found=$(find "$bot/bin" -name "*.algo" | head -n 1)
+            if [ -z "$found" ]; then found=$(find "$USERPROFILE/Documents" -name "$bot*.algo" | head -n 1); fi
+            if [ -z "$found" ]; then echo "No .algo file was produced for $bot"; exit 1; fi
+            cp "$found" "out/$bot.algo"
+          done
           ls -l out
       - uses: actions/upload-artifact@v4
         with:
-          name: QuickScalper
-          path: out/QuickScalper.algo
+          name: bots
+          path: out/*.algo
       - name: Publish release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "cbot-${{ github.run_number }}" out/QuickScalper.algo --title "QuickScalper cTrader bot (build ${{ github.run_number }})" --notes "Open QuickScalper.algo on your phone with the cTrader app. Test on a demo account first." --target "${{ github.sha }}"
+        run: gh release create "cbot-${{ github.run_number }}" out/QuickScalper.algo out/HedgeGrid.algo --title "cTrader bots (build ${{ github.run_number }})" --notes "Open the .algo files on your phone with the cTrader app. Test on a demo account first." --target "${{ github.sha }}"

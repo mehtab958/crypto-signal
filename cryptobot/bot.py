@@ -15,14 +15,15 @@ import json
 import os
 import sys
 import time
+import urllib.parse
 import urllib.request
 
 BASES = ["https://data-api.binance.vision", "https://api.binance.com", "https://api-gcp.binance.com", "https://api1.binance.com"]
 _base = [None]
 
 CFG = {
-    "min_quote_volume": 5_000_000,   # 24h USD volume a coin needs to be considered
-    "study_top": 45,                 # coins studied in detail each run
+    "min_quote_volume": 2_000_000,   # 24h USD volume a coin needs to be considered
+    "study_top": 60,                 # coins studied in detail each run
     "interval": "15m",
     # spot paper account
     "spot_start": 500.0, "spot_stake": 50.0, "spot_max_open": 5,
@@ -59,7 +60,7 @@ def get(path):
 
 
 def klines(symbol, limit=130):
-    data = get("/api/v3/klines?symbol=%s&interval=%s&limit=%d" % (symbol, CFG["interval"], limit))
+    data = get("/api/v3/klines?symbol=%s&interval=%s&limit=%d" % (urllib.parse.quote(symbol), CFG["interval"], limit))
     if not isinstance(data, list) or len(data) < 60:
         return None
     try:

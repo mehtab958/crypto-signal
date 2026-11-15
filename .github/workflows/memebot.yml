@@ -37,4 +37,4 @@ jobs:
           git add meme
           git diff --cached --quiet && exit 0
           git commit -q -m "memebot: update paper results"
-          git push || (git pull --rebase -q && git push)
+          git push || (git pull --rebase -q && git push) || (sleep 5 && git pull --rebase -q && git push)

@@ -29,20 +29,20 @@ namespace cAlgo.Robots
         [Parameter("Max open trades", DefaultValue = 6, MinValue = 1, MaxValue = 10)]
         public int MaxPositions { get; set; }
 
-        [Parameter("Close at profit (money)", DefaultValue = 0.35, MinValue = 0.05)]
+        [Parameter("Smallest profit target (money)", DefaultValue = 0.70, MinValue = 0.05)]
         public double ProfitTarget { get; set; }
 
-        [Parameter("Close at profit when spread is high (money)", DefaultValue = 0.70, MinValue = 0.05)]
-        public double HighSpreadProfitTarget { get; set; }
+        [Parameter("Largest profit target (money)", DefaultValue = 2.0, MinValue = 0.05)]
+        public double MaxProfitTarget { get; set; }
 
-        [Parameter("Close at loss (money)", DefaultValue = 1.0, MinValue = 0.1)]
+        [Parameter("Profit target is at least this many times the spread cost", DefaultValue = 4.0, MinValue = 1.0, Step = 0.5)]
+        public double SpreadMultiple { get; set; }
+
+        [Parameter("Loss limit at smallest target (money, grows with target)", DefaultValue = 1.0, MinValue = 0.1)]
         public double StopLoss { get; set; }
 
         [Parameter("Daily loss limit (money, 0 = off)", DefaultValue = 20.0, MinValue = 0)]
         public double DailyLossLimit { get; set; }
-
-        [Parameter("Max spread cost (% of profit target)", DefaultValue = 50, MinValue = 1, MaxValue = 100)]
-        public double MaxSpreadPercent { get; set; }
 
         [Parameter("Seconds between new trades", DefaultValue = 10, MinValue = 0)]
         public int SecondsBetweenOpen { get; set; }
@@ -163,7 +163,7 @@ namespace cAlgo.Robots
             // Close trades that reached the money target or the money stop
             foreach (var position in Positions.FindAll(Label, SymbolName))
             {
-                if (position.NetProfit >= TargetOf(position) || position.NetProfit <= -StopLoss)
+                if (position.NetProfit >= TargetOf(position) || position.NetProfit <= -StopOf(position))
                 {
                     var result = ClosePosition(position);
                     if (result.IsSuccessful)
@@ -197,22 +197,15 @@ namespace cAlgo.Robots
             if (pipMoney <= 0)
                 return;
 
-            // Works on any symbol: compare what the spread costs in money with the profit target.
-            // If the spread is too big for the normal target, use the larger target instead of skipping.
+            // Flexible target: never skip for spread. The wider the spread, the larger
+            // the profit target (and the loss limit, in the same proportion).
             double spreadCost = Symbol.Spread / Symbol.PipSize * pipMoney;
-            double target = ProfitTarget;
-            if (spreadCost > target * MaxSpreadPercent / 100)
-            {
-                target = Math.Max(ProfitTarget, HighSpreadProfitTarget);
-                if (spreadCost > target * MaxSpreadPercent / 100)
-                {
-                    Skip(string.Format("spread costs {0:0.00}, more than {1}% of the {2:0.00} profit target", spreadCost, MaxSpreadPercent, target));
-                    return;
-                }
-            }
-            double slPips = Math.Max(1, Math.Round(StopLoss / pipMoney, 1));
+            double largest = Math.Max(ProfitTarget, MaxProfitTarget);
+            double target = Math.Min(largest, Math.Max(ProfitTarget, SpreadMultiple * spreadCost));
+            double stop = StopLoss * target / ProfitTarget;
+            double slPips = Math.Max(1, Math.Round(stop / pipMoney, 1));
             double tpPips = Math.Max(1, Math.Round(target / pipMoney, 1));
-            string comment = _signalNames + "|" + target.ToString("0.00", CultureInfo.InvariantCulture);
+            string comment = _signalNames + "|" + target.ToString("0.00", CultureInfo.InvariantCulture) + "|" + stop.ToString("0.00", CultureInfo.InvariantCulture);
 
             var tradeType = _signal > 0 ? TradeType.Buy : TradeType.Sell;
             var order = ExecuteMarketOrder(tradeType, SymbolName, volume, Label, slPips, tpPips, comment);
@@ -222,16 +215,19 @@ namespace cAlgo.Robots
                 Print("Order failed: {0}", order.Error);
         }
 
-        // Each trade carries its own profit target at the end of its comment, e.g. "sweep|0.70"
-        private double TargetOf(Position position)
+        // Each trade carries its own profit target and loss limit at the end of
+        // its comment, e.g. "sweep|0.70|1.00"
+        private double CommentNumber(Position position, int fromEnd, double fallback)
         {
-            string comment = position.Comment ?? "";
-            int cut = comment.LastIndexOf('|');
+            string[] parts = (position.Comment ?? "").Split('|');
             double value;
-            if (cut >= 0 && double.TryParse(comment.Substring(cut + 1), NumberStyles.Float, CultureInfo.InvariantCulture, out value) && value > 0)
+            if (parts.Length >= 3 && double.TryParse(parts[parts.Length - fromEnd], NumberStyles.Float, CultureInfo.InvariantCulture, out value) && value > 0)
                 return value;
-            return ProfitTarget;
+            return fallback;
         }
+
+        private double TargetOf(Position position) { return CommentNumber(position, 2, ProfitTarget); }
+        private double StopOf(Position position) { return CommentNumber(position, 1, StopLoss); }
 
         // Log why a signal was not traded, once per bar
         private DateTime _lastSkipBar = DateTime.MinValue;

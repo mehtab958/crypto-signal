@@ -123,13 +123,13 @@ namespace cAlgo.Robots
         [Parameter("Basket mode (open a group, close together)", DefaultValue = true, Group = "Basket")]
         public bool BasketMode { get; set; }
 
-        [Parameter("Trades opened together", DefaultValue = 5, MinValue = 1, MaxValue = 10, Group = "Basket")]
+        [Parameter("Trades opened together", DefaultValue = 1, MinValue = 1, MaxValue = 10, Group = "Basket")]
         public int BasketSize { get; set; }
 
-        [Parameter("Max groups open at once", DefaultValue = 4, MinValue = 1, MaxValue = 10, Group = "Basket")]
+        [Parameter("Max groups open at once", DefaultValue = 1, MinValue = 1, MaxValue = 10, Group = "Basket")]
         public int MaxBaskets { get; set; }
 
-        [Parameter("Close all at total profit (money)", DefaultValue = 3.5, MinValue = 0.1, Group = "Basket")]
+        [Parameter("Close all at total profit (money)", DefaultValue = 3.0, MinValue = 0.1, Group = "Basket")]
         public double BasketProfit { get; set; }
 
         [Parameter("Close all at total loss (money)", DefaultValue = 5.0, MinValue = 0.1, Group = "Basket")]
@@ -346,8 +346,10 @@ namespace cAlgo.Robots
 
             // Safety stop and target on the server for each trade, set wide (2x its share),
             // in case the bot is not running; the basket limits normally act first
-            double slPips = Math.Max(1, Math.Round(2 * BasketLoss / BasketSize / pipMoney, 1));
-            double tpPips = Math.Max(1, Math.Round(2 * BasketProfit / BasketSize / pipMoney, 1));
+            // (a single trade gets its exact stop and target on the server)
+            double safety = BasketSize == 1 ? 1 : 2;
+            double slPips = Math.Max(1, Math.Round(safety * BasketLoss / BasketSize / pipMoney, 1));
+            double tpPips = Math.Max(1, Math.Round(safety * BasketProfit / BasketSize / pipMoney, 1));
 
             var tradeType = _signal > 0 ? TradeType.Buy : TradeType.Sell;
             string comment = _signalNames + "|basket|" + Server.Time.ToString("ddHHmmss", CultureInfo.InvariantCulture);

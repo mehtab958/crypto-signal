@@ -125,7 +125,7 @@ namespace cAlgo.Robots
         [Parameter("Trades opened together", DefaultValue = 5, MinValue = 1, MaxValue = 10, Group = "Basket")]
         public int BasketSize { get; set; }
 
-        [Parameter("Close all at total profit (money)", DefaultValue = 5.0, MinValue = 0.1, Group = "Basket")]
+        [Parameter("Close all at total profit (money)", DefaultValue = 3.5, MinValue = 0.1, Group = "Basket")]
         public double BasketProfit { get; set; }
 
         [Parameter("Close all at total loss (money)", DefaultValue = 5.0, MinValue = 0.1, Group = "Basket")]

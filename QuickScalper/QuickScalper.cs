@@ -131,6 +131,9 @@ namespace cAlgo.Robots
         [Parameter("Close all at total loss (money)", DefaultValue = 5.0, MinValue = 0.1, Group = "Basket")]
         public double BasketLoss { get; set; }
 
+        [Parameter("Open first trade(s) right at start (trend direction)", DefaultValue = true)]
+        public bool OpenOnStart { get; set; }
+
         private const string Label = "QuickScalper";
 
         private ExponentialMovingAverage _fast;
@@ -143,6 +146,9 @@ namespace cAlgo.Robots
         private StochasticOscillator _stoch;
         private string _signalNames = "";
         private int _signalVotes = 1;
+        private bool _startPending;
+        private bool _immediate;
+        private DateTime _lastStatus = DateTime.MinValue;
         private AverageTrueRange _atr;
         private DateTime _pauseUntil = DateTime.MinValue;
         private DateTime _lastOpen = DateTime.MinValue;
@@ -159,7 +165,8 @@ namespace cAlgo.Robots
             _bb = Indicators.BollingerBands(Bars.ClosePrices, 20, 2, MovingAverageType.Simple);
             _macd = Indicators.MacdCrossOver(26, 12, 9);
             _stoch = Indicators.StochasticOscillator(14, 3, 3, MovingAverageType.Simple);
-            Print("QuickScalper started on {0} {1}", SymbolName, TimeFrame);
+            _startPending = OpenOnStart;
+            Print("QuickScalper started on {0} {1}, {2} bars loaded, account {3}", SymbolName, TimeFrame, Bars.Count, Account.IsLive ? "LIVE" : "demo");
         }
 
         protected override void OnBar()
@@ -169,6 +176,24 @@ namespace cAlgo.Robots
 
         protected override void OnTick()
         {
+            // Proof-of-life line in the log every 15 minutes
+            if ((Server.Time - _lastStatus).TotalMinutes >= 15)
+            {
+                _lastStatus = Server.Time;
+                Print("Running. Open trades: {0}. Spread: {1:0.0} pips.", Positions.FindAll(Label, SymbolName).Length, Symbol.Spread / Symbol.PipSize);
+            }
+
+            // Optional first entry right after start, in the direction of the trend EMA
+            if (_startPending && Bars.Count >= TrendPeriod + 5)
+            {
+                _startPending = false;
+                _signal = Bars.ClosePrices.Last(1) >= _trend.Result.Last(1) ? 1 : -1;
+                _signalNames = "start";
+                _signalVotes = 1;
+                _immediate = true;
+                Print("Start entry: {0}", _signal > 0 ? "BUY" : "SELL");
+            }
+
             if (BasketMode)
             {
                 BasketTick();
@@ -196,8 +221,9 @@ namespace cAlgo.Robots
                 return;
             if ((Server.Time - _lastOpen).TotalSeconds < SecondsBetweenOpen)
                 return;
-            if ((Server.Time - Bars.OpenTimes.LastValue).TotalSeconds > 20)   // only act early in the bar
+            if (!_immediate && (Server.Time - Bars.OpenTimes.LastValue).TotalSeconds > 20)   // only act early in the bar
                 return;
+            _immediate = false;
             if (DailyLossLimit > 0 && TodayClosedProfit() + floating <= -DailyLossLimit)
             {
                 Skip("daily loss limit reached");
@@ -256,8 +282,9 @@ namespace cAlgo.Robots
 
             if (_signal == 0)
                 return;
-            if ((Server.Time - Bars.OpenTimes.LastValue).TotalSeconds > 20)
+            if (!_immediate && (Server.Time - Bars.OpenTimes.LastValue).TotalSeconds > 20)
                 return;
+            _immediate = false;
             if (DailyLossLimit > 0 && TodayClosedProfit() <= -DailyLossLimit)
             {
                 Skip("daily loss limit reached");

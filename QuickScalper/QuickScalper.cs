@@ -34,7 +34,7 @@ namespace cAlgo.Robots
         [Parameter("Close at loss (money)", DefaultValue = 2.0, MinValue = 0.1)]
         public double StopLoss { get; set; }
 
-        [Parameter("Daily loss limit (money)", DefaultValue = 20.0, MinValue = 1)]
+        [Parameter("Daily loss limit (money, 0 = off)", DefaultValue = 20.0, MinValue = 0)]
         public double DailyLossLimit { get; set; }
 
         [Parameter("Max spread cost (% of profit target)", DefaultValue = 25, MinValue = 1, MaxValue = 100)]
@@ -176,7 +176,7 @@ namespace cAlgo.Robots
                 return;
             if ((Server.Time - Bars.OpenTimes.LastValue).TotalSeconds > 20)   // only act early in the bar
                 return;
-            if (TodayClosedProfit() + floating <= -DailyLossLimit)
+            if (DailyLossLimit > 0 && TodayClosedProfit() + floating <= -DailyLossLimit)
             {
                 Skip("daily loss limit reached");
                 return;

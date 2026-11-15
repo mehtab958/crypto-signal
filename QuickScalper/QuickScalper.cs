@@ -126,6 +126,9 @@ namespace cAlgo.Robots
         [Parameter("Trades opened together", DefaultValue = 5, MinValue = 1, MaxValue = 10, Group = "Basket")]
         public int BasketSize { get; set; }
 
+        [Parameter("Max groups open at once", DefaultValue = 4, MinValue = 1, MaxValue = 10, Group = "Basket")]
+        public int MaxBaskets { get; set; }
+
         [Parameter("Close all at total profit (money)", DefaultValue = 3.5, MinValue = 0.1, Group = "Basket")]
         public double BasketProfit { get; set; }
 
@@ -296,29 +299,39 @@ namespace cAlgo.Robots
         // then close them all when their total profit or total loss reaches the limit.
         private void BasketTick()
         {
-            var positions = Positions.FindAll(Label, SymbolName);
-            if (positions.Length > 0)
+            // Each group is managed on its own: closed when ITS total hits the profit or loss limit
+            var groups = Positions.FindAll(Label, SymbolName).GroupBy(p => BasketId(p)).ToList();
+            int openGroups = 0;
+            double floating = 0;
+            foreach (var group in groups)
             {
-                double total = positions.Sum(p => p.NetProfit);
+                double total = group.Sum(p => p.NetProfit);
                 if (total >= BasketProfit || total <= -BasketLoss)
                 {
-                    Print("Basket closed at {0:0.00}", total);
-                    foreach (var position in positions)
+                    Print("Group {0} closed at {1:0.00}", group.Key, total);
+                    foreach (var position in group.ToList())
                     {
                         var closed = ClosePosition(position);
                         if (!closed.IsSuccessful)
                             Print("Close failed: {0}", closed.Error);
                     }
+                    continue;
                 }
-                return;   // one basket at a time
+                openGroups++;
+                floating += total;
             }
 
             if (_signal == 0)
                 return;
+            if (openGroups >= MaxBaskets)
+            {
+                Skip("maximum number of groups already open");
+                return;
+            }
             if (!_immediate && (Server.Time - Bars.OpenTimes.LastValue).TotalSeconds > 20)
                 return;
             _immediate = false;
-            if (DailyLossLimit > 0 && TodayClosedProfit() <= -DailyLossLimit)
+            if (DailyLossLimit > 0 && TodayClosedProfit() + floating <= -DailyLossLimit)
             {
                 Skip("daily loss limit reached");
                 return;
@@ -337,7 +350,7 @@ namespace cAlgo.Robots
             double tpPips = Math.Max(1, Math.Round(2 * BasketProfit / BasketSize / pipMoney, 1));
 
             var tradeType = _signal > 0 ? TradeType.Buy : TradeType.Sell;
-            string comment = _signalNames + "|basket";
+            string comment = _signalNames + "|basket|" + Server.Time.ToString("ddHHmmss", CultureInfo.InvariantCulture);
             int opened = 0;
             for (int n = 0; n < BasketSize; n++)
             {
@@ -349,6 +362,14 @@ namespace cAlgo.Robots
             }
             Print("Basket opened: {0} x {1} ({2})", opened, tradeType, _signalNames);
             _signal = 0;
+        }
+
+        // Group id is the last part of the comment, e.g. "sweep|basket|16024512"
+        private static string BasketId(Position position)
+        {
+            string comment = position.Comment ?? "";
+            int cut = comment.LastIndexOf('|');
+            return cut >= 0 ? comment.Substring(cut + 1) : "old";
         }
 
         // Each trade carries its own profit target and loss limit at the end of

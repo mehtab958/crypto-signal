@@ -7,7 +7,7 @@
    "name": "gtacoin",
    "url": "https://dexscreener.com/solana/9ztc73qq2p77grmhzzsfp4tezmisvkxbpvjvonnzevbe",
    "entry_price": 0.00037038800000000003,
-   "last_price": 0.0003596,
+   "last_price": 0.0003457,
    "peak_price": 0.0003596,
    "qty": 53997.42972234521,
    "cost": 20.0,
@@ -23,26 +23,30 @@
   [
    1794782088,
    199.42
+  ],
+  [
+   1794782609,
+   198.67
   ]
  ],
  "cooldown": {},
- "runs": 1,
+ "runs": 2,
  "summary": {
-  "updated": 1794782088,
+  "updated": 1794782609,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 199.42,
+  "equity": 198.67,
   "cash": 180.0,
   "trades": 0,
   "wins": 0,
   "win_rate": null,
   "scanned": 56,
-  "passed": 1,
+  "passed": 0,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    37
+    38
    ],
    [
     "too old",
@@ -50,7 +54,11 @@
    ],
    [
     "1h move out of range",
-    3
+    2
+   ],
+   [
+    "falling right now",
+    2
    ],
    [
     "not enough buying",
@@ -58,10 +66,6 @@
    ],
    [
     "volume looks fake for this liquidity",
-    1
-   ],
-   [
-    "falling right now",
     1
    ]
   ]

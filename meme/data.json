@@ -1,0 +1,93 @@
+{
+ "cash": 180.0,
+ "positions": [
+  {
+   "address": "DSKM3d518BBaQShSKqaqZcG1XMRf81UFB6a1eavhSTNK",
+   "symbol": "gtacoin",
+   "name": "gtacoin",
+   "url": "https://dexscreener.com/solana/9ztc73qq2p77grmhzzsfp4tezmisvkxbpvjvonnzevbe",
+   "entry_price": 0.00037038800000000003,
+   "last_price": 0.0003596,
+   "peak_price": 0.0003596,
+   "qty": 53997.42972234521,
+   "cost": 20.0,
+   "entry_time": 1794782088.284247,
+   "entry_liq": 46461.47,
+   "score": 26.2,
+   "reason": "1h +35%, buys/sells 1.5, liq $46k, age 29.7h",
+   "misses": 0
+  }
+ ],
+ "closed": [],
+ "equity": [
+  [
+   1794782088,
+   199.42
+  ]
+ ],
+ "cooldown": {},
+ "runs": 1,
+ "summary": {
+  "updated": 1794782088,
+  "chain": "solana",
+  "start_cash": 200.0,
+  "equity": 199.42,
+  "cash": 180.0,
+  "trades": 0,
+  "wins": 0,
+  "win_rate": null,
+  "scanned": 56,
+  "passed": 1,
+  "api_ok": true,
+  "rejected": [
+   [
+    "liquidity too low",
+    37
+   ],
+   [
+    "too old",
+    9
+   ],
+   [
+    "1h move out of range",
+    3
+   ],
+   [
+    "not enough buying",
+    2
+   ],
+   [
+    "volume looks fake for this liquidity",
+    1
+   ],
+   [
+    "falling right now",
+    1
+   ]
+  ]
+ },
+ "config": {
+  "start_cash": 200.0,
+  "stake": 20.0,
+  "max_open": 5,
+  "min_liquidity": 20000,
+  "min_age_min": 20,
+  "max_age_h": 48,
+  "max_vol_to_liq": 10,
+  "min_txns_h1": 100,
+  "min_sell_share": 0.15,
+  "fdv_min": 50000,
+  "fdv_max": 20000000,
+  "min_vol_h1": 10000,
+  "min_buy_ratio": 1.1,
+  "h1_change_min": 5,
+  "h1_change_max": 150,
+  "take_profit": 0.5,
+  "stop_loss": 0.25,
+  "trail_arm": 0.25,
+  "trail_drop": 0.2,
+  "max_hold_h": 6,
+  "slippage": 0.03,
+  "cooldown_h": 24
+ }
+}

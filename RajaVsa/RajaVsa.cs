@@ -53,6 +53,18 @@ namespace cAlgo.Robots
         [Parameter("Fixed reward : risk (0 = aim for the next level)", DefaultValue = 0.0, MinValue = 0, Step = 0.5, Group = "Exits")]
         public double FixedRewardRisk { get; set; }
 
+        [Parameter("Learn from its own results", DefaultValue = true, Group = "Learning")]
+        public bool UseLearning { get; set; }
+
+        [Parameter("Judge a setup type on its last trades", DefaultValue = 15, MinValue = 5, MaxValue = 100, Group = "Learning")]
+        public int LearnTrades { get; set; }
+
+        [Parameter("Trades needed before judging", DefaultValue = 5, MinValue = 3, MaxValue = 50, Group = "Learning")]
+        public int LearnMinTrades { get; set; }
+
+        [Parameter("A losing setup type rests for (hours)", DefaultValue = 24, MinValue = 1, Group = "Learning")]
+        public int LearnRestHours { get; set; }
+
         [Parameter("Need VSA confirmation", DefaultValue = true, Group = "VSA")]
         public bool NeedVsa { get; set; }
 
@@ -99,6 +111,7 @@ namespace cAlgo.Robots
         private readonly HashSet<string> _usedLevels = new HashSet<string>();
         private string _lastStoryText = "";
         private DateTime _lastStatus = DateTime.MinValue;
+        private DateTime _lastReport = DateTime.MinValue;
 
         protected override void OnStart()
         {
@@ -183,6 +196,8 @@ namespace cAlgo.Robots
         {
             if (_story.Count < 40 || Bars.Count < 40)
                 return;
+            if (UseLearning)
+                DailyReport();
 
             // Storyline from the higher timeframe
             Rejection storyRejection;
@@ -224,6 +239,12 @@ namespace cAlgo.Robots
                     Print("Setup skipped: {0} level {1} rejected, but no VSA confirmation", entry.Kind, entry.Price.ToString(CultureInfo.InvariantCulture));
                     return;
                 }
+            }
+            // Self-learning: a level type or VSA signal whose own recent trades lost money rests for a while
+            if (UseLearning && (IsLosing(0, entry.Kind) || (vsaName.Length > 0 && IsLosing(2, vsaName))))
+            {
+                Print("Setup skipped by learning: '{0}' or '{1}' has been losing recently", entry.Kind, vsaName);
+                return;
             }
             if (Positions.FindAll(Label, SymbolName).Length >= MaxPositions)
             {
@@ -318,6 +339,54 @@ namespace cAlgo.Robots
                     var result = ModifyPosition(position, position.EntryPrice, position.TakeProfit);
                     if (result.IsSuccessful)
                         Print("Stop moved to break-even on position {0}", position.Id);
+                }
+            }
+        }
+
+        // Trade comments look like "V|bull|spring": part 0 is the level type, part 2 the VSA signal
+        private static string Part(string comment, int index)
+        {
+            var parts = (comment ?? "").Split('|');
+            return parts.Length > index ? parts[index] : "";
+        }
+
+        private List<HistoricalTrade> RecentOf(int part, string value)
+        {
+            return History
+                .Where(t => t.Label == Label && t.SymbolName == SymbolName && Part(t.Comment, part) == value)
+                .OrderByDescending(t => t.ClosingTime)
+                .Take(LearnTrades)
+                .ToList();
+        }
+
+        private bool IsLosing(int part, string value)
+        {
+            var mine = RecentOf(part, value);
+            return mine.Count >= LearnMinTrades
+                && mine.Sum(t => t.NetProfit) < 0
+                && mine[0].ClosingTime > Server.Time.AddHours(-LearnRestHours);
+        }
+
+        // Once a day, write what the bot has learned so far to the log
+        private void DailyReport()
+        {
+            if (Server.Time.Date == _lastReport.Date)
+                return;
+            _lastReport = Server.Time;
+            var all = History.Where(t => t.Label == Label && t.SymbolName == SymbolName).ToList();
+            if (all.Count == 0)
+            {
+                Print("Daily learning report: no closed trades yet");
+                return;
+            }
+            Print("Daily learning report: {0} trades, total {1:0.00}", all.Count, all.Sum(t => t.NetProfit));
+            foreach (int part in new[] { 0, 2 })
+            {
+                foreach (var group in all.GroupBy(t => Part(t.Comment, part)).Where(g => g.Key.Length > 0))
+                {
+                    var recent = RecentOf(part, group.Key);
+                    Print("  {0} '{1}': last {2} trades net {3:0.00}{4}", part == 0 ? "level" : "VSA", group.Key, recent.Count,
+                        recent.Sum(t => t.NetProfit), IsLosing(part, group.Key) ? " -> resting" : "");
                 }
             }
         }

@@ -12,23 +12,32 @@
   [
    1794782609,
    1000.0
+  ],
+  [
+   1794782709,
+   1000.0
   ]
  ],
  "cooldown": {},
- "runs": 1,
+ "runs": 2,
  "summary": {
-  "updated": 1794782609,
+  "updated": 1794782709,
   "api_ok": true,
-  "coins": 57,
-  "studied": 45,
+  "coins": 94,
+  "studied": 60,
   "signals": [
    [
-    "AAVEUSDT",
+    "DASHUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "RAYUSDT",
     1,
     "breakout"
    ],
    [
-    "ARBUSDT",
+    "DOTUSDT",
     1,
     "pullback"
    ]
@@ -53,8 +62,8 @@
   "strategies": []
  },
  "config": {
-  "min_quote_volume": 5000000,
-  "study_top": 45,
+  "min_quote_volume": 2000000,
+  "study_top": 60,
   "interval": "15m",
   "spot_start": 500.0,
   "spot_stake": 50.0,

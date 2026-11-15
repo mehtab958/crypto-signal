@@ -29,16 +29,16 @@ namespace cAlgo.Robots
         [Parameter("Max open trades", DefaultValue = 6, MinValue = 1, MaxValue = 10)]
         public int MaxPositions { get; set; }
 
-        [Parameter("Smallest profit target (money)", DefaultValue = 0.70, MinValue = 0.05)]
+        [Parameter("Smallest profit target (money)", DefaultValue = 5.0, MinValue = 0.05)]
         public double ProfitTarget { get; set; }
 
-        [Parameter("Largest profit target (money)", DefaultValue = 2.0, MinValue = 0.05)]
+        [Parameter("Largest profit target (money)", DefaultValue = 5.0, MinValue = 0.05)]
         public double MaxProfitTarget { get; set; }
 
         [Parameter("Profit target is at least this many times the spread cost", DefaultValue = 4.0, MinValue = 1.0, Step = 0.5)]
         public double SpreadMultiple { get; set; }
 
-        [Parameter("Loss limit at smallest target (money, grows with target)", DefaultValue = 1.0, MinValue = 0.1)]
+        [Parameter("Loss limit at smallest target (money, grows with target)", DefaultValue = 3.0, MinValue = 0.1)]
         public double StopLoss { get; set; }
 
         [Parameter("Daily loss limit (money, 0 = off)", DefaultValue = 20.0, MinValue = 0)]

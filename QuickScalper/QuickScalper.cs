@@ -19,8 +19,11 @@ namespace cAlgo.Robots
     [Robot(AccessRights = AccessRights.None)]
     public class QuickScalper : Robot
     {
-        [Parameter("Lots per trade", DefaultValue = 0.01, MinValue = 0.01, Step = 0.01)]
-        public double Lots { get; set; }
+        [Parameter("Smallest lot (1 strategy)", DefaultValue = 0.01, MinValue = 0.01, Step = 0.01)]
+        public double MinLots { get; set; }
+
+        [Parameter("Largest lot (3+ strategies agree)", DefaultValue = 0.03, MinValue = 0.01, Step = 0.01)]
+        public double MaxLots { get; set; }
 
         [Parameter("Max open trades", DefaultValue = 3, MinValue = 1, MaxValue = 10)]
         public int MaxPositions { get; set; }
@@ -28,10 +31,10 @@ namespace cAlgo.Robots
         [Parameter("Close at profit (money)", DefaultValue = 1.0, MinValue = 0.1)]
         public double ProfitTarget { get; set; }
 
-        [Parameter("Close at loss (money)", DefaultValue = 2.0, MinValue = 0.1)]
+        [Parameter("Close at loss (money)", DefaultValue = 20.0, MinValue = 0.1)]
         public double StopLoss { get; set; }
 
-        [Parameter("Daily loss limit (money)", DefaultValue = 10.0, MinValue = 1)]
+        [Parameter("Daily loss limit (money)", DefaultValue = 60.0, MinValue = 1)]
         public double DailyLossLimit { get; set; }
 
         [Parameter("Max spread cost (% of profit target)", DefaultValue = 25, MinValue = 1, MaxValue = 100)]
@@ -123,6 +126,7 @@ namespace cAlgo.Robots
         private MacdCrossOver _macd;
         private StochasticOscillator _stoch;
         private string _signalNames = "";
+        private int _signalVotes = 1;
         private AverageTrueRange _atr;
         private DateTime _pauseUntil = DateTime.MinValue;
         private DateTime _lastOpen = DateTime.MinValue;
@@ -178,7 +182,9 @@ namespace cAlgo.Robots
                 return;
             }
 
-            double volume = Symbol.NormalizeVolumeInUnits(Symbol.QuantityToVolumeInUnits(Lots), RoundingMode.Down);
+            // More agreeing strategies -> bigger lot, from the smallest to the largest setting
+            double lots = Math.Min(Math.Max(MinLots, MaxLots), MinLots + 0.01 * (Math.Max(1, _signalVotes) - 1));
+            double volume = Symbol.NormalizeVolumeInUnits(Symbol.QuantityToVolumeInUnits(lots), RoundingMode.Down);
             if (volume < Symbol.VolumeInUnitsMin)
                 volume = Symbol.VolumeInUnitsMin;
 
@@ -241,6 +247,7 @@ namespace cAlgo.Robots
                     if (News == NewsMode.TradeSpike && Math.Abs(C(i) - O(i)) >= 0.6 * size)
                     {
                         _signalNames = "news";
+                        _signalVotes = 1;
                         return C(i) > O(i) ? 1 : -1;
                     }
                     return 0;
@@ -267,6 +274,7 @@ namespace cAlgo.Robots
             if (direction == 0 || votes < (FastScalping ? 1 : MinAgree))
                 return 0;
             _signalNames = names;
+            _signalVotes = votes;
             Print("Signal {0}: {1}", direction > 0 ? "BUY" : "SELL", names);
             return direction;
         }

@@ -3,6 +3,7 @@
 // small money profit or a fixed money loss. Start it on an m1 chart.
 // Test on a demo account first.
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using cAlgo.API;
@@ -131,6 +132,27 @@ namespace cAlgo.Robots
         [Parameter("Close all at total loss (money)", DefaultValue = 5.0, MinValue = 0.1, Group = "Basket")]
         public double BasketLoss { get; set; }
 
+        [Parameter("Only trade with the 15-min and 1-hour trend", DefaultValue = true, Group = "Filters")]
+        public bool UseHtfFilter { get; set; }
+
+        [Parameter("Only trade in session hours", DefaultValue = true, Group = "Filters")]
+        public bool UseSessionFilter { get; set; }
+
+        [Parameter("Session start hour (UTC)", DefaultValue = 7, MinValue = 0, MaxValue = 23, Group = "Filters")]
+        public int SessionStartUtc { get; set; }
+
+        [Parameter("Session end hour (UTC)", DefaultValue = 16, MinValue = 0, MaxValue = 24, Group = "Filters")]
+        public int SessionEndUtc { get; set; }
+
+        [Parameter("Pause strategies that are losing", DefaultValue = true, Group = "Filters")]
+        public bool UseSelfScoring { get; set; }
+
+        [Parameter("Score over this many recent trades", DefaultValue = 30, MinValue = 10, MaxValue = 200, Group = "Filters")]
+        public int ScoreTrades { get; set; }
+
+        [Parameter("Paused strategy returns after (hours)", DefaultValue = 24, MinValue = 1, Group = "Filters")]
+        public int PauseHours { get; set; }
+
         [Parameter("Open first trade(s) right at start (trend direction)", DefaultValue = true)]
         public bool OpenOnStart { get; set; }
 
@@ -147,6 +169,13 @@ namespace cAlgo.Robots
         private string _signalNames = "";
         private int _signalVotes = 1;
         private bool _startPending;
+        private Bars _m15;
+        private Bars _h1;
+        private ExponentialMovingAverage _m15Trend;
+        private ExponentialMovingAverage _h1Trend;
+        private HashSet<string> _paused = new HashSet<string>();
+        private string _pausedText = "";
+        private static readonly string[] StrategyNames = { "pullback", "sweep", "pinbar", "engulf", "bb", "cross", "snr", "fvg", "retest", "macd", "stoch", "volclimax", "volbreak" };
         private bool _immediate;
         private DateTime _lastStatus = DateTime.MinValue;
         private AverageTrueRange _atr;
@@ -165,6 +194,10 @@ namespace cAlgo.Robots
             _bb = Indicators.BollingerBands(Bars.ClosePrices, 20, 2, MovingAverageType.Simple);
             _macd = Indicators.MacdCrossOver(26, 12, 9);
             _stoch = Indicators.StochasticOscillator(14, 3, 3, MovingAverageType.Simple);
+            _m15 = MarketData.GetBars(TimeFrame.Minute15);
+            _h1 = MarketData.GetBars(TimeFrame.Hour);
+            _m15Trend = Indicators.ExponentialMovingAverage(_m15.ClosePrices, 50);
+            _h1Trend = Indicators.ExponentialMovingAverage(_h1.ClosePrices, 50);
             _startPending = OpenOnStart;
             Print("QuickScalper started on {0} {1}, {2} bars loaded, account {3}", SymbolName, TimeFrame, Bars.Count, Account.IsLive ? "LIVE" : "demo");
         }
@@ -355,6 +388,9 @@ namespace cAlgo.Robots
             int direction = 0, votes = 0;
             string names = "";
 
+            if (UseSelfScoring)
+                UpdateScores();
+
             // News handling: a news release shows up as a candle several times
             // larger than normal. Trade with it and/or pause the other strategies.
             if (News != NewsMode.Off)
@@ -394,6 +430,16 @@ namespace cAlgo.Robots
 
             if (direction == 0 || votes < (FastScalping ? 1 : MinAgree))
                 return 0;
+            if (UseSessionFilter && !InSession())
+            {
+                Skip("outside session hours");
+                return 0;
+            }
+            if (UseHtfFilter && HigherTrend() != direction)
+            {
+                Skip("against the 15-min / 1-hour trend (" + names + ")");
+                return 0;
+            }
             _signalNames = names;
             _signalVotes = votes;
             Print("Signal {0}: {1}", direction > 0 ? "BUY" : "SELL", names);
@@ -401,9 +447,9 @@ namespace cAlgo.Robots
         }
 
         // Returns false when this vote conflicts with earlier ones
-        private static bool Vote(bool enabled, int vote, string name, ref int direction, ref int votes, ref string names)
+        private bool Vote(bool enabled, int vote, string name, ref int direction, ref int votes, ref string names)
         {
-            if (!enabled || vote == 0)
+            if (!enabled || vote == 0 || _paused.Contains(name))
                 return true;
             if (direction != 0 && vote != direction)
                 return false;
@@ -411,6 +457,59 @@ namespace cAlgo.Robots
             votes++;
             names = names.Length == 0 ? name : names + "+" + name;
             return true;
+        }
+
+        private bool InSession()
+        {
+            int hour = Server.Time.Hour;
+            return SessionStartUtc <= SessionEndUtc
+                ? hour >= SessionStartUtc && hour < SessionEndUtc
+                : hour >= SessionStartUtc || hour < SessionEndUtc;
+        }
+
+        // +1 when both the 15-minute and 1-hour closes are above their EMA 50, -1 when both below, else 0
+        private int HigherTrend()
+        {
+            if (_m15.Count < 60 || _h1.Count < 60)
+                return 0;
+            bool m15Up = _m15.ClosePrices.Last(1) > _m15Trend.Result.Last(1);
+            bool h1Up = _h1.ClosePrices.Last(1) > _h1Trend.Result.Last(1);
+            if (m15Up && h1Up) return 1;
+            if (!m15Up && !h1Up) return -1;
+            return 0;
+        }
+
+        // Self-scoring: a strategy whose recent trades add up to a loss is paused.
+        // It returns once its last trade is older than the pause time.
+        private void UpdateScores()
+        {
+            var recent = History
+                .Where(t => t.Label == Label && t.SymbolName == SymbolName)
+                .OrderByDescending(t => t.ClosingTime)
+                .Take(600)
+                .ToList();
+            var cutoff = Server.Time.AddHours(-PauseHours);
+            var paused = new HashSet<string>();
+            foreach (var name in StrategyNames)
+            {
+                var mine = recent.Where(t => HasStrategy(t.Comment, name)).Take(ScoreTrades).ToList();
+                if (mine.Count >= 10 && mine.Sum(t => t.NetProfit) < 0 && mine[0].ClosingTime > cutoff)
+                    paused.Add(name);
+            }
+            _paused = paused;
+            string text = string.Join(", ", paused.OrderBy(n => n));
+            if (text != _pausedText)
+            {
+                _pausedText = text;
+                Print("Paused strategies: {0}", text.Length == 0 ? "none" : text);
+            }
+        }
+
+        private static bool HasStrategy(string comment, string name)
+        {
+            if (string.IsNullOrEmpty(comment))
+                return false;
+            return comment.Split('|')[0].Split('+').Contains(name);
         }
 
         private double O(int j) { return Bars.OpenPrices[j]; }

@@ -1,71 +1,70 @@
 {
  "spot": {
-  "cash": 399.9,
-  "positions": [
-   {
-    "symbol": "SOPHUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 0.001030515,
-    "last": 0.00103,
-    "peak": 0.001030515,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1794795896,
-    "checked": 1794795300000,
-    "misses": 0
-   },
-   {
-    "symbol": "ZILUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 0.0010715355,
-    "last": 0.001071,
-    "peak": 0.0010715355,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1794795896,
-    "checked": 1794795300000,
-    "misses": 0
-   }
-  ]
+  "cash": 496.75149999999996,
+  "positions": []
  },
  "fut": {
-  "cash": 449.875,
-  "positions": [
-   {
-    "symbol": "SOPHUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 0.001030515,
-    "last": 0.00103,
-    "peak": 0.001030515,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1794795896,
-    "checked": 1794795300000,
-    "misses": 0
-   },
-   {
-    "symbol": "ZILUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 0.0010715355,
-    "last": 0.001071,
-    "peak": 0.0010715355,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1794795896,
-    "checked": 1794795300000,
-    "misses": 0
-   }
-  ]
+  "cash": 492.12875,
+  "positions": []
  },
- "closed": [],
+ "closed": [
+  {
+   "account": "fut",
+   "symbol": "ZILUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1794795896,
+   "exit_time": 1794823515,
+   "entry": 0.0010715355,
+   "exit": 0.0010388697402825,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "fut",
+   "symbol": "SOPHUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1794795896,
+   "exit_time": 1794823515,
+   "entry": 0.001030515,
+   "exit": 0.0009990997502250002,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "ZILUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1794795896,
+   "exit_time": 1794823515,
+   "entry": 0.0010715355,
+   "exit": 0.0010388697402825,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "SOPHUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1794795896,
+   "exit_time": 1794823515,
+   "entry": 0.001030515,
+   "exit": 0.0009990997502250002,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  }
+ ],
  "equity": [
   [
    1794782609,
@@ -78,75 +77,29 @@
   [
    1794795896,
    999.6
+  ],
+  [
+   1794823515,
+   988.88
   ]
  ],
- "cooldown": {},
- "runs": 3,
+ "cooldown": {
+  "spot:SOPHUSDT": 1794823515,
+  "spot:ZILUSDT": 1794823515,
+  "fut:SOPHUSDT": 1794823515,
+  "fut:ZILUSDT": 1794823515
+ },
+ "runs": 4,
  "summary": {
-  "updated": 1794795896,
+  "updated": 1794823515,
   "api_ok": true,
-  "coins": 91,
+  "coins": 85,
   "studied": 60,
   "signals": [
    [
-    "SOPHUSDT",
+    "ZROUSDT",
     1,
-    "oversold bounce"
-   ],
-   [
-    "SOLUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "XRPUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "AAVEUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "ZILUSDT",
-    1,
-    "oversold bounce"
-   ],
-   [
-    "UNIUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "SHELLUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "MEGAUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "DOGEUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "SPCXBUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "BNBUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "TQQQBUSDT",
-    1,
-    "pullback"
+    "breakout"
    ]
   ],
   "mood": -1,
@@ -154,19 +107,26 @@
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 499.85,
-   "cash": 399.9,
-   "trades": 0,
-   "win_rate": null
+   "equity": 496.75,
+   "cash": 496.75,
+   "trades": 2,
+   "win_rate": 0.0
   },
   "fut": {
    "start": 500.0,
-   "equity": 499.75,
-   "cash": 449.88,
-   "trades": 0,
-   "win_rate": null
+   "equity": 492.13,
+   "cash": 492.13,
+   "trades": 2,
+   "win_rate": 0.0
   },
-  "strategies": []
+  "strategies": [
+   [
+    "oversold bounce",
+    4,
+    0,
+    -11.12
+   ]
+  ]
  },
  "config": {
   "min_quote_volume": 2000000,

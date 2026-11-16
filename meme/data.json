@@ -1,5 +1,5 @@
 {
- "cash": 180.0,
+ "cash": 140.0,
  "positions": [
   {
    "address": "DSKM3d518BBaQShSKqaqZcG1XMRf81UFB6a1eavhSTNK",
@@ -7,7 +7,7 @@
    "name": "gtacoin",
    "url": "https://dexscreener.com/solana/9ztc73qq2p77grmhzzsfp4tezmisvkxbpvjvonnzevbe",
    "entry_price": 0.00037038800000000003,
-   "last_price": 0.0003457,
+   "last_price": 0.0003561,
    "peak_price": 0.0003596,
    "qty": 53997.42972234521,
    "cost": 20.0,
@@ -15,6 +15,38 @@
    "entry_liq": 46461.47,
    "score": 26.2,
    "reason": "1h +35%, buys/sells 1.5, liq $46k, age 29.7h",
+   "misses": 0
+  },
+  {
+   "address": "C5X8tVbt8cGw7iaaEuAVGTxFVZ4uSjscmiUbVpVwpump",
+   "symbol": "CYBERDACITY",
+   "name": "Cyber Dacity Coin",
+   "url": "https://dexscreener.com/solana/9iqd6n93rwevk8kmwww2fpbonsvfpkghvdgpchvzsgxk",
+   "entry_price": 0.000254719,
+   "last_price": 0.0002473,
+   "peak_price": 0.0002473,
+   "qty": 78517.89619148945,
+   "cost": 20.0,
+   "entry_time": 1794795793.8700533,
+   "entry_liq": 35054.21,
+   "score": 44.7,
+   "reason": "1h +43%, buys/sells 2.5, liq $35k, age 2.9h",
+   "misses": 0
+  },
+  {
+   "address": "FS1pBmZKp2Qw1atC64GoLamHstECAos9ot8bGPgDpump",
+   "symbol": "Socks",
+   "name": "Socks Neobank",
+   "url": "https://dexscreener.com/solana/agqolmpxk7etjy74tnyepqksqqyttscrmmvgyqrkajk3",
+   "entry_price": 0.000146775,
+   "last_price": 0.0001425,
+   "peak_price": 0.0001425,
+   "qty": 136262.98756600238,
+   "cost": 20.0,
+   "entry_time": 1794795793.8700533,
+   "entry_liq": 29353.47,
+   "score": 20.5,
+   "reason": "1h +9%, buys/sells 1.5, liq $29k, age 16.6h",
    "misses": 0
   }
  ],
@@ -27,42 +59,42 @@
   [
    1794782609,
    198.67
+  ],
+  [
+   1794795793,
+   198.06
   ]
  ],
  "cooldown": {},
- "runs": 2,
+ "runs": 3,
  "summary": {
-  "updated": 1794782609,
+  "updated": 1794795793,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 198.67,
-  "cash": 180.0,
+  "equity": 198.06,
+  "cash": 140.0,
   "trades": 0,
   "wins": 0,
   "win_rate": null,
-  "scanned": 56,
-  "passed": 0,
+  "scanned": 61,
+  "passed": 2,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    38
+    39
    ],
    [
     "too old",
-    9
+    10
    ],
    [
     "1h move out of range",
-    2
+    5
    ],
    [
-    "falling right now",
-    2
-   ],
-   [
-    "not enough buying",
-    2
+    "no price",
+    3
    ],
    [
     "volume looks fake for this liquidity",

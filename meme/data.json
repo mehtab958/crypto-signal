@@ -1,56 +1,80 @@
 {
- "cash": 140.0,
+ "cash": 153.57785065745168,
  "positions": [
   {
-   "address": "DSKM3d518BBaQShSKqaqZcG1XMRf81UFB6a1eavhSTNK",
-   "symbol": "gtacoin",
-   "name": "gtacoin",
-   "url": "https://dexscreener.com/solana/9ztc73qq2p77grmhzzsfp4tezmisvkxbpvjvonnzevbe",
-   "entry_price": 0.00037038800000000003,
-   "last_price": 0.0003561,
-   "peak_price": 0.0003596,
-   "qty": 53997.42972234521,
+   "address": "G9ZMir6uh66Y7viPkXAy7myA9jjE4T1YgheVUmGDpump",
+   "symbol": "GTA",
+   "name": "Good To Ape",
+   "url": "https://dexscreener.com/solana/5noplqbddwxewcmzrhctgvfboozrjhjzslwfkytg2rqw",
+   "entry_price": 0.000160268,
+   "last_price": 0.0001556,
+   "peak_price": 0.0001556,
+   "qty": 124790.97511667956,
    "cost": 20.0,
-   "entry_time": 1794782088.284247,
-   "entry_liq": 46461.47,
-   "score": 26.2,
-   "reason": "1h +35%, buys/sells 1.5, liq $46k, age 29.7h",
+   "entry_time": 1794823358.186166,
+   "entry_liq": 38219.82,
+   "score": 19.3,
+   "reason": "1h +17%, buys/sells 1.2, liq $38k, age 28.5h",
    "misses": 0
   },
   {
-   "address": "C5X8tVbt8cGw7iaaEuAVGTxFVZ4uSjscmiUbVpVwpump",
-   "symbol": "CYBERDACITY",
-   "name": "Cyber Dacity Coin",
-   "url": "https://dexscreener.com/solana/9iqd6n93rwevk8kmwww2fpbonsvfpkghvdgpchvzsgxk",
-   "entry_price": 0.000254719,
-   "last_price": 0.0002473,
-   "peak_price": 0.0002473,
-   "qty": 78517.89619148945,
+   "address": "85RhcSEMy15SNhFLmSArNm7udPKXVagVgsq4YmSopump",
+   "symbol": "bill",
+   "name": "bill",
+   "url": "https://dexscreener.com/solana/95ytgfrcbgt1d8ioaqkptxea6qrgj5omgimhnyherxdp",
+   "entry_price": 0.000144097,
+   "last_price": 0.0001399,
+   "peak_price": 0.0001399,
+   "qty": 138795.39476880155,
    "cost": 20.0,
-   "entry_time": 1794795793.8700533,
-   "entry_liq": 35054.21,
-   "score": 44.7,
-   "reason": "1h +43%, buys/sells 2.5, liq $35k, age 2.9h",
-   "misses": 0
-  },
-  {
-   "address": "FS1pBmZKp2Qw1atC64GoLamHstECAos9ot8bGPgDpump",
-   "symbol": "Socks",
-   "name": "Socks Neobank",
-   "url": "https://dexscreener.com/solana/agqolmpxk7etjy74tnyepqksqqyttscrmmvgyqrkajk3",
-   "entry_price": 0.000146775,
-   "last_price": 0.0001425,
-   "peak_price": 0.0001425,
-   "qty": 136262.98756600238,
-   "cost": 20.0,
-   "entry_time": 1794795793.8700533,
-   "entry_liq": 29353.47,
-   "score": 20.5,
-   "reason": "1h +9%, buys/sells 1.5, liq $29k, age 16.6h",
+   "entry_time": 1794823358.186166,
+   "entry_liq": 41667.46,
+   "score": 16.2,
+   "reason": "1h +11%, buys/sells 1.2, liq $42k, age 38.2h",
    "misses": 0
   }
  ],
- "closed": [],
+ "closed": [
+  {
+   "symbol": "Socks",
+   "address": "FS1pBmZKp2Qw1atC64GoLamHstECAos9ot8bGPgDpump",
+   "url": "https://dexscreener.com/solana/agqolmpxk7etjy74tnyepqksqqyttscrmmvgyqrkajk3",
+   "entry_time": 1794795793.8700533,
+   "exit_time": 1794823358.186166,
+   "entry_price": 0.000146775,
+   "exit_price": 0.000106,
+   "cost": 20.0,
+   "pnl": -5.99,
+   "pnl_pct": -29.9,
+   "why": "stop loss"
+  },
+  {
+   "symbol": "CYBERDACITY",
+   "address": "C5X8tVbt8cGw7iaaEuAVGTxFVZ4uSjscmiUbVpVwpump",
+   "url": "https://dexscreener.com/solana/9iqd6n93rwevk8kmwww2fpbonsvfpkghvdgpchvzsgxk",
+   "entry_time": 1794795793.8700533,
+   "exit_time": 1794823358.186166,
+   "entry_price": 0.000254719,
+   "exit_price": 0.0001901,
+   "cost": 20.0,
+   "pnl": -5.52,
+   "pnl_pct": -27.6,
+   "why": "stop loss"
+  },
+  {
+   "symbol": "gtacoin",
+   "address": "DSKM3d518BBaQShSKqaqZcG1XMRf81UFB6a1eavhSTNK",
+   "url": "https://dexscreener.com/solana/9ztc73qq2p77grmhzzsfp4tezmisvkxbpvjvonnzevbe",
+   "entry_time": 1794782088.284247,
+   "exit_time": 1794823358.186166,
+   "entry_price": 0.00037038800000000003,
+   "exit_price": 0.000479,
+   "cost": 20.0,
+   "pnl": 5.09,
+   "pnl_pct": 25.4,
+   "why": "time limit"
+  }
+ ],
  "equity": [
   [
    1794782088,
@@ -63,41 +87,49 @@
   [
    1794795793,
    198.06
+  ],
+  [
+   1794823358,
+   192.41
   ]
  ],
- "cooldown": {},
- "runs": 3,
+ "cooldown": {
+  "DSKM3d518BBaQShSKqaqZcG1XMRf81UFB6a1eavhSTNK": 1794823358.186166,
+  "C5X8tVbt8cGw7iaaEuAVGTxFVZ4uSjscmiUbVpVwpump": 1794823358.186166,
+  "FS1pBmZKp2Qw1atC64GoLamHstECAos9ot8bGPgDpump": 1794823358.186166
+ },
+ "runs": 4,
  "summary": {
-  "updated": 1794795793,
+  "updated": 1794823358,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 198.06,
-  "cash": 140.0,
-  "trades": 0,
-  "wins": 0,
-  "win_rate": null,
-  "scanned": 61,
+  "equity": 192.41,
+  "cash": 153.58,
+  "trades": 3,
+  "wins": 1,
+  "win_rate": 33.3,
+  "scanned": 49,
   "passed": 2,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    39
+    32
    ],
    [
     "too old",
-    10
-   ],
-   [
-    "1h move out of range",
-    5
+    9
    ],
    [
     "no price",
-    3
+    2
    ],
    [
-    "volume looks fake for this liquidity",
+    "1h move out of range",
+    2
+   ],
+   [
+    "valuation out of range",
     1
    ]
   ]

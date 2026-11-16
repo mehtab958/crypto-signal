@@ -1,40 +1,50 @@
 {
- "cash": 153.57785065745168,
+ "cash": 162.37229608716103,
  "positions": [
   {
-   "address": "G9ZMir6uh66Y7viPkXAy7myA9jjE4T1YgheVUmGDpump",
+   "address": "2NWgu4fqN2AxS5pp5v3f3SH54qArP9JepQFJm58gpump",
    "symbol": "GTA",
-   "name": "Good To Ape",
-   "url": "https://dexscreener.com/solana/5noplqbddwxewcmzrhctgvfboozrjhjzslwfkytg2rqw",
-   "entry_price": 0.000160268,
-   "last_price": 0.0001556,
-   "peak_price": 0.0001556,
-   "qty": 124790.97511667956,
+   "name": "Grand Theft Anthropic",
+   "url": "https://dexscreener.com/solana/7ticdhje5yhwgras8v1exxxvajy9etbzvq97nfgqdhyt",
+   "entry_price": 0.0007699250000000001,
+   "last_price": 0.0007475,
+   "peak_price": 0.0007475,
+   "qty": 25976.556158067342,
    "cost": 20.0,
-   "entry_time": 1794823358.186166,
-   "entry_liq": 38219.82,
-   "score": 19.3,
-   "reason": "1h +17%, buys/sells 1.2, liq $38k, age 28.5h",
-   "misses": 0
-  },
-  {
-   "address": "85RhcSEMy15SNhFLmSArNm7udPKXVagVgsq4YmSopump",
-   "symbol": "bill",
-   "name": "bill",
-   "url": "https://dexscreener.com/solana/95ytgfrcbgt1d8ioaqkptxea6qrgj5omgimhnyherxdp",
-   "entry_price": 0.000144097,
-   "last_price": 0.0001399,
-   "peak_price": 0.0001399,
-   "qty": 138795.39476880155,
-   "cost": 20.0,
-   "entry_time": 1794823358.186166,
-   "entry_liq": 41667.46,
-   "score": 16.2,
-   "reason": "1h +11%, buys/sells 1.2, liq $42k, age 38.2h",
+   "entry_time": 1794860635.7744107,
+   "entry_liq": 61686.99,
+   "score": 32.2,
+   "reason": "1h +91%, buys/sells 1.2, liq $62k, age 2.5h",
    "misses": 0
   }
  ],
  "closed": [
+  {
+   "symbol": "bill",
+   "address": "85RhcSEMy15SNhFLmSArNm7udPKXVagVgsq4YmSopump",
+   "url": "https://dexscreener.com/solana/95ytgfrcbgt1d8ioaqkptxea6qrgj5omgimhnyherxdp",
+   "entry_time": 1794823358.186166,
+   "exit_time": 1794860635.7744107,
+   "entry_price": 0.000144097,
+   "exit_price": 7.991e-05,
+   "cost": 20.0,
+   "pnl": -9.24,
+   "pnl_pct": -46.2,
+   "why": "stop loss"
+  },
+  {
+   "symbol": "GTA",
+   "address": "G9ZMir6uh66Y7viPkXAy7myA9jjE4T1YgheVUmGDpump",
+   "url": "https://dexscreener.com/solana/5noplqbddwxewcmzrhctgvfboozrjhjzslwfkytg2rqw",
+   "entry_time": 1794823358.186166,
+   "exit_time": 1794860635.7744107,
+   "entry_price": 0.000160268,
+   "exit_price": 0.000149,
+   "cost": 20.0,
+   "pnl": -1.96,
+   "pnl_pct": -9.8,
+   "why": "time limit"
+  },
   {
    "symbol": "Socks",
    "address": "FS1pBmZKp2Qw1atC64GoLamHstECAos9ot8bGPgDpump",
@@ -91,42 +101,52 @@
   [
    1794823358,
    192.41
+  ],
+  [
+   1794860635,
+   181.79
   ]
  ],
  "cooldown": {
   "DSKM3d518BBaQShSKqaqZcG1XMRf81UFB6a1eavhSTNK": 1794823358.186166,
   "C5X8tVbt8cGw7iaaEuAVGTxFVZ4uSjscmiUbVpVwpump": 1794823358.186166,
-  "FS1pBmZKp2Qw1atC64GoLamHstECAos9ot8bGPgDpump": 1794823358.186166
+  "FS1pBmZKp2Qw1atC64GoLamHstECAos9ot8bGPgDpump": 1794823358.186166,
+  "G9ZMir6uh66Y7viPkXAy7myA9jjE4T1YgheVUmGDpump": 1794860635.7744107,
+  "85RhcSEMy15SNhFLmSArNm7udPKXVagVgsq4YmSopump": 1794860635.7744107
  },
- "runs": 4,
+ "runs": 5,
  "summary": {
-  "updated": 1794823358,
+  "updated": 1794860635,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 192.41,
-  "cash": 153.58,
-  "trades": 3,
+  "equity": 181.79,
+  "cash": 162.37,
+  "trades": 5,
   "wins": 1,
-  "win_rate": 33.3,
-  "scanned": 49,
-  "passed": 2,
+  "win_rate": 20.0,
+  "scanned": 55,
+  "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    32
+    34
    ],
    [
     "too old",
-    9
+    11
    ],
    [
-    "no price",
+    "volume looks fake for this liquidity",
     2
    ],
    [
     "1h move out of range",
     2
+   ],
+   [
+    "almost no sells (possible honeypot)",
+    1
    ],
    [
     "valuation out of range",

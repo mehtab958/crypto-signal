@@ -132,7 +132,7 @@ namespace cAlgo.Robots
         [Parameter("Close all at total profit (money)", DefaultValue = 3.0, MinValue = 0.1, Group = "Basket")]
         public double BasketProfit { get; set; }
 
-        [Parameter("Close all at total loss (money)", DefaultValue = 5.0, MinValue = 0.1, Group = "Basket")]
+        [Parameter("Close all at total loss (money)", DefaultValue = 3.5, MinValue = 0.1, Group = "Basket")]
         public double BasketLoss { get; set; }
 
         [Parameter("Only trade with the 15-min and 1-hour trend", DefaultValue = true, Group = "Filters")]

@@ -159,6 +159,18 @@ namespace cAlgo.Robots
         [Parameter("Open first trade(s) right at start (trend direction)", DefaultValue = true)]
         public bool OpenOnStart { get; set; }
 
+        [Parameter("Trailing mode on strong signals", DefaultValue = true, Group = "Trailing")]
+        public bool UseTrailing { get; set; }
+
+        [Parameter("Strong = this many strategies agree", DefaultValue = 2, MinValue = 1, MaxValue = 6, Group = "Trailing")]
+        public int TrailVotes { get; set; }
+
+        [Parameter("Add a second entry when up by (money)", DefaultValue = 1.5, MinValue = 0.1, Group = "Trailing")]
+        public double TrailAddAt { get; set; }
+
+        [Parameter("Close when profit falls back by (money)", DefaultValue = 1.0, MinValue = 0.1, Group = "Trailing")]
+        public double TrailGap { get; set; }
+
         private const string Label = "QuickScalper";
 
         private ExponentialMovingAverage _fast;
@@ -172,6 +184,8 @@ namespace cAlgo.Robots
         private string _signalNames = "";
         private int _signalVotes = 1;
         private bool _startPending;
+        private readonly Dictionary<string, double> _peaks = new Dictionary<string, double>();
+        private readonly HashSet<string> _addedTo = new HashSet<string>();
         private Bars _m15;
         private Bars _h1;
         private ExponentialMovingAverage _m15Trend;
@@ -306,9 +320,41 @@ namespace cAlgo.Robots
             foreach (var group in groups)
             {
                 double total = group.Sum(p => p.NetProfit);
-                if (total >= BasketProfit || total <= -BasketLoss)
+                bool trailing = group.Any(p => (p.Comment ?? "").Contains("|trail|"));
+                bool exit;
+                if (!trailing)
                 {
-                    Print("Group {0} closed at {1:0.00}", group.Key, total);
+                    exit = total >= BasketProfit || total <= -BasketLoss;
+                }
+                else
+                {
+                    // Trailing mode: no fixed target. Add one entry once in profit, protect
+                    // break-even after that, and follow the profit up until it falls back.
+                    double peak = _peaks.ContainsKey(group.Key) ? Math.Max(_peaks[group.Key], total) : total;
+                    _peaks[group.Key] = peak;
+                    if (!_addedTo.Contains(group.Key) && total >= TrailAddAt)
+                    {
+                        _addedTo.Add(group.Key);
+                        var first = group.First();
+                        double addPipMoney = Symbol.PipValue * first.VolumeInUnits;
+                        if (addPipMoney > 0)
+                        {
+                            double addSl = Math.Max(1, Math.Round(BasketLoss / addPipMoney, 1));
+                            double addTp = Math.Max(1, Math.Round(4 * BasketProfit / addPipMoney, 1));
+                            var add = ExecuteMarketOrder(first.TradeType, SymbolName, first.VolumeInUnits, Label, addSl, addTp, first.Comment);
+                            Print(add.IsSuccessful ? "Group {0}: trailing entry added at +{1:0.00}" : "Group {0}: trailing entry failed", group.Key, total);
+                        }
+                    }
+                    bool protectedNow = _addedTo.Contains(group.Key);
+                    exit = total <= -BasketLoss
+                        || (protectedNow && total <= 0)
+                        || (peak >= BasketProfit && total <= peak - TrailGap);
+                }
+                if (exit)
+                {
+                    _peaks.Remove(group.Key);
+                    _addedTo.Remove(group.Key);
+                    Print("Group {0} closed at {1:0.00}{2}", group.Key, total, trailing ? " (trailing)" : "");
                     foreach (var position in group.ToList())
                     {
                         var closed = ClosePosition(position);
@@ -352,7 +398,10 @@ namespace cAlgo.Robots
             double tpPips = Math.Max(1, Math.Round(safety * BasketProfit / BasketSize / pipMoney, 1));
 
             var tradeType = _signal > 0 ? TradeType.Buy : TradeType.Sell;
-            string comment = _signalNames + "|basket|" + Server.Time.ToString("ddHHmmss", CultureInfo.InvariantCulture);
+            bool strong = UseTrailing && _signalVotes >= TrailVotes && _signalNames != "start" && _signalNames != "news";
+            if (strong)
+                tpPips = Math.Max(1, Math.Round(4 * BasketProfit / BasketSize / pipMoney, 1));   // far server target; the bot trails instead
+            string comment = _signalNames + "|basket|" + (strong ? "trail|" : "") + Server.Time.ToString("ddHHmmss", CultureInfo.InvariantCulture);
             int opened = 0;
             for (int n = 0; n < BasketSize; n++)
             {
@@ -362,7 +411,7 @@ namespace cAlgo.Robots
                 else
                     Print("Order failed: {0}", order.Error);
             }
-            Print("Basket opened: {0} x {1} ({2})", opened, tradeType, _signalNames);
+            Print("Basket opened: {0} x {1} ({2}){3}", opened, tradeType, _signalNames, strong ? " - strong signal, trailing mode" : "");
             _signal = 0;
         }
 

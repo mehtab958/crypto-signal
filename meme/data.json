@@ -1,24 +1,37 @@
 {
- "cash": 162.37229608716103,
+ "cash": 169.53494179940571,
  "positions": [
   {
-   "address": "2NWgu4fqN2AxS5pp5v3f3SH54qArP9JepQFJm58gpump",
-   "symbol": "GTA",
-   "name": "Grand Theft Anthropic",
-   "url": "https://dexscreener.com/solana/7ticdhje5yhwgras8v1exxxvajy9etbzvq97nfgqdhyt",
-   "entry_price": 0.0007699250000000001,
-   "last_price": 0.0007475,
-   "peak_price": 0.0007475,
-   "qty": 25976.556158067342,
+   "address": "D9EcoQZeAytCrF1kQFSpRNpoPhibJUvJcmRHXhubpump",
+   "symbol": "BAWSAQ",
+   "name": "Vice City Bawsaq",
+   "url": "https://dexscreener.com/solana/b8a1mw1vfm5pnm4rgud8zhbtbnkpb2fbmdiku33z1jqv",
+   "entry_price": 0.0019374300000000002,
+   "last_price": 0.001881,
+   "peak_price": 0.001881,
+   "qty": 10322.953603485028,
    "cost": 20.0,
-   "entry_time": 1794860635.7744107,
-   "entry_liq": 61686.99,
-   "score": 32.2,
-   "reason": "1h +91%, buys/sells 1.2, liq $62k, age 2.5h",
+   "entry_time": 1794884625.2852983,
+   "entry_liq": 102020.11,
+   "score": 32.4,
+   "reason": "1h +14%, buys/sells 2.3, liq $102k, age 7.0h",
    "misses": 0
   }
  ],
  "closed": [
+  {
+   "symbol": "GTA",
+   "address": "2NWgu4fqN2AxS5pp5v3f3SH54qArP9JepQFJm58gpump",
+   "url": "https://dexscreener.com/solana/7ticdhje5yhwgras8v1exxxvajy9etbzvq97nfgqdhyt",
+   "entry_time": 1794860635.7744107,
+   "exit_time": 1794884625.2852983,
+   "entry_price": 0.0007699250000000001,
+   "exit_price": 0.001078,
+   "cost": 20.0,
+   "pnl": 7.16,
+   "pnl_pct": 35.8,
+   "why": "time limit"
+  },
   {
    "symbol": "bill",
    "address": "85RhcSEMy15SNhFLmSArNm7udPKXVagVgsq4YmSopump",
@@ -105,6 +118,10 @@
   [
    1794860635,
    181.79
+  ],
+  [
+   1794884625,
+   188.95
   ]
  ],
  "cooldown": {
@@ -112,44 +129,45 @@
   "C5X8tVbt8cGw7iaaEuAVGTxFVZ4uSjscmiUbVpVwpump": 1794823358.186166,
   "FS1pBmZKp2Qw1atC64GoLamHstECAos9ot8bGPgDpump": 1794823358.186166,
   "G9ZMir6uh66Y7viPkXAy7myA9jjE4T1YgheVUmGDpump": 1794860635.7744107,
-  "85RhcSEMy15SNhFLmSArNm7udPKXVagVgsq4YmSopump": 1794860635.7744107
+  "85RhcSEMy15SNhFLmSArNm7udPKXVagVgsq4YmSopump": 1794860635.7744107,
+  "2NWgu4fqN2AxS5pp5v3f3SH54qArP9JepQFJm58gpump": 1794884625.2852983
  },
- "runs": 5,
+ "runs": 6,
  "summary": {
-  "updated": 1794860635,
+  "updated": 1794884625,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 181.79,
-  "cash": 162.37,
-  "trades": 5,
-  "wins": 1,
-  "win_rate": 20.0,
-  "scanned": 55,
+  "equity": 188.95,
+  "cash": 169.53,
+  "trades": 6,
+  "wins": 2,
+  "win_rate": 33.3,
+  "scanned": 63,
   "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    34
+    38
    ],
    [
     "too old",
-    11
+    9
    ],
    [
-    "volume looks fake for this liquidity",
-    2
+    "no price",
+    6
    ],
    [
     "1h move out of range",
-    2
+    3
    ],
    [
-    "almost no sells (possible honeypot)",
+    "too new or age unknown",
     1
    ],
    [
-    "valuation out of range",
+    "not enough buying",
     1
    ]
   ]

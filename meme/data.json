@@ -1,24 +1,20 @@
 {
- "cash": 158.34361101584193,
- "positions": [
-  {
-   "address": "2cMcMEX3Eqo86tUrVe5dgHp5GZNwqQ6crqm22UeZpump",
-   "symbol": "LEOSTAR",
-   "name": "Leonida Games",
-   "url": "https://dexscreener.com/solana/hm7nvb4bxsdyzhtbm2yhemhcmc6lq4xtedy4q1we9r7q",
-   "entry_price": 0.00133076,
-   "last_price": 0.001292,
-   "peak_price": 0.001292,
-   "qty": 15029.00598154438,
-   "cost": 20.0,
-   "entry_time": 1794915859.9570775,
-   "entry_liq": 84501.7,
-   "score": 24.7,
-   "reason": "1h +14%, buys/sells 1.6, liq $85k, age 12.7h",
-   "misses": 0
-  }
- ],
+ "cash": 158.35565255601446,
+ "positions": [],
  "closed": [
+  {
+   "symbol": "LEOSTAR",
+   "address": "2cMcMEX3Eqo86tUrVe5dgHp5GZNwqQ6crqm22UeZpump",
+   "url": "https://dexscreener.com/solana/hm7nvb4bxsdyzhtbm2yhemhcmc6lq4xtedy4q1we9r7q",
+   "entry_time": 1794915859.9570775,
+   "exit_time": 1794945847.3210523,
+   "entry_price": 0.00133076,
+   "exit_price": 8.26e-07,
+   "cost": 20.0,
+   "pnl": -19.99,
+   "pnl_pct": -99.9,
+   "why": "liquidity pulled"
+  },
   {
    "symbol": "BAWSAQ",
    "address": "D9EcoQZeAytCrF1kQFSpRNpoPhibJUvJcmRHXhubpump",
@@ -139,50 +135,55 @@
   [
    1794915859,
    177.76
+  ],
+  [
+   1794945847,
+   158.36
   ]
  ],
  "cooldown": {
   "G9ZMir6uh66Y7viPkXAy7myA9jjE4T1YgheVUmGDpump": 1794860635.7744107,
   "85RhcSEMy15SNhFLmSArNm7udPKXVagVgsq4YmSopump": 1794860635.7744107,
   "2NWgu4fqN2AxS5pp5v3f3SH54qArP9JepQFJm58gpump": 1794884625.2852983,
-  "D9EcoQZeAytCrF1kQFSpRNpoPhibJUvJcmRHXhubpump": 1794915859.9570775
+  "D9EcoQZeAytCrF1kQFSpRNpoPhibJUvJcmRHXhubpump": 1794915859.9570775,
+  "2cMcMEX3Eqo86tUrVe5dgHp5GZNwqQ6crqm22UeZpump": 1794945847.3210523
  },
- "runs": 7,
+ "runs": 8,
  "summary": {
-  "updated": 1794915859,
+  "updated": 1794945847,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 177.76,
-  "cash": 158.34,
-  "trades": 7,
+  "equity": 158.36,
+  "cash": 158.36,
+  "trades": 8,
   "wins": 2,
-  "win_rate": 28.6,
-  "scanned": 53,
-  "passed": 1,
+  "win_rate": 25.0,
+  "scanned": 54,
+  "passed": 0,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    32
+    30
    ],
    [
     "too old",
     11
    ],
    [
-    "no price",
-    2
-   ],
-   [
     "1h move out of range",
-    2
+    6
    ],
    [
     "too new or age unknown",
     1
    ],
    [
-    "volume looks fake for this liquidity",
+    "no price",
+    1
+   ],
+   [
+    "falling right now",
     1
    ]
   ]

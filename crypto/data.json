@@ -1,155 +1,153 @@
 {
  "spot": {
-  "cash": 246.5014999999999,
-  "positions": [
-   {
-    "symbol": "MSTRBUSDT",
-    "dir": 1,
-    "strategy": "pullback",
-    "entry": 103.71182999999999,
-    "last": 103.61,
-    "peak": 104.29,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1794861106,
-    "checked": 1794915900000,
-    "misses": 0
-   },
-   {
-    "symbol": "ETHUSDT",
-    "dir": 1,
-    "strategy": "pullback",
-    "entry": 1821.35022,
-    "last": 1819.23,
-    "peak": 1843.49,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1794861106,
-    "checked": 1794915900000,
-    "misses": 0
-   },
-   {
-    "symbol": "INJUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 7.535766,
-    "last": 7.532,
-    "peak": 7.535766,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1794916594,
-    "checked": 1794915900000,
-    "misses": 0
-   },
-   {
-    "symbol": "SOLUSDT",
-    "dir": 1,
-    "strategy": "pullback",
-    "entry": 73.4367,
-    "last": 73.4,
-    "peak": 73.4367,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1794916594,
-    "checked": 1794915900000,
-    "misses": 0
-   },
-   {
-    "symbol": "UNIUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 5.372685,
-    "last": 5.37,
-    "peak": 5.372685,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1794916594,
-    "checked": 1794915900000,
-    "misses": 0
-   }
-  ]
+  "cash": 488.6302499999999,
+  "positions": []
  },
  "fut": {
-  "cash": 366.1731406677182,
-  "positions": [
-   {
-    "symbol": "INJUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 7.535766,
-    "last": 7.532,
-    "peak": 7.535766,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1794916594,
-    "checked": 1794915900000,
-    "misses": 0
-   },
-   {
-    "symbol": "SOLUSDT",
-    "dir": 1,
-    "strategy": "pullback",
-    "entry": 73.4367,
-    "last": 73.4,
-    "peak": 73.4367,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1794916594,
-    "checked": 1794915900000,
-    "misses": 0
-   },
-   {
-    "symbol": "UNIUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 5.372685,
-    "last": 5.37,
-    "peak": 5.372685,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1794916594,
-    "checked": 1794915900000,
-    "misses": 0
-   },
-   {
-    "symbol": "NEARUSDT",
-    "dir": 1,
-    "strategy": "pullback",
-    "entry": 3.283641,
-    "last": 3.282,
-    "peak": 3.283641,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1794916594,
-    "checked": 1794915900000,
-    "misses": 0
-   },
-   {
-    "symbol": "ZAMAUSDT",
-    "dir": 1,
-    "strategy": "pullback",
-    "entry": 0.059279624999999996,
-    "last": 0.05925,
-    "peak": 0.059279624999999996,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1794916594,
-    "checked": 1794915900000,
-    "misses": 0
-   }
-  ]
+  "cash": 471.8075156677183,
+  "positions": []
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "ZAMAUSDT",
+   "dir": 1,
+   "strategy": "pullback",
+   "entry_time": 1794916594,
+   "exit_time": 1794948104,
+   "entry": 0.059279624999999996,
+   "exit": 0.057472485631875,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "fut",
+   "symbol": "NEARUSDT",
+   "dir": 1,
+   "strategy": "pullback",
+   "entry_time": 1794916594,
+   "exit_time": 1794948104,
+   "entry": 3.283641,
+   "exit": 3.183539204115,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "fut",
+   "symbol": "UNIUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1794916594,
+   "exit_time": 1794948104,
+   "entry": 5.372685,
+   "exit": 5.208898697775,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "fut",
+   "symbol": "SOLUSDT",
+   "dir": 1,
+   "strategy": "pullback",
+   "entry_time": 1794916594,
+   "exit_time": 1794948104,
+   "entry": 73.4367,
+   "exit": 71.19798220050001,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "fut",
+   "symbol": "INJUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1794916594,
+   "exit_time": 1794948104,
+   "entry": 7.535766,
+   "exit": 7.306038173489999,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "UNIUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1794916594,
+   "exit_time": 1794948104,
+   "entry": 5.372685,
+   "exit": 5.208898697775,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "SOLUSDT",
+   "dir": 1,
+   "strategy": "pullback",
+   "entry_time": 1794916594,
+   "exit_time": 1794948104,
+   "entry": 73.4367,
+   "exit": 71.19798220050001,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "INJUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1794916594,
+   "exit_time": 1794948104,
+   "entry": 7.535766,
+   "exit": 7.306038173489999,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "ETHUSDT",
+   "dir": 1,
+   "strategy": "pullback",
+   "entry_time": 1794861106,
+   "exit_time": 1794948104,
+   "entry": 1821.35022,
+   "exit": 1765.8263585433,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "MSTRBUSDT",
+   "dir": 1,
+   "strategy": "pullback",
+   "entry_time": 1794861106,
+   "exit_time": 1794948104,
+   "entry": 103.71182999999999,
+   "exit": 100.55017486244999,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
   {
    "account": "fut",
    "symbol": "ETHUSDT",
@@ -263,103 +261,73 @@
   [
    1794916594,
    987.18
+  ],
+  [
+   1794948104,
+   960.44
   ]
  ],
  "cooldown": {
-  "fut:MSTRBUSDT": 1794916594,
-  "fut:ETHUSDT": 1794916594
+  "spot:MSTRBUSDT": 1794948104,
+  "spot:ETHUSDT": 1794948104,
+  "spot:INJUSDT": 1794948104,
+  "spot:SOLUSDT": 1794948104,
+  "spot:UNIUSDT": 1794948104,
+  "fut:INJUSDT": 1794948104,
+  "fut:SOLUSDT": 1794948104,
+  "fut:UNIUSDT": 1794948104,
+  "fut:NEARUSDT": 1794948104,
+  "fut:ZAMAUSDT": 1794948104
  },
- "runs": 7,
+ "runs": 8,
  "summary": {
-  "updated": 1794916594,
+  "updated": 1794948104,
   "api_ok": true,
-  "coins": 89,
+  "coins": 96,
   "studied": 60,
   "signals": [
    [
-    "INJUSDT",
-    1,
-    "breakout"
-   ],
-   [
-    "SOLUSDT",
+    "POLUSDT",
     1,
     "pullback"
    ],
    [
-    "UNIUSDT",
-    1,
-    "breakout"
-   ],
-   [
-    "NEARUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "ZAMAUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "AAVEUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "ZROUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "XRPUSDT",
-    1,
-    "breakout"
-   ],
-   [
-    "XPLUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "TAOUSDT",
-    1,
-    "breakout"
-   ],
-   [
-    "\u725b\u6765USDT",
-    1,
-    "pullback"
-   ],
-   [
-    "TRUMPUSDT",
+    "ALLOUSDT",
     1,
     "pullback"
    ]
   ],
-  "mood": 1,
-  "paused": [],
+  "mood": -1,
+  "paused": [
+   "pullback"
+  ],
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 496.32,
-   "cash": 246.5,
-   "trades": 2,
+   "equity": 488.63,
+   "cash": 488.63,
+   "trades": 7,
    "win_rate": 0.0
   },
   "fut": {
    "start": 500.0,
-   "equity": 490.86,
-   "cash": 366.17,
-   "trades": 4,
+   "equity": 471.81,
+   "cash": 471.81,
+   "trades": 9,
    "win_rate": 0.0
   },
   "strategies": [
    [
-    "pullback",
-    2,
+    "breakout",
+    4,
     0,
-    -0.64
+    -11.12
+   ],
+   [
+    "pullback",
+    8,
+    0,
+    -17.32
    ],
    [
     "oversold bounce",

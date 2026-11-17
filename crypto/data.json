@@ -7,13 +7,13 @@
     "dir": 1,
     "strategy": "pullback",
     "entry": 103.71182999999999,
-    "last": 103.66,
-    "peak": 103.71182999999999,
+    "last": 102.72,
+    "peak": 104.29,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1794861106,
-    "checked": 1794861000000,
+    "checked": 1794884400000,
     "misses": 0
    },
    {
@@ -21,13 +21,13 @@
     "dir": 1,
     "strategy": "pullback",
     "entry": 1821.35022,
-    "last": 1820.44,
-    "peak": 1821.35022,
+    "last": 1814.91,
+    "peak": 1838.59,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1794861106,
-    "checked": 1794861000000,
+    "checked": 1794884400000,
     "misses": 0
    }
   ]
@@ -40,13 +40,13 @@
     "dir": 1,
     "strategy": "pullback",
     "entry": 103.71182999999999,
-    "last": 103.66,
-    "peak": 103.71182999999999,
+    "last": 102.72,
+    "peak": 104.29,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1794861106,
-    "checked": 1794861000000,
+    "checked": 1794884400000,
     "misses": 0
    },
    {
@@ -54,13 +54,13 @@
     "dir": 1,
     "strategy": "pullback",
     "entry": 1821.35022,
-    "last": 1820.44,
-    "peak": 1821.35022,
+    "last": 1814.91,
+    "peak": 1838.59,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1794861106,
-    "checked": 1794861000000,
+    "checked": 1794884400000,
     "misses": 0
    }
   ]
@@ -143,40 +143,44 @@
   [
    1794861106,
    988.48
+  ],
+  [
+   1794884775,
+   986.36
   ]
  ],
  "cooldown": {},
- "runs": 5,
+ "runs": 6,
  "summary": {
-  "updated": 1794861106,
+  "updated": 1794884775,
   "api_ok": true,
-  "coins": 98,
+  "coins": 91,
   "studied": 60,
   "signals": [
    [
-    "MSTRBUSDT",
+    "GLMRUSDT",
     1,
-    "pullback"
+    "breakout"
    ],
    [
-    "ETHUSDT",
+    "INJUSDT",
     1,
-    "pullback"
+    "breakout"
    ]
   ],
-  "mood": 1,
+  "mood": -1,
   "paused": [],
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 496.6,
+   "equity": 496.0,
    "cash": 396.65,
    "trades": 2,
    "win_rate": 0.0
   },
   "fut": {
    "start": 500.0,
-   "equity": 491.88,
+   "equity": 490.37,
    "cash": 442.0,
    "trades": 2,
    "win_rate": 0.0

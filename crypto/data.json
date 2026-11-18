@@ -269,59 +269,22 @@
   [
    1794969459,
    960.44
+  ],
+  [
+   1794998795,
+   960.44
   ]
  ],
- "cooldown": {
-  "spot:MSTRBUSDT": 1794948104,
-  "spot:ETHUSDT": 1794948104,
-  "spot:INJUSDT": 1794948104,
-  "spot:SOLUSDT": 1794948104,
-  "spot:UNIUSDT": 1794948104,
-  "fut:INJUSDT": 1794948104,
-  "fut:SOLUSDT": 1794948104,
-  "fut:UNIUSDT": 1794948104,
-  "fut:NEARUSDT": 1794948104,
-  "fut:ZAMAUSDT": 1794948104
- },
- "runs": 9,
+ "cooldown": {},
+ "runs": 10,
  "summary": {
-  "updated": 1794969459,
+  "updated": 1794998795,
   "api_ok": true,
-  "coins": 95,
+  "coins": 97,
   "studied": 60,
   "signals": [
    [
-    "MMTUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "RUNEUSDT",
-    1,
-    "pullback"
-   ],
-   [
     "ZILUSDT",
-    1,
-    "breakout"
-   ],
-   [
-    "OPUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "AAVEUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "TRUMPUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "XLMUSDT",
     1,
     "pullback"
    ]

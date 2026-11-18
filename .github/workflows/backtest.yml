@@ -1,4 +1,4 @@
-name: Deriv synthetic indices check
+name: Deriv binary check
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Backtest
-        run: pip install -q websockets && cd backtest && python3 bt5.py
+        run: pip install -q websockets && cd backtest && python3 bt6.py
       - uses: actions/upload-artifact@v4
         with:
           name: backtest-results

@@ -265,6 +265,10 @@
   [
    1794948104,
    960.44
+  ],
+  [
+   1794969459,
+   960.44
   ]
  ],
  "cooldown": {
@@ -279,20 +283,45 @@
   "fut:NEARUSDT": 1794948104,
   "fut:ZAMAUSDT": 1794948104
  },
- "runs": 8,
+ "runs": 9,
  "summary": {
-  "updated": 1794948104,
+  "updated": 1794969459,
   "api_ok": true,
-  "coins": 96,
+  "coins": 95,
   "studied": 60,
   "signals": [
    [
-    "POLUSDT",
+    "MMTUSDT",
     1,
     "pullback"
    ],
    [
-    "ALLOUSDT",
+    "RUNEUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "ZILUSDT",
+    1,
+    "breakout"
+   ],
+   [
+    "OPUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "AAVEUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "TRUMPUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "XLMUSDT",
     1,
     "pullback"
    ]

@@ -72,46 +72,46 @@ namespace cAlgo.Robots
         [Parameter("Fast scalping (1 strategy is enough)", DefaultValue = true, Group = "Strategies")]
         public bool FastScalping { get; set; }
 
-        [Parameter("Volume climax reversal", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Volume climax reversal", DefaultValue = false, Group = "Strategies")]
         public bool UseVolumeClimax { get; set; }
 
-        [Parameter("Volume breakout", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Volume breakout", DefaultValue = false, Group = "Strategies")]
         public bool UseVolumeBreakout { get; set; }
 
-        [Parameter("Trend pullback", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Trend pullback", DefaultValue = false, Group = "Strategies")]
         public bool UsePullback { get; set; }
 
-        [Parameter("Liquidity sweep", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Liquidity sweep", DefaultValue = false, Group = "Strategies")]
         public bool UseSweep { get; set; }
 
-        [Parameter("Rejection wick (pin bar)", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Rejection wick (pin bar)", DefaultValue = false, Group = "Strategies")]
         public bool UsePinBar { get; set; }
 
-        [Parameter("Engulfing candle", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Engulfing candle", DefaultValue = false, Group = "Strategies")]
         public bool UseEngulfing { get; set; }
 
-        [Parameter("Bollinger reversal", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Bollinger reversal", DefaultValue = false, Group = "Strategies")]
         public bool UseBollinger { get; set; }
 
-        [Parameter("EMA 9/21 cross", DefaultValue = true, Group = "Strategies")]
+        [Parameter("EMA 9/21 cross", DefaultValue = false, Group = "Strategies")]
         public bool UseEmaCross { get; set; }
 
-        [Parameter("Raja Banks style SnR", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Raja Banks style SnR", DefaultValue = false, Group = "Strategies")]
         public bool UseSnr { get; set; }
 
-        [Parameter("Fair value gap retest", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Fair value gap retest", DefaultValue = false, Group = "Strategies")]
         public bool UseFvg { get; set; }
 
-        [Parameter("Break and retest", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Break and retest", DefaultValue = false, Group = "Strategies")]
         public bool UseRetest { get; set; }
 
         [Parameter("MACD cross", DefaultValue = true, Group = "Strategies")]
         public bool UseMacd { get; set; }
 
-        [Parameter("Stochastic turn", DefaultValue = true, Group = "Strategies")]
+        [Parameter("Stochastic turn", DefaultValue = false, Group = "Strategies")]
         public bool UseStochastic { get; set; }
 
-        [Parameter("News mode", DefaultValue = NewsMode.TradeSpike, Group = "News")]
+        [Parameter("News mode", DefaultValue = NewsMode.Off, Group = "News")]
         public NewsMode News { get; set; }
 
         [Parameter("Spike size (x average candle)", DefaultValue = 3.0, MinValue = 1.5, Step = 0.5, Group = "News")]
@@ -129,10 +129,10 @@ namespace cAlgo.Robots
         [Parameter("Max groups open at once", DefaultValue = 1, MinValue = 1, MaxValue = 10, Group = "Basket")]
         public int MaxBaskets { get; set; }
 
-        [Parameter("Close all at total profit (money)", DefaultValue = 3.0, MinValue = 0.1, Group = "Basket")]
+        [Parameter("Close all at total profit (money)", DefaultValue = 6.0, MinValue = 0.1, Group = "Basket")]
         public double BasketProfit { get; set; }
 
-        [Parameter("Close all at total loss (money)", DefaultValue = 3.5, MinValue = 0.1, Group = "Basket")]
+        [Parameter("Close all at total loss (money)", DefaultValue = 3.0, MinValue = 0.1, Group = "Basket")]
         public double BasketLoss { get; set; }
 
         [Parameter("Only trade with the 15-min and 1-hour trend", DefaultValue = true, Group = "Filters")]
@@ -156,10 +156,10 @@ namespace cAlgo.Robots
         [Parameter("Paused strategy returns after (hours)", DefaultValue = 24, MinValue = 1, Group = "Filters")]
         public int PauseHours { get; set; }
 
-        [Parameter("Open first trade(s) right at start (trend direction)", DefaultValue = true)]
+        [Parameter("Open first trade(s) right at start (trend direction)", DefaultValue = false)]
         public bool OpenOnStart { get; set; }
 
-        [Parameter("Trailing mode on strong signals", DefaultValue = true, Group = "Trailing")]
+        [Parameter("Trailing mode on strong signals", DefaultValue = false, Group = "Trailing")]
         public bool UseTrailing { get; set; }
 
         [Parameter("Strong = this many strategies agree", DefaultValue = 2, MinValue = 1, MaxValue = 6, Group = "Trailing")]
@@ -216,6 +216,8 @@ namespace cAlgo.Robots
             _m15Trend = Indicators.ExponentialMovingAverage(_m15.ClosePrices, 50);
             _h1Trend = Indicators.ExponentialMovingAverage(_h1.ClosePrices, 50);
             _startPending = OpenOnStart;
+            if (TimeFrame != TimeFrame.Minute15)
+                Print("Note: the default settings were tested on the m15 chart. This instance is on {0}.", TimeFrame);
             Print("QuickScalper started on {0} {1}, {2} bars loaded, account {3}", SymbolName, TimeFrame, Bars.Count, Account.IsLive ? "LIVE" : "demo");
         }
 

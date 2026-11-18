@@ -1,4 +1,4 @@
-name: Deriv binary check
+name: Every-candle gold check
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Backtest
-        run: pip install -q websockets && cd backtest && python3 bt6.py
+        run: pip install -q websockets && cd backtest && python3 bt7.py
       - uses: actions/upload-artifact@v4
         with:
           name: backtest-results

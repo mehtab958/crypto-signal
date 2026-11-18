@@ -143,16 +143,19 @@
   [
    1794968668,
    158.36
+  ],
+  [
+   1794997889,
+   158.36
   ]
  ],
  "cooldown": {
-  "2NWgu4fqN2AxS5pp5v3f3SH54qArP9JepQFJm58gpump": 1794884625.2852983,
   "D9EcoQZeAytCrF1kQFSpRNpoPhibJUvJcmRHXhubpump": 1794915859.9570775,
   "2cMcMEX3Eqo86tUrVe5dgHp5GZNwqQ6crqm22UeZpump": 1794945847.3210523
  },
- "runs": 9,
+ "runs": 10,
  "summary": {
-  "updated": 1794968668,
+  "updated": 1794997889,
   "chain": "solana",
   "start_cash": 200.0,
   "equity": 158.36,
@@ -160,13 +163,13 @@
   "trades": 8,
   "wins": 2,
   "win_rate": 25.0,
-  "scanned": 66,
+  "scanned": 50,
   "passed": 0,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    45
+    34
    ],
    [
     "too old",
@@ -174,19 +177,19 @@
    ],
    [
     "1h move out of range",
-    5
+    3
    ],
    [
-    "volume looks fake for this liquidity",
-    2
-   ],
-   [
-    "no price",
+    "volume too low",
     2
    ],
    [
     "falling right now",
-    2
+    1
+   ],
+   [
+    "not enough buying",
+    1
    ]
   ]
  },

@@ -273,18 +273,27 @@
   [
    1794998795,
    960.44
+  ],
+  [
+   1795028912,
+   960.44
   ]
  ],
  "cooldown": {},
- "runs": 10,
+ "runs": 11,
  "summary": {
-  "updated": 1794998795,
+  "updated": 1795028912,
   "api_ok": true,
-  "coins": 97,
+  "coins": 92,
   "studied": 60,
   "signals": [
    [
-    "ZILUSDT",
+    "AVGOBUSDT",
+    1,
+    "breakout"
+   ],
+   [
+    "XPLUSDT",
     1,
     "pullback"
    ]

@@ -159,6 +159,18 @@ namespace cAlgo.Robots
         [Parameter("Open first trade(s) right at start (trend direction)", DefaultValue = false)]
         public bool OpenOnStart { get; set; }
 
+        [Parameter("VSA trades (own stop, fixed reward : risk)", DefaultValue = true, Group = "VSA")]
+        public bool UseVsa { get; set; }
+
+        [Parameter("VSA reward : risk", DefaultValue = 2.0, MinValue = 0.5, Step = 0.5, Group = "VSA")]
+        public double VsaRewardRisk { get; set; }
+
+        [Parameter("VSA max risk per trade (money)", DefaultValue = 5.0, MinValue = 0.5, Group = "VSA")]
+        public double VsaMaxRisk { get; set; }
+
+        [Parameter("VSA moves stop to break-even at 1x risk", DefaultValue = true, Group = "VSA")]
+        public bool VsaBreakEven { get; set; }
+
         [Parameter("Trailing mode on strong signals", DefaultValue = false, Group = "Trailing")]
         public bool UseTrailing { get; set; }
 
@@ -192,10 +204,12 @@ namespace cAlgo.Robots
         private ExponentialMovingAverage _h1Trend;
         private HashSet<string> _paused = new HashSet<string>();
         private string _pausedText = "";
-        private static readonly string[] StrategyNames = { "pullback", "sweep", "pinbar", "engulf", "bb", "cross", "snr", "fvg", "retest", "macd", "stoch", "volclimax", "volbreak" };
+        private static readonly string[] StrategyNames = { "pullback", "sweep", "pinbar", "engulf", "bb", "cross", "snr", "fvg", "retest", "macd", "stoch", "volclimax", "volbreak", "vsa" };
         private bool _immediate;
         private DateTime _lastStatus = DateTime.MinValue;
         private AverageTrueRange _atr;
+        private int _vsaDir;            // +1 buy, -1 sell, 0 none; set once per closed bar
+        private string _vsaName = "";
         private DateTime _pauseUntil = DateTime.MinValue;
         private DateTime _lastOpen = DateTime.MinValue;
         private int _signal;   // +1 buy, -1 sell, 0 none; set once per closed bar
@@ -224,6 +238,122 @@ namespace cAlgo.Robots
         protected override void OnBar()
         {
             _signal = ReadSignal();
+            _vsaDir = UseVsa ? ReadVsaSignal(out _vsaName) : 0;
+            if (_vsaDir != 0)
+                Print("VSA signal {0}: {1}", _vsaDir > 0 ? "BUY" : "SELL", _vsaName);
+        }
+
+        // VSA (Volume Spread Analysis) on the candle before the last one, confirmed by the
+        // last candle closing in the signal's direction. Same rules as the tested VSA bot.
+        private int ReadVsaSignal(out string name)
+        {
+            name = "";
+            if (Bars.Count < 80)
+                return 0;
+            int last = Bars.Count - 2, i = last - 1;
+            if (UseSelfScoring && _paused.Contains("vsa"))
+                return 0;
+            if (UseSessionFilter && !InSession())
+                return 0;
+
+            double avgVolume = 0, avgSpread = 0, highest = double.MinValue, lowest = double.MaxValue;
+            for (int j = i - 20; j < i; j++)
+            {
+                avgVolume += Bars.TickVolumes[j];
+                avgSpread += H(j) - L(j);
+                highest = Math.Max(highest, H(j));
+                lowest = Math.Min(lowest, L(j));
+            }
+            avgVolume /= 20;
+            avgSpread /= 20;
+            double spread = H(i) - L(i), volume = Bars.TickVolumes[i];
+            if (spread <= 0 || avgVolume <= 0 || avgSpread <= 0)
+                return 0;
+            double closePosition = (C(i) - L(i)) / spread;      // 0 = closed on the low, 1 = on the high
+            bool up = C(i) > C(i - 1), down = C(i) < C(i - 1);
+            bool highVol = volume >= 2.0 * avgVolume, lowVol = volume <= 0.8 * avgVolume;
+            bool wide = spread >= 1.3 * avgSpread, narrow = spread <= 0.7 * avgSpread;
+            int dir = 0;
+
+            if (down && highVol && wide && closePosition >= 0.5 && L(i) <= lowest) { name = "stopping volume"; dir = 1; }
+            else if (L(i) < lowest && C(i) > lowest && closePosition >= 0.6 && volume >= 1.2 * avgVolume) { name = "spring"; dir = 1; }
+            else if (up && highVol && wide && closePosition <= 0.5 && H(i) >= highest) { name = "buying climax"; dir = -1; }
+            else if (H(i) > highest && C(i) < highest && closePosition <= 0.4 && volume >= 1.2 * avgVolume) { name = "upthrust"; dir = -1; }
+            else if (highVol && narrow && up && C(i) > C(i - 5)) { name = "effort no result"; dir = -1; }
+            else if (highVol && narrow && down && C(i) < C(i - 5)) { name = "effort no result"; dir = 1; }
+            else
+            {
+                bool quieter = volume < Bars.TickVolumes[i - 1] && volume < Bars.TickVolumes[i - 2];
+                if (down && narrow && lowVol && quieter && C(i) > _trend.Result[i]) { name = "no supply"; dir = 1; }
+                else if (up && narrow && lowVol && quieter && C(i) < _trend.Result[i]) { name = "no demand"; dir = -1; }
+            }
+            if (dir == 0)
+                return 0;
+            bool confirmed = dir > 0 ? C(last) > C(i) : C(last) < C(i);
+            return confirmed ? dir : 0;
+        }
+
+        // Places a VSA trade: stop beyond the signal and confirmation candles, target a multiple of the risk
+        private void OpenVsaTrade()
+        {
+            int last = Bars.Count - 2, i = last - 1;
+            double buffer = _atr.Result[last] * 0.25;
+            bool buy = _vsaDir > 0;
+            double price = buy ? Symbol.Ask : Symbol.Bid;
+            double stop = buy ? Math.Min(L(i), L(last)) - buffer : Math.Max(H(i), H(last)) + buffer + Symbol.Spread;
+            double risk = Math.Abs(price - stop);
+            string name = _vsaName;
+            _vsaDir = 0;
+            if (risk <= 0)
+                return;
+            if (Symbol.Spread > 0.3 * risk)
+            {
+                Skip("VSA '" + name + "': spread too large for this stop");
+                return;
+            }
+            double volume = Symbol.NormalizeVolumeInUnits(Symbol.QuantityToVolumeInUnits(MinLots), RoundingMode.Down);
+            if (volume < Symbol.VolumeInUnitsMin)
+                volume = Symbol.VolumeInUnitsMin;
+            double slPips = Math.Round(risk / Symbol.PipSize, 1);
+            double tpPips = Math.Round(slPips * VsaRewardRisk, 1);
+            double riskMoney = slPips * Symbol.PipValue * volume;
+            if (riskMoney > VsaMaxRisk)
+            {
+                Skip(string.Format("VSA '{0}': stop would risk {1:0.00} (limit {2:0.00})", name, riskMoney, VsaMaxRisk));
+                return;
+            }
+            string comment = "vsa|" + name + "|r=" + slPips.ToString("0.0", CultureInfo.InvariantCulture) + "|" + Server.Time.ToString("ddHHmmss", CultureInfo.InvariantCulture);
+            var type = buy ? TradeType.Buy : TradeType.Sell;
+            var result = ExecuteMarketOrder(type, SymbolName, volume, Label, slPips, tpPips, comment);
+            if (result.IsSuccessful)
+                Print("VSA {0} on '{1}': risk {2:0.00}, target {3:0.00}", type, name, riskMoney, riskMoney * VsaRewardRisk);
+            else
+                Print("VSA order failed: {0}", result.Error);
+        }
+
+        private static bool IsVsaTrade(Position p)
+        {
+            return (p.Comment ?? "").StartsWith("vsa|");
+        }
+
+        // Moves a VSA trade's stop to its entry once it is up by 1x its original risk
+        private void ManageVsaTrade(Position p)
+        {
+            if (!VsaBreakEven || !p.StopLoss.HasValue)
+                return;
+            bool buy = p.TradeType == TradeType.Buy;
+            if (buy ? p.StopLoss.Value >= p.EntryPrice : p.StopLoss.Value <= p.EntryPrice)
+                return;
+            double riskPips = 0;
+            foreach (var part in (p.Comment ?? "").Split('|'))
+                if (part.StartsWith("r="))
+                    double.TryParse(part.Substring(2), NumberStyles.Float, CultureInfo.InvariantCulture, out riskPips);
+            if (riskPips > 0 && p.Pips >= riskPips)
+            {
+                var result = ModifyPosition(p, p.EntryPrice, p.TakeProfit);
+                if (result.IsSuccessful)
+                    Print("VSA trade {0}: stop moved to break-even", p.Id);
+            }
         }
 
         protected override void OnTick()
@@ -322,6 +452,14 @@ namespace cAlgo.Robots
             foreach (var group in groups)
             {
                 double total = group.Sum(p => p.NetProfit);
+                if (group.Any(IsVsaTrade))
+                {
+                    foreach (var p in group)
+                        ManageVsaTrade(p);
+                    openGroups++;
+                    floating += total;
+                    continue;
+                }
                 bool trailing = group.Any(p => (p.Comment ?? "").Contains("|trail|"));
                 bool exit;
                 if (!trailing)
@@ -369,7 +507,7 @@ namespace cAlgo.Robots
                 floating += total;
             }
 
-            if (_signal == 0)
+            if (_signal == 0 && _vsaDir == 0)
                 return;
             if (openGroups >= MaxBaskets)
             {
@@ -382,6 +520,11 @@ namespace cAlgo.Robots
             if (DailyLossLimit > 0 && TodayClosedProfit() + floating <= -DailyLossLimit)
             {
                 Skip("daily loss limit reached");
+                return;
+            }
+            if (_signal == 0)
+            {
+                OpenVsaTrade();
                 return;
             }
 
@@ -415,6 +558,7 @@ namespace cAlgo.Robots
             }
             Print("Basket opened: {0} x {1} ({2}){3}", opened, tradeType, _signalNames, strong ? " - strong signal, trailing mode" : "");
             _signal = 0;
+            _vsaDir = 0;
         }
 
         // Group id is the last part of the comment, e.g. "sweep|basket|16024512"

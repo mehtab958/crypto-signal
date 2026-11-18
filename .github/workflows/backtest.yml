@@ -1,0 +1,19 @@
+name: Gold strategy backtest
+
+on:
+  push:
+    branches: [backtest]
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Backtest
+        run: python3 backtest/backtest.py 45
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backtest-results
+          path: results.json

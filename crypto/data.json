@@ -285,14 +285,18 @@
   [
    1795078360,
    960.44
+  ],
+  [
+   1795111582,
+   960.44
   ]
  ],
  "cooldown": {},
- "runs": 13,
+ "runs": 14,
  "summary": {
-  "updated": 1795078360,
+  "updated": 1795111582,
   "api_ok": true,
-  "coins": 96,
+  "coins": 97,
   "studied": 60,
   "signals": [
    [
@@ -301,7 +305,12 @@
     "pullback"
    ],
    [
-    "ENSOUSDT",
+    "HYPEUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "ERAUSDT",
     1,
     "pullback"
    ]

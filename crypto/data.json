@@ -277,31 +277,22 @@
   [
    1795028912,
    960.44
+  ],
+  [
+   1795050899,
+   960.44
   ]
  ],
  "cooldown": {},
- "runs": 11,
+ "runs": 12,
  "summary": {
-  "updated": 1795028912,
+  "updated": 1795050899,
   "api_ok": true,
-  "coins": 92,
+  "coins": 89,
   "studied": 60,
-  "signals": [
-   [
-    "AVGOBUSDT",
-    1,
-    "breakout"
-   ],
-   [
-    "XPLUSDT",
-    1,
-    "pullback"
-   ]
-  ],
+  "signals": [],
   "mood": -1,
-  "paused": [
-   "pullback"
-  ],
+  "paused": [],
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,

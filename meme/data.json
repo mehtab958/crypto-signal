@@ -1,6 +1,23 @@
 {
- "cash": 158.35565255601446,
- "positions": [],
+ "cash": 138.35565255601446,
+ "positions": [
+  {
+   "address": "A4jXnWk1rDRDth6HmDASi45c89n1AguTHivAQPTVpump",
+   "symbol": "GTASZN",
+   "name": "GTA Season",
+   "url": "https://dexscreener.com/solana/c3ai5bk7q9jttvcbwqeexsta99bmmlcnvyasdd7mnqbt",
+   "entry_price": 0.00207133,
+   "last_price": 0.002011,
+   "peak_price": 0.002011,
+   "qty": 9655.631888689875,
+   "cost": 20.0,
+   "entry_time": 1795050531.9819417,
+   "entry_liq": 107913.9,
+   "score": 47.8,
+   "reason": "1h +18%, buys/sells 1.8, liq $108k, age 1.4h",
+   "misses": 0
+  }
+ ],
  "closed": [
   {
    "symbol": "LEOSTAR",
@@ -151,47 +168,49 @@
   [
    1795028526,
    158.36
+  ],
+  [
+   1795050531,
+   157.77
   ]
  ],
- "cooldown": {
-  "2cMcMEX3Eqo86tUrVe5dgHp5GZNwqQ6crqm22UeZpump": 1794945847.3210523
- },
- "runs": 11,
+ "cooldown": {},
+ "runs": 12,
  "summary": {
-  "updated": 1795028526,
+  "updated": 1795050531,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 158.36,
-  "cash": 158.36,
+  "equity": 157.77,
+  "cash": 138.36,
   "trades": 8,
   "wins": 2,
   "win_rate": 25.0,
-  "scanned": 50,
-  "passed": 0,
+  "scanned": 48,
+  "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    25
+    27
    ],
    [
     "too old",
-    9
+    8
    ],
    [
     "1h move out of range",
-    7
-   ],
-   [
-    "no price",
     3
    ],
    [
-    "volume looks fake for this liquidity",
+    "volume too low",
+    3
+   ],
+   [
+    "too new or age unknown",
     2
    ],
    [
-    "volume too low",
+    "no price",
     2
    ]
   ]

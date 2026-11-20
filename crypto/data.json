@@ -293,22 +293,20 @@
   [
    1795135177,
    960.44
+  ],
+  [
+   1795160871,
+   960.44
   ]
  ],
  "cooldown": {},
- "runs": 15,
+ "runs": 16,
  "summary": {
-  "updated": 1795135177,
+  "updated": 1795160871,
   "api_ok": true,
   "coins": 101,
   "studied": 60,
-  "signals": [
-   [
-    "MEGAUSDT",
-    1,
-    "pullback"
-   ]
-  ],
+  "signals": [],
   "mood": -1,
   "paused": [],
   "source": "https://data-api.binance.vision",

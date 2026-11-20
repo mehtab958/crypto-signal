@@ -1,40 +1,33 @@
 {
- "cash": 108.10561996825683,
- "positions": [
+ "cash": 146.64785286929984,
+ "positions": [],
+ "closed": [
   {
-   "address": "HF2RBPrfNBk9TxggL2cYZFEKSgirzh5HKCngLENTpump",
-   "symbol": "LOOSY",
-   "name": "Cool Dog",
-   "url": "https://dexscreener.com/solana/bfiq9ealcmjpekcgm16gszzgdedcpcfhrafvivrp4qky",
-   "entry_price": 0.00132252,
-   "last_price": 0.001284,
-   "peak_price": 0.001284,
-   "qty": 15122.644648096059,
-   "cost": 20.0,
+   "symbol": "iAgent",
+   "address": "44DZsPNJUtUyTkELAFYdwCpe82sEt12HZKrMgK1Spump",
+   "url": "https://dexscreener.com/solana/bb8pp1b4ryr9bgm59ju1wmqpwqa42kuyno5smhljfakp",
    "entry_time": 1795155295.9274662,
-   "entry_liq": 83078.71,
-   "score": 36.0,
-   "reason": "1h +13%, buys/sells 2.9, liq $83k, age 5.2h",
-   "misses": 0
+   "exit_time": 1795189009.0987403,
+   "entry_price": 0.00258015,
+   "exit_price": 9.125e-07,
+   "cost": 20.0,
+   "pnl": -19.99,
+   "pnl_pct": -100.0,
+   "why": "liquidity pulled"
   },
   {
-   "address": "44DZsPNJUtUyTkELAFYdwCpe82sEt12HZKrMgK1Spump",
-   "symbol": "iAgent",
-   "name": "Apple AI Agent",
-   "url": "https://dexscreener.com/solana/bb8pp1b4ryr9bgm59ju1wmqpwqa42kuyno5smhljfakp",
-   "entry_price": 0.00258015,
-   "last_price": 0.002505,
-   "peak_price": 0.002505,
-   "qty": 7751.487316628879,
-   "cost": 20.0,
+   "symbol": "LOOSY",
+   "address": "HF2RBPrfNBk9TxggL2cYZFEKSgirzh5HKCngLENTpump",
+   "url": "https://dexscreener.com/solana/bfiq9ealcmjpekcgm16gszzgdedcpcfhrafvivrp4qky",
    "entry_time": 1795155295.9274662,
-   "entry_liq": 121592.14,
-   "score": 23.2,
-   "reason": "1h +23%, buys/sells 1.5, liq $122k, age 5.1h",
-   "misses": 0
-  }
- ],
- "closed": [
+   "exit_time": 1795189009.0987403,
+   "entry_price": 0.00132252,
+   "exit_price": 0.002627,
+   "cost": 20.0,
+   "pnl": 18.54,
+   "pnl_pct": 92.7,
+   "why": "take profit"
+  },
   {
    "symbol": "GTASZN",
    "address": "A4jXnWk1rDRDth6HmDASi45c89n1AguTHivAQPTVpump",
@@ -217,47 +210,48 @@
   [
    1795155295,
    146.94
+  ],
+  [
+   1795189009,
+   146.65
   ]
  ],
  "cooldown": {
-  "A4jXnWk1rDRDth6HmDASi45c89n1AguTHivAQPTVpump": 1795078086.323719
+  "HF2RBPrfNBk9TxggL2cYZFEKSgirzh5HKCngLENTpump": 1795189009.0987403,
+  "44DZsPNJUtUyTkELAFYdwCpe82sEt12HZKrMgK1Spump": 1795189009.0987403
  },
- "runs": 16,
+ "runs": 17,
  "summary": {
-  "updated": 1795155295,
+  "updated": 1795189009,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 146.94,
-  "cash": 108.11,
-  "trades": 9,
-  "wins": 2,
-  "win_rate": 22.2,
-  "scanned": 52,
-  "passed": 2,
+  "equity": 146.65,
+  "cash": 146.65,
+  "trades": 11,
+  "wins": 3,
+  "win_rate": 27.3,
+  "scanned": 42,
+  "passed": 0,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    36
+    28
    ],
    [
     "too old",
-    8
+    6
    ],
    [
-    "volume looks fake for this liquidity",
+    "no price",
+    3
+   ],
+   [
+    "1h move out of range",
     2
    ],
    [
     "volume too low",
-    2
-   ],
-   [
-    "falling right now",
-    1
-   ],
-   [
-    "not enough buying",
     1
    ]
   ]

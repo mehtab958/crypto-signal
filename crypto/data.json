@@ -289,28 +289,22 @@
   [
    1795111582,
    960.44
+  ],
+  [
+   1795135177,
+   960.44
   ]
  ],
  "cooldown": {},
- "runs": 14,
+ "runs": 15,
  "summary": {
-  "updated": 1795111582,
+  "updated": 1795135177,
   "api_ok": true,
-  "coins": 97,
+  "coins": 101,
   "studied": 60,
   "signals": [
    [
     "MEGAUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "HYPEUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "ERAUSDT",
     1,
     "pullback"
    ]

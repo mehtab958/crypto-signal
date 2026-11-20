@@ -1,6 +1,39 @@
 {
- "cash": 148.10561996825683,
- "positions": [],
+ "cash": 108.10561996825683,
+ "positions": [
+  {
+   "address": "HF2RBPrfNBk9TxggL2cYZFEKSgirzh5HKCngLENTpump",
+   "symbol": "LOOSY",
+   "name": "Cool Dog",
+   "url": "https://dexscreener.com/solana/bfiq9ealcmjpekcgm16gszzgdedcpcfhrafvivrp4qky",
+   "entry_price": 0.00132252,
+   "last_price": 0.001284,
+   "peak_price": 0.001284,
+   "qty": 15122.644648096059,
+   "cost": 20.0,
+   "entry_time": 1795155295.9274662,
+   "entry_liq": 83078.71,
+   "score": 36.0,
+   "reason": "1h +13%, buys/sells 2.9, liq $83k, age 5.2h",
+   "misses": 0
+  },
+  {
+   "address": "44DZsPNJUtUyTkELAFYdwCpe82sEt12HZKrMgK1Spump",
+   "symbol": "iAgent",
+   "name": "Apple AI Agent",
+   "url": "https://dexscreener.com/solana/bb8pp1b4ryr9bgm59ju1wmqpwqa42kuyno5smhljfakp",
+   "entry_price": 0.00258015,
+   "last_price": 0.002505,
+   "peak_price": 0.002505,
+   "qty": 7751.487316628879,
+   "cost": 20.0,
+   "entry_time": 1795155295.9274662,
+   "entry_liq": 121592.14,
+   "score": 23.2,
+   "reason": "1h +23%, buys/sells 1.5, liq $122k, age 5.1h",
+   "misses": 0
+  }
+ ],
  "closed": [
   {
    "symbol": "GTASZN",
@@ -180,35 +213,39 @@
   [
    1795132515,
    148.11
+  ],
+  [
+   1795155295,
+   146.94
   ]
  ],
  "cooldown": {
   "A4jXnWk1rDRDth6HmDASi45c89n1AguTHivAQPTVpump": 1795078086.323719
  },
- "runs": 15,
+ "runs": 16,
  "summary": {
-  "updated": 1795132515,
+  "updated": 1795155295,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 148.11,
-  "cash": 148.11,
+  "equity": 146.94,
+  "cash": 108.11,
   "trades": 9,
   "wins": 2,
   "win_rate": 22.2,
-  "scanned": 56,
-  "passed": 0,
+  "scanned": 52,
+  "passed": 2,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    41
+    36
    ],
    [
     "too old",
-    7
+    8
    ],
    [
-    "no price",
+    "volume looks fake for this liquidity",
     2
    ],
    [
@@ -216,11 +253,11 @@
     2
    ],
    [
-    "volume looks fake for this liquidity",
+    "falling right now",
     1
    ],
    [
-    "1h move out of range",
+    "not enough buying",
     1
    ]
   ]

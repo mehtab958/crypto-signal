@@ -1,71 +1,127 @@
 {
  "spot": {
-  "cash": 380.40899999999976,
+  "cash": 328.73474999999974,
   "positions": [
-   {
-    "symbol": "RAREUSDT",
-    "dir": 1,
-    "strategy": "pullback",
-    "entry": 0.015217604999999999,
-    "last": 0.01521,
-    "peak": 0.015217604999999999,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795287411,
-    "checked": 1795286700000,
-    "misses": 0
-   },
    {
     "symbol": "PROMUSDT",
     "dir": 1,
     "strategy": "pullback",
     "entry": 5.031514499999999,
-    "last": 5.029,
-    "peak": 5.031514499999999,
+    "last": 5.065,
+    "peak": 5.082,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1795287411,
-    "checked": 1795286700000,
+    "checked": 1795303800000,
+    "misses": 0
+   },
+   {
+    "symbol": "ETHFIUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 0.47543759999999996,
+    "last": 0.4752,
+    "peak": 0.47543759999999996,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795304633,
+    "checked": 1795303800000,
+    "misses": 0
+   },
+   {
+    "symbol": "ENAUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 0.09884939999999999,
+    "last": 0.0988,
+    "peak": 0.09884939999999999,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795304633,
+    "checked": 1795303800000,
     "misses": 0
    }
   ]
  },
  "fut": {
-  "cash": 394.1256406677183,
+  "cash": 365.12751566771834,
   "positions": [
-   {
-    "symbol": "RAREUSDT",
-    "dir": 1,
-    "strategy": "pullback",
-    "entry": 0.015217604999999999,
-    "last": 0.01521,
-    "peak": 0.015217604999999999,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795287411,
-    "checked": 1795286700000,
-    "misses": 0
-   },
    {
     "symbol": "PROMUSDT",
     "dir": 1,
     "strategy": "pullback",
     "entry": 5.031514499999999,
-    "last": 5.029,
-    "peak": 5.031514499999999,
+    "last": 5.065,
+    "peak": 5.082,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795287411,
-    "checked": 1795286700000,
+    "checked": 1795303800000,
+    "misses": 0
+   },
+   {
+    "symbol": "ETHFIUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 0.47543759999999996,
+    "last": 0.4752,
+    "peak": 0.47543759999999996,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795304633,
+    "checked": 1795303800000,
+    "misses": 0
+   },
+   {
+    "symbol": "ENAUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 0.09884939999999999,
+    "last": 0.0988,
+    "peak": 0.09884939999999999,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795304633,
+    "checked": 1795303800000,
     "misses": 0
    }
   ]
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "RAREUSDT",
+   "dir": 1,
+   "strategy": "pullback",
+   "entry_time": 1795287411,
+   "exit_time": 1795304633,
+   "entry": 0.015217604999999999,
+   "exit": 0.014753696311575,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "RAREUSDT",
+   "dir": 1,
+   "strategy": "pullback",
+   "entry_time": 1795287411,
+   "exit_time": 1795304633,
+   "entry": 0.015217604999999999,
+   "exit": 0.014753696311575,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
   {
    "account": "fut",
    "symbol": "ICPUSDT",
@@ -543,49 +599,87 @@
   [
    1795287411,
    924.36
+  ],
+  [
+   1795304633,
+   919.85
   ]
  ],
- "cooldown": {},
- "runs": 21,
+ "cooldown": {
+  "spot:RAREUSDT": 1795304633,
+  "fut:RAREUSDT": 1795304633
+ },
+ "runs": 22,
  "summary": {
-  "updated": 1795287411,
+  "updated": 1795304633,
   "api_ok": true,
-  "coins": 121,
+  "coins": 107,
   "studied": 60,
   "signals": [
    [
-    "RAREUSDT",
+    "XRPUSDT",
     1,
     "pullback"
    ],
    [
-    "LUNCUSDT",
+    "ETHFIUSDT",
+    1,
+    "breakout"
+   ],
+   [
+    "ASTERUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "BREVUSDT",
     -1,
     "breakdown"
    ],
    [
-    "PROMUSDT",
+    "DOGEUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "ENAUSDT",
+    1,
+    "breakout"
+   ],
+   [
+    "WLDUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "SUIUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "PENGUUSDT",
     1,
     "pullback"
    ]
   ],
   "mood": 1,
   "paused": [
+   "pullback",
    "oversold bounce"
   ],
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 480.36,
-   "cash": 380.41,
-   "trades": 12,
+   "equity": 479.02,
+   "cash": 328.73,
+   "trades": 13,
    "win_rate": 0.0
   },
   "fut": {
    "start": 500.0,
-   "equity": 444.0,
-   "cash": 394.13,
-   "trades": 16,
+   "equity": 440.83,
+   "cash": 365.13,
+   "trades": 17,
    "win_rate": 0.0
   },
   "strategies": [
@@ -597,9 +691,9 @@
    ],
    [
     "pullback",
-    8,
+    10,
     0,
-    -17.32
+    -22.88
    ],
    [
     "oversold bounce",

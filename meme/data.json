@@ -1,24 +1,37 @@
 {
- "cash": 126.64785286929984,
+ "cash": 106.68469774696202,
  "positions": [
   {
-   "address": "CUfphqswgDK3VP3FX7CiShVCTdGQneFusYRFViABpump",
-   "symbol": "BTC",
-   "name": "BartCoin",
-   "url": "https://dexscreener.com/solana/5q1ezo7m3njacxmsum8bzz8iqzgt8equ9ftqtnus7aoj",
-   "entry_price": 0.000413854,
-   "last_price": 0.0004018,
-   "peak_price": 0.0004018,
-   "qty": 48326.22132442842,
+   "address": "FJKt1LxbWBpTRt9BaDEB6Wr2qL5LZzjFF5sx8rXnpump",
+   "symbol": "MAYA",
+   "name": "Maya The Samoyed",
+   "url": "https://dexscreener.com/solana/51edmriyson7mwtgqxaysog4z9nnvhvuupbuyy1epcbo",
+   "entry_price": 0.00389031,
+   "last_price": 0.003777,
+   "peak_price": 0.003777,
+   "qty": 5140.978482434562,
    "cost": 20.0,
-   "entry_time": 1795231355.3535385,
-   "entry_liq": 44038.13,
-   "score": 21.2,
-   "reason": "1h +14%, buys/sells 1.4, liq $44k, age 6.6h",
+   "entry_time": 1795260983.5790346,
+   "entry_liq": 138769.1,
+   "score": 26.5,
+   "reason": "1h +22%, buys/sells 1.9, liq $139k, age 6.5h",
    "misses": 0
   }
  ],
  "closed": [
+  {
+   "symbol": "BTC",
+   "address": "CUfphqswgDK3VP3FX7CiShVCTdGQneFusYRFViABpump",
+   "url": "https://dexscreener.com/solana/5q1ezo7m3njacxmsum8bzz8iqzgt8equ9ftqtnus7aoj",
+   "entry_time": 1795231355.3535385,
+   "exit_time": 1795260983.5790346,
+   "entry_price": 0.000413854,
+   "exit_price": 7.86e-07,
+   "cost": 20.0,
+   "pnl": -19.96,
+   "pnl_pct": -99.8,
+   "why": "liquidity pulled"
+  },
   {
    "symbol": "iAgent",
    "address": "44DZsPNJUtUyTkELAFYdwCpe82sEt12HZKrMgK1Spump",
@@ -239,29 +252,34 @@
   [
    1795231355,
    146.07
+  ],
+  [
+   1795260983,
+   126.1
   ]
  ],
  "cooldown": {
   "HF2RBPrfNBk9TxggL2cYZFEKSgirzh5HKCngLENTpump": 1795189009.0987403,
-  "44DZsPNJUtUyTkELAFYdwCpe82sEt12HZKrMgK1Spump": 1795189009.0987403
+  "44DZsPNJUtUyTkELAFYdwCpe82sEt12HZKrMgK1Spump": 1795189009.0987403,
+  "CUfphqswgDK3VP3FX7CiShVCTdGQneFusYRFViABpump": 1795260983.5790346
  },
- "runs": 19,
+ "runs": 20,
  "summary": {
-  "updated": 1795231355,
+  "updated": 1795260983,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 146.07,
-  "cash": 126.65,
-  "trades": 11,
+  "equity": 126.1,
+  "cash": 106.68,
+  "trades": 12,
   "wins": 3,
-  "win_rate": 27.3,
-  "scanned": 50,
+  "win_rate": 25.0,
+  "scanned": 48,
   "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    33
+    27
    ],
    [
     "too old",
@@ -269,18 +287,18 @@
    ],
    [
     "no price",
-    3
-   ],
-   [
-    "volume too low",
-    3
-   ],
-   [
-    "volume looks fake for this liquidity",
-    1
+    6
    ],
    [
     "1h move out of range",
+    2
+   ],
+   [
+    "volume too low",
+    2
+   ],
+   [
+    "falling right now",
     1
    ]
   ]

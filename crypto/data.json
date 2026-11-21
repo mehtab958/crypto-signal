@@ -4,39 +4,38 @@
   "positions": []
  },
  "fut": {
-  "cash": 402.00439066771827,
-  "positions": [
-   {
-    "symbol": "ADAUSDT",
-    "dir": -1,
-    "strategy": "breakdown",
-    "entry": 0.13543225,
-    "last": 0.1355,
-    "peak": 0.13543225,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795231992,
-    "checked": 1795231800000,
-    "misses": 0
-   },
-   {
-    "symbol": "ICPUSDT",
-    "dir": -1,
-    "strategy": "breakdown",
-    "entry": 1.889055,
-    "last": 1.89,
-    "peak": 1.889055,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795231992,
-    "checked": 1795231800000,
-    "misses": 0
-   }
-  ]
+  "cash": 444.2506406677183,
+  "positions": []
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "ICPUSDT",
+   "dir": -1,
+   "strategy": "breakdown",
+   "entry_time": 1795231992,
+   "exit_time": 1795261787,
+   "entry": 1.889055,
+   "exit": 1.9466995133249998,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.8,
+   "why": "stop loss"
+  },
+  {
+   "account": "fut",
+   "symbol": "ADAUSDT",
+   "dir": -1,
+   "strategy": "breakdown",
+   "entry_time": 1795231992,
+   "exit_time": 1795261787,
+   "entry": 0.13543225,
+   "exit": 0.13956496510875002,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.8,
+   "why": "stop loss"
+  },
   {
    "account": "fut",
    "symbol": "TAOUSDT",
@@ -478,48 +477,23 @@
   [
    1795231992,
    932.39
+  ],
+  [
+   1795261787,
+   924.76
   ]
  ],
  "cooldown": {
-  "spot:BNBUSDT": 1795214810,
-  "spot:SUIUSDT": 1795214810,
-  "fut:BNBUSDT": 1795214810,
-  "fut:SUIUSDT": 1795214810,
-  "spot:SOLUSDT": 1795231992,
-  "spot:DOGEUSDT": 1795231992,
-  "spot:TAOUSDT": 1795231992,
-  "fut:SOLUSDT": 1795231992,
-  "fut:DOGEUSDT": 1795231992,
-  "fut:TAOUSDT": 1795231992
+  "fut:ADAUSDT": 1795261787,
+  "fut:ICPUSDT": 1795261787
  },
- "runs": 19,
+ "runs": 20,
  "summary": {
-  "updated": 1795231992,
+  "updated": 1795261787,
   "api_ok": true,
-  "coins": 121,
+  "coins": 136,
   "studied": 60,
-  "signals": [
-   [
-    "SOXSBUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "ADAUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "ICPUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "DODOUSDT",
-    1,
-    "breakout"
-   ]
-  ],
+  "signals": [],
   "mood": -1,
   "paused": [
    "oversold bounce"
@@ -534,9 +508,9 @@
   },
   "fut": {
    "start": 500.0,
-   "equity": 451.88,
-   "cash": 402.0,
-   "trades": 14,
+   "equity": 444.25,
+   "cash": 444.25,
+   "trades": 16,
    "win_rate": 0.0
   },
   "strategies": [
@@ -557,6 +531,12 @@
     14,
     0,
     -38.92
+   ],
+   [
+    "breakdown",
+    2,
+    0,
+    -7.88
    ]
   ]
  },

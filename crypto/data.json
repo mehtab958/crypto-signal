@@ -1,11 +1,69 @@
 {
  "spot": {
-  "cash": 480.5089999999998,
-  "positions": []
+  "cash": 380.40899999999976,
+  "positions": [
+   {
+    "symbol": "RAREUSDT",
+    "dir": 1,
+    "strategy": "pullback",
+    "entry": 0.015217604999999999,
+    "last": 0.01521,
+    "peak": 0.015217604999999999,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795287411,
+    "checked": 1795286700000,
+    "misses": 0
+   },
+   {
+    "symbol": "PROMUSDT",
+    "dir": 1,
+    "strategy": "pullback",
+    "entry": 5.031514499999999,
+    "last": 5.029,
+    "peak": 5.031514499999999,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795287411,
+    "checked": 1795286700000,
+    "misses": 0
+   }
+  ]
  },
  "fut": {
-  "cash": 444.2506406677183,
-  "positions": []
+  "cash": 394.1256406677183,
+  "positions": [
+   {
+    "symbol": "RAREUSDT",
+    "dir": 1,
+    "strategy": "pullback",
+    "entry": 0.015217604999999999,
+    "last": 0.01521,
+    "peak": 0.015217604999999999,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795287411,
+    "checked": 1795286700000,
+    "misses": 0
+   },
+   {
+    "symbol": "PROMUSDT",
+    "dir": 1,
+    "strategy": "pullback",
+    "entry": 5.031514499999999,
+    "last": 5.029,
+    "peak": 5.031514499999999,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795287411,
+    "checked": 1795286700000,
+    "misses": 0
+   }
+  ]
  },
  "closed": [
   {
@@ -481,35 +539,52 @@
   [
    1795261787,
    924.76
+  ],
+  [
+   1795287411,
+   924.36
   ]
  ],
- "cooldown": {
-  "fut:ADAUSDT": 1795261787,
-  "fut:ICPUSDT": 1795261787
- },
- "runs": 20,
+ "cooldown": {},
+ "runs": 21,
  "summary": {
-  "updated": 1795261787,
+  "updated": 1795287411,
   "api_ok": true,
-  "coins": 136,
+  "coins": 121,
   "studied": 60,
-  "signals": [],
-  "mood": -1,
+  "signals": [
+   [
+    "RAREUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "LUNCUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "PROMUSDT",
+    1,
+    "pullback"
+   ]
+  ],
+  "mood": 1,
   "paused": [
    "oversold bounce"
   ],
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 480.51,
-   "cash": 480.51,
+   "equity": 480.36,
+   "cash": 380.41,
    "trades": 12,
    "win_rate": 0.0
   },
   "fut": {
    "start": 500.0,
-   "equity": 444.25,
-   "cash": 444.25,
+   "equity": 444.0,
+   "cash": 394.13,
    "trades": 16,
    "win_rate": 0.0
   },

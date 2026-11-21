@@ -1,99 +1,126 @@
 {
  "spot": {
-  "cash": 335.2317499999998,
-  "positions": [
-   {
-    "symbol": "SOLUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 68.764365,
-    "last": 69.23,
-    "peak": 69.77,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795191960,
-    "checked": 1795214700000,
-    "misses": 0
-   },
-   {
-    "symbol": "DOGEUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 0.053806889999999996,
-    "last": 0.05449,
-    "peak": 0.05464,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795191960,
-    "checked": 1795214700000,
-    "misses": 0
-   },
-   {
-    "symbol": "TAOUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 175.4877,
-    "last": 180.4,
-    "peak": 180.8,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795191960,
-    "checked": 1795214700000,
-    "misses": 0
-   }
-  ]
+  "cash": 480.5089999999998,
+  "positions": []
  },
  "fut": {
-  "cash": 388.7487656677183,
+  "cash": 402.00439066771827,
   "positions": [
    {
-    "symbol": "SOLUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 68.764365,
-    "last": 69.23,
-    "peak": 69.77,
+    "symbol": "ADAUSDT",
+    "dir": -1,
+    "strategy": "breakdown",
+    "entry": 0.13543225,
+    "last": 0.1355,
+    "peak": 0.13543225,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
-    "time": 1795191960,
-    "checked": 1795214700000,
+    "time": 1795231992,
+    "checked": 1795231800000,
     "misses": 0
    },
    {
-    "symbol": "DOGEUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 0.053806889999999996,
-    "last": 0.05449,
-    "peak": 0.05464,
+    "symbol": "ICPUSDT",
+    "dir": -1,
+    "strategy": "breakdown",
+    "entry": 1.889055,
+    "last": 1.89,
+    "peak": 1.889055,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
-    "time": 1795191960,
-    "checked": 1795214700000,
-    "misses": 0
-   },
-   {
-    "symbol": "TAOUSDT",
-    "dir": 1,
-    "strategy": "oversold bounce",
-    "entry": 175.4877,
-    "last": 180.4,
-    "peak": 180.8,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795191960,
-    "checked": 1795214700000,
+    "time": 1795231992,
+    "checked": 1795231800000,
     "misses": 0
    }
   ]
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "TAOUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1795191960,
+   "exit_time": 1795231992,
+   "entry": 175.4877,
+   "exit": 170.1379574655,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "fut",
+   "symbol": "DOGEUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1795191960,
+   "exit_time": 1795231992,
+   "entry": 0.053806889999999996,
+   "exit": 0.05216658695835,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "fut",
+   "symbol": "SOLUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1795191960,
+   "exit_time": 1795231992,
+   "entry": 68.764365,
+   "exit": 66.668083332975,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "TAOUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1795191960,
+   "exit_time": 1795231992,
+   "entry": 175.4877,
+   "exit": 170.1379574655,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "DOGEUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1795191960,
+   "exit_time": 1795231992,
+   "entry": 0.053806889999999996,
+   "exit": 0.05216658695835,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "SOLUSDT",
+   "dir": 1,
+   "strategy": "oversold bounce",
+   "entry_time": 1795191960,
+   "exit_time": 1795231992,
+   "entry": 68.764365,
+   "exit": 66.668083332975,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
   {
    "account": "fut",
    "symbol": "SUIUSDT",
@@ -447,21 +474,52 @@
   [
    1795214810,
    957.29
+  ],
+  [
+   1795231992,
+   932.39
   ]
  ],
  "cooldown": {
   "spot:BNBUSDT": 1795214810,
   "spot:SUIUSDT": 1795214810,
   "fut:BNBUSDT": 1795214810,
-  "fut:SUIUSDT": 1795214810
+  "fut:SUIUSDT": 1795214810,
+  "spot:SOLUSDT": 1795231992,
+  "spot:DOGEUSDT": 1795231992,
+  "spot:TAOUSDT": 1795231992,
+  "fut:SOLUSDT": 1795231992,
+  "fut:DOGEUSDT": 1795231992,
+  "fut:TAOUSDT": 1795231992
  },
- "runs": 18,
+ "runs": 19,
  "summary": {
-  "updated": 1795214810,
+  "updated": 1795231992,
   "api_ok": true,
-  "coins": 122,
+  "coins": 121,
   "studied": 60,
-  "signals": [],
+  "signals": [
+   [
+    "SOXSBUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "ADAUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "ICPUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "DODOUSDT",
+    1,
+    "breakout"
+   ]
+  ],
   "mood": -1,
   "paused": [
    "oversold bounce"
@@ -469,16 +527,16 @@
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 487.6,
-   "cash": 335.23,
-   "trades": 9,
+   "equity": 480.51,
+   "cash": 480.51,
+   "trades": 12,
    "win_rate": 0.0
   },
   "fut": {
    "start": 500.0,
-   "equity": 469.68,
-   "cash": 388.75,
-   "trades": 11,
+   "equity": 451.88,
+   "cash": 402.0,
+   "trades": 14,
    "win_rate": 0.0
   },
   "strategies": [
@@ -496,9 +554,9 @@
    ],
    [
     "oversold bounce",
-    8,
+    14,
     0,
-    -22.24
+    -38.92
    ]
   ]
  },

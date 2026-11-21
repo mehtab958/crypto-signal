@@ -1,5 +1,5 @@
 {
- "cash": 103.95879672622074,
+ "cash": 83.95879672622074,
  "positions": [
   {
    "address": "EoV9JQYi57tqjyQbWLdXVarYpEu82FsP8SDnkbFmpump",
@@ -7,7 +7,7 @@
    "name": "BUST",
    "url": "https://dexscreener.com/solana/dxusprkbwt81ib46q2m5a9yumo1j1dnymu6tbmhvhjw9",
    "entry_price": 8.059750000000001e-05,
-   "last_price": 7.825e-05,
+   "last_price": 7.633e-05,
    "peak_price": 7.825e-05,
    "qty": 248146.65467291165,
    "cost": 20.0,
@@ -15,6 +15,22 @@
    "entry_liq": 24033.98,
    "score": 23.4,
    "reason": "1h +13%, buys/sells 1.6, liq $24k, age 19.6h",
+   "misses": 0
+  },
+  {
+   "address": "4mE8dPH1RTqQBT5EPim5Ubt2v2wXZ9zgEDDWmL1o1EYu",
+   "symbol": "SBS",
+   "name": "Solana Beauty Salon",
+   "url": "https://dexscreener.com/solana/asztn7gufcodmjnfkcqgarc2bb6qniup9hzy4j2pkkl2",
+   "entry_price": 0.000204455,
+   "last_price": 0.0001985,
+   "peak_price": 0.0001985,
+   "qty": 97821.0364138808,
+   "cost": 20.0,
+   "entry_time": 1795303649.9549122,
+   "entry_liq": 35335.22,
+   "score": 37.8,
+   "reason": "1h +99%, buys/sells 1.4, liq $35k, age 23.6h",
    "misses": 0
   }
  ],
@@ -273,48 +289,44 @@
   [
    1795284748,
    123.38
+  ],
+  [
+   1795303649,
+   122.32
   ]
  ],
  "cooldown": {
   "CUfphqswgDK3VP3FX7CiShVCTdGQneFusYRFViABpump": 1795260983.5790346,
   "FJKt1LxbWBpTRt9BaDEB6Wr2qL5LZzjFF5sx8rXnpump": 1795284748.8295112
  },
- "runs": 21,
+ "runs": 22,
  "summary": {
-  "updated": 1795284748,
+  "updated": 1795303649,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 123.38,
-  "cash": 103.96,
+  "equity": 122.32,
+  "cash": 83.96,
   "trades": 13,
   "wins": 3,
   "win_rate": 23.1,
-  "scanned": 49,
+  "scanned": 50,
   "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    28
+    32
    ],
    [
     "too old",
-    9
+    11
    ],
    [
     "no price",
-    3
-   ],
-   [
-    "volume too low",
     2
    ],
    [
     "1h move out of range",
-    2
-   ],
-   [
-    "not enough buying",
     1
    ]
   ]

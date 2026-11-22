@@ -1,40 +1,50 @@
 {
- "cash": 83.95879672622074,
+ "cash": 88.57410067110405,
  "positions": [
   {
-   "address": "EoV9JQYi57tqjyQbWLdXVarYpEu82FsP8SDnkbFmpump",
-   "symbol": "Bust",
-   "name": "BUST",
-   "url": "https://dexscreener.com/solana/dxusprkbwt81ib46q2m5a9yumo1j1dnymu6tbmhvhjw9",
-   "entry_price": 8.059750000000001e-05,
-   "last_price": 7.633e-05,
-   "peak_price": 7.825e-05,
-   "qty": 248146.65467291165,
+   "address": "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump",
+   "symbol": "GRAUDIA",
+   "name": "Graudia",
+   "url": "https://dexscreener.com/solana/bvlq2j9mwieefcv6e9m6pcahdtfnhr3jezbh4nyvaoow",
+   "entry_price": 0.000209708,
+   "last_price": 0.0002036,
+   "peak_price": 0.0002036,
+   "qty": 95370.70593396532,
    "cost": 20.0,
-   "entry_time": 1795284748.8295112,
-   "entry_liq": 24033.98,
-   "score": 23.4,
-   "reason": "1h +13%, buys/sells 1.6, liq $24k, age 19.6h",
-   "misses": 0
-  },
-  {
-   "address": "4mE8dPH1RTqQBT5EPim5Ubt2v2wXZ9zgEDDWmL1o1EYu",
-   "symbol": "SBS",
-   "name": "Solana Beauty Salon",
-   "url": "https://dexscreener.com/solana/asztn7gufcodmjnfkcqgarc2bb6qniup9hzy4j2pkkl2",
-   "entry_price": 0.000204455,
-   "last_price": 0.0001985,
-   "peak_price": 0.0001985,
-   "qty": 97821.0364138808,
-   "cost": 20.0,
-   "entry_time": 1795303649.9549122,
-   "entry_liq": 35335.22,
-   "score": 37.8,
-   "reason": "1h +99%, buys/sells 1.4, liq $35k, age 23.6h",
+   "entry_time": 1795317906.9291112,
+   "entry_liq": 31080.23,
+   "score": 40.2,
+   "reason": "1h +55%, buys/sells 1.8, liq $31k, age 2.6h",
    "misses": 0
   }
  ],
  "closed": [
+  {
+   "symbol": "SBS",
+   "address": "4mE8dPH1RTqQBT5EPim5Ubt2v2wXZ9zgEDDWmL1o1EYu",
+   "url": "https://dexscreener.com/solana/asztn7gufcodmjnfkcqgarc2bb6qniup9hzy4j2pkkl2",
+   "entry_time": 1795303649.9549122,
+   "exit_time": 1795317906.9291112,
+   "entry_price": 0.000204455,
+   "exit_price": 0.0001304,
+   "cost": 20.0,
+   "pnl": -7.63,
+   "pnl_pct": -38.1,
+   "why": "stop loss"
+  },
+  {
+   "symbol": "Bust",
+   "address": "EoV9JQYi57tqjyQbWLdXVarYpEu82FsP8SDnkbFmpump",
+   "url": "https://dexscreener.com/solana/dxusprkbwt81ib46q2m5a9yumo1j1dnymu6tbmhvhjw9",
+   "entry_time": 1795284748.8295112,
+   "exit_time": 1795317906.9291112,
+   "entry_price": 8.059750000000001e-05,
+   "exit_price": 5.086e-05,
+   "cost": 20.0,
+   "pnl": -7.76,
+   "pnl_pct": -38.8,
+   "why": "stop loss"
+  },
   {
    "symbol": "MAYA",
    "address": "FJKt1LxbWBpTRt9BaDEB6Wr2qL5LZzjFF5sx8rXnpump",
@@ -293,40 +303,50 @@
   [
    1795303649,
    122.32
+  ],
+  [
+   1795317906,
+   107.99
   ]
  ],
  "cooldown": {
   "CUfphqswgDK3VP3FX7CiShVCTdGQneFusYRFViABpump": 1795260983.5790346,
-  "FJKt1LxbWBpTRt9BaDEB6Wr2qL5LZzjFF5sx8rXnpump": 1795284748.8295112
+  "FJKt1LxbWBpTRt9BaDEB6Wr2qL5LZzjFF5sx8rXnpump": 1795284748.8295112,
+  "EoV9JQYi57tqjyQbWLdXVarYpEu82FsP8SDnkbFmpump": 1795317906.9291112,
+  "4mE8dPH1RTqQBT5EPim5Ubt2v2wXZ9zgEDDWmL1o1EYu": 1795317906.9291112
  },
- "runs": 22,
+ "runs": 23,
  "summary": {
-  "updated": 1795303649,
+  "updated": 1795317906,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 122.32,
-  "cash": 83.96,
-  "trades": 13,
+  "equity": 107.99,
+  "cash": 88.57,
+  "trades": 15,
   "wins": 3,
-  "win_rate": 23.1,
-  "scanned": 50,
+  "win_rate": 20.0,
+  "scanned": 45,
   "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    32
+    29
    ],
    [
     "too old",
-    11
+    9
    ],
    [
-    "no price",
+    "volume too low",
     2
    ],
    [
     "1h move out of range",
+    1
+   ],
+   [
+    "falling right now",
     1
    ]
   ]

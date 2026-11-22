@@ -1,71 +1,69 @@
 {
  "spot": {
-  "cash": 327.1104999999997,
-  "positions": [
-   {
-    "symbol": "ETHFIUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 0.47543759999999996,
-    "last": 0.4857,
-    "peak": 0.497,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795304633,
-    "checked": 1795347900000,
-    "misses": 0
-   },
-   {
-    "symbol": "ENAUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 0.09884939999999999,
-    "last": 0.1026,
-    "peak": 0.1033,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795304633,
-    "checked": 1795347900000,
-    "misses": 0
-   },
-   {
-    "symbol": "NIGHTUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 0.046873425,
-    "last": 0.04685,
-    "peak": 0.046873425,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795348487,
-    "checked": 1795347900000,
-    "misses": 0
-   }
-  ]
+  "cash": 480.49439523913674,
+  "positions": []
  },
  "fut": {
-  "cash": 418.37913695813194,
-  "positions": [
-   {
-    "symbol": "NIGHTUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 0.046873425,
-    "last": 0.04685,
-    "peak": 0.046873425,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795348487,
-    "checked": 1795347900000,
-    "misses": 0
-   }
-  ]
+  "cash": 446.77469414885354,
+  "positions": []
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "NIGHTUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795348487,
+   "exit_time": 1795374988,
+   "entry": 0.046873425,
+   "exit": 0.048170152875000004,
+   "stake": 25.0,
+   "pnl": 3.33,
+   "pnl_pct": 13.3,
+   "why": "trailing stop"
+  },
+  {
+   "account": "spot",
+   "symbol": "NIGHTUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795348487,
+   "exit_time": 1795374988,
+   "entry": 0.046873425,
+   "exit": 0.048170152875000004,
+   "stake": 50.0,
+   "pnl": 1.28,
+   "pnl_pct": 2.6,
+   "why": "trailing stop"
+  },
+  {
+   "account": "spot",
+   "symbol": "ENAUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795304633,
+   "exit_time": 1795374988,
+   "entry": 0.09884939999999999,
+   "exit": 0.10125184875000001,
+   "stake": 50.0,
+   "pnl": 1.12,
+   "pnl_pct": 2.2,
+   "why": "trailing stop"
+  },
+  {
+   "account": "spot",
+   "symbol": "ETHFIUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795304633,
+   "exit_time": 1795374988,
+   "entry": 0.47543759999999996,
+   "exit": 0.4843327125,
+   "stake": 50.0,
+   "pnl": 0.84,
+   "pnl_pct": 1.7,
+   "why": "trailing stop"
+  },
   {
    "account": "fut",
    "symbol": "ENAUSDT",
@@ -639,25 +637,49 @@
   [
    1795348487,
    923.38
+  ],
+  [
+   1795374988,
+   927.27
   ]
  ],
  "cooldown": {
-  "spot:PROMUSDT": 1795348487,
-  "fut:PROMUSDT": 1795348487,
-  "fut:ETHFIUSDT": 1795348487,
-  "fut:ENAUSDT": 1795348487
+  "spot:ETHFIUSDT": 1795374988,
+  "spot:ENAUSDT": 1795374988,
+  "spot:NIGHTUSDT": 1795374988,
+  "fut:NIGHTUSDT": 1795374988
  },
- "runs": 24,
+ "runs": 25,
  "summary": {
-  "updated": 1795348487,
+  "updated": 1795374988,
   "api_ok": true,
-  "coins": 83,
+  "coins": 80,
   "studied": 60,
   "signals": [
    [
-    "NIGHTUSDT",
+    "FILUSDT",
     1,
-    "breakout"
+    "pullback"
+   ],
+   [
+    "RENDERUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "ONDOUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "APTUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "DOTUSDT",
+    1,
+    "pullback"
    ]
   ],
   "mood": 1,
@@ -667,24 +689,24 @@
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 480.06,
-   "cash": 327.11,
-   "trades": 14,
-   "win_rate": 0.0
+   "equity": 480.49,
+   "cash": 480.49,
+   "trades": 17,
+   "win_rate": 17.6
   },
   "fut": {
    "start": 500.0,
-   "equity": 443.32,
-   "cash": 418.38,
-   "trades": 20,
-   "win_rate": 10.0
+   "equity": 446.77,
+   "cash": 446.77,
+   "trades": 21,
+   "win_rate": 14.3
   },
   "strategies": [
    [
     "breakout",
-    6,
-    33,
-    -4.06
+    10,
+    60,
+    2.51
    ],
    [
     "pullback",

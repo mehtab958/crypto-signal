@@ -1,24 +1,37 @@
 {
- "cash": 88.57410067110405,
+ "cash": 68.64061506254357,
  "positions": [
   {
-   "address": "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump",
-   "symbol": "GRAUDIA",
-   "name": "Graudia",
-   "url": "https://dexscreener.com/solana/bvlq2j9mwieefcv6e9m6pcahdtfnhr3jezbh4nyvaoow",
-   "entry_price": 0.000209708,
-   "last_price": 0.0002036,
-   "peak_price": 0.0002036,
-   "qty": 95370.70593396532,
+   "address": "3N6Mp8YQuVDfEtyuyJS72s4MRrgQuKY34gvYZD5Kpump",
+   "symbol": "PushCoin",
+   "name": "PushCoin",
+   "url": "https://dexscreener.com/solana/gz6zuqpbwrcdfbl9aspyahdmyk3fnpv1am719rylmyzf",
+   "entry_price": 0.00121437,
+   "last_price": 0.001179,
+   "peak_price": 0.001179,
+   "qty": 16469.445062048635,
    "cost": 20.0,
-   "entry_time": 1795317906.9291112,
-   "entry_liq": 31080.23,
-   "score": 40.2,
-   "reason": "1h +55%, buys/sells 1.8, liq $31k, age 2.6h",
+   "entry_time": 1795348211.4918702,
+   "entry_liq": 78065.75,
+   "score": 29.2,
+   "reason": "1h +9%, buys/sells 2.2, liq $78k, age 9.9h",
    "misses": 0
   }
  ],
  "closed": [
+  {
+   "symbol": "GRAUDIA",
+   "address": "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump",
+   "url": "https://dexscreener.com/solana/bvlq2j9mwieefcv6e9m6pcahdtfnhr3jezbh4nyvaoow",
+   "entry_time": 1795317906.9291112,
+   "exit_time": 1795348211.4918702,
+   "entry_price": 0.000209708,
+   "exit_price": 7.19e-07,
+   "cost": 20.0,
+   "pnl": -19.93,
+   "pnl_pct": -99.7,
+   "why": "liquidity pulled"
+  },
   {
    "symbol": "SBS",
    "address": "4mE8dPH1RTqQBT5EPim5Ubt2v2wXZ9zgEDDWmL1o1EYu",
@@ -307,46 +320,50 @@
   [
    1795317906,
    107.99
+  ],
+  [
+   1795348211,
+   88.06
   ]
  ],
  "cooldown": {
-  "CUfphqswgDK3VP3FX7CiShVCTdGQneFusYRFViABpump": 1795260983.5790346,
   "FJKt1LxbWBpTRt9BaDEB6Wr2qL5LZzjFF5sx8rXnpump": 1795284748.8295112,
   "EoV9JQYi57tqjyQbWLdXVarYpEu82FsP8SDnkbFmpump": 1795317906.9291112,
-  "4mE8dPH1RTqQBT5EPim5Ubt2v2wXZ9zgEDDWmL1o1EYu": 1795317906.9291112
+  "4mE8dPH1RTqQBT5EPim5Ubt2v2wXZ9zgEDDWmL1o1EYu": 1795317906.9291112,
+  "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump": 1795348211.4918702
  },
- "runs": 23,
+ "runs": 24,
  "summary": {
-  "updated": 1795317906,
+  "updated": 1795348211,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 107.99,
-  "cash": 88.57,
-  "trades": 15,
+  "equity": 88.06,
+  "cash": 68.64,
+  "trades": 16,
   "wins": 3,
-  "win_rate": 20.0,
-  "scanned": 45,
+  "win_rate": 18.8,
+  "scanned": 40,
   "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    29
+    28
    ],
    [
     "too old",
-    9
+    6
    ],
    [
-    "volume too low",
+    "no price",
     2
    ],
    [
-    "1h move out of range",
+    "volume looks fake for this liquidity",
     1
    ],
    [
-    "falling right now",
+    "volume too low",
     1
    ]
   ]

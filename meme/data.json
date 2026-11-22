@@ -1,24 +1,20 @@
 {
- "cash": 68.64061506254357,
- "positions": [
-  {
-   "address": "3N6Mp8YQuVDfEtyuyJS72s4MRrgQuKY34gvYZD5Kpump",
-   "symbol": "PushCoin",
-   "name": "PushCoin",
-   "url": "https://dexscreener.com/solana/gz6zuqpbwrcdfbl9aspyahdmyk3fnpv1am719rylmyzf",
-   "entry_price": 0.00121437,
-   "last_price": 0.001179,
-   "peak_price": 0.001179,
-   "qty": 16469.445062048635,
-   "cost": 20.0,
-   "entry_time": 1795348211.4918702,
-   "entry_liq": 78065.75,
-   "score": 29.2,
-   "reason": "1h +9%, buys/sells 2.2, liq $78k, age 9.9h",
-   "misses": 0
-  }
- ],
+ "cash": 89.21688094526466,
+ "positions": [],
  "closed": [
+  {
+   "symbol": "PushCoin",
+   "address": "3N6Mp8YQuVDfEtyuyJS72s4MRrgQuKY34gvYZD5Kpump",
+   "url": "https://dexscreener.com/solana/gz6zuqpbwrcdfbl9aspyahdmyk3fnpv1am719rylmyzf",
+   "entry_time": 1795348211.4918702,
+   "exit_time": 1795374683.3519764,
+   "entry_price": 0.00121437,
+   "exit_price": 0.001288,
+   "cost": 20.0,
+   "pnl": 0.58,
+   "pnl_pct": 2.9,
+   "why": "time limit"
+  },
   {
    "symbol": "GRAUDIA",
    "address": "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump",
@@ -324,42 +320,50 @@
   [
    1795348211,
    88.06
+  ],
+  [
+   1795374683,
+   89.22
   ]
  ],
  "cooldown": {
-  "FJKt1LxbWBpTRt9BaDEB6Wr2qL5LZzjFF5sx8rXnpump": 1795284748.8295112,
   "EoV9JQYi57tqjyQbWLdXVarYpEu82FsP8SDnkbFmpump": 1795317906.9291112,
   "4mE8dPH1RTqQBT5EPim5Ubt2v2wXZ9zgEDDWmL1o1EYu": 1795317906.9291112,
-  "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump": 1795348211.4918702
+  "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump": 1795348211.4918702,
+  "3N6Mp8YQuVDfEtyuyJS72s4MRrgQuKY34gvYZD5Kpump": 1795374683.3519764
  },
- "runs": 24,
+ "runs": 25,
  "summary": {
-  "updated": 1795348211,
+  "updated": 1795374683,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 88.06,
-  "cash": 68.64,
-  "trades": 16,
-  "wins": 3,
-  "win_rate": 18.8,
-  "scanned": 40,
-  "passed": 1,
+  "equity": 89.22,
+  "cash": 89.22,
+  "trades": 17,
+  "wins": 4,
+  "win_rate": 23.5,
+  "scanned": 45,
+  "passed": 0,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    28
+    27
    ],
    [
     "too old",
-    6
+    8
+   ],
+   [
+    "volume looks fake for this liquidity",
+    3
    ],
    [
     "no price",
     2
    ],
    [
-    "volume looks fake for this liquidity",
+    "valuation out of range",
     1
    ],
    [

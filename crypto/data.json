@@ -7,13 +7,13 @@
     "dir": 1,
     "strategy": "pullback",
     "entry": 5.031514499999999,
-    "last": 5.065,
+    "last": 5.025,
     "peak": 5.082,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1795287411,
-    "checked": 1795303800000,
+    "checked": 1795318200000,
     "misses": 0
    },
    {
@@ -21,13 +21,13 @@
     "dir": 1,
     "strategy": "breakout",
     "entry": 0.47543759999999996,
-    "last": 0.4752,
-    "peak": 0.47543759999999996,
+    "last": 0.4797,
+    "peak": 0.4905,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1795304633,
-    "checked": 1795303800000,
+    "checked": 1795318200000,
     "misses": 0
    },
    {
@@ -35,13 +35,13 @@
     "dir": 1,
     "strategy": "breakout",
     "entry": 0.09884939999999999,
-    "last": 0.0988,
-    "peak": 0.09884939999999999,
+    "last": 0.0974,
+    "peak": 0.0992,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1795304633,
-    "checked": 1795303800000,
+    "checked": 1795318200000,
     "misses": 0
    }
   ]
@@ -54,13 +54,13 @@
     "dir": 1,
     "strategy": "pullback",
     "entry": 5.031514499999999,
-    "last": 5.065,
+    "last": 5.025,
     "peak": 5.082,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795287411,
-    "checked": 1795303800000,
+    "checked": 1795318200000,
     "misses": 0
    },
    {
@@ -68,13 +68,13 @@
     "dir": 1,
     "strategy": "breakout",
     "entry": 0.47543759999999996,
-    "last": 0.4752,
-    "peak": 0.47543759999999996,
+    "last": 0.4797,
+    "peak": 0.4905,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795304633,
-    "checked": 1795303800000,
+    "checked": 1795318200000,
     "misses": 0
    },
    {
@@ -82,13 +82,13 @@
     "dir": 1,
     "strategy": "breakout",
     "entry": 0.09884939999999999,
-    "last": 0.0988,
-    "peak": 0.09884939999999999,
+    "last": 0.0974,
+    "peak": 0.0992,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795304633,
-    "checked": 1795303800000,
+    "checked": 1795318200000,
     "misses": 0
    }
   ]
@@ -603,66 +603,45 @@
   [
    1795304633,
    919.85
+  ],
+  [
+   1795318242,
+   917.64
   ]
  ],
  "cooldown": {
   "spot:RAREUSDT": 1795304633,
   "fut:RAREUSDT": 1795304633
  },
- "runs": 22,
+ "runs": 23,
  "summary": {
-  "updated": 1795304633,
+  "updated": 1795318242,
   "api_ok": true,
-  "coins": 107,
+  "coins": 98,
   "studied": 60,
   "signals": [
    [
-    "XRPUSDT",
+    "SOLUSDT",
+    1,
+    "oversold bounce"
+   ],
+   [
+    "ORCAUSDT",
     1,
     "pullback"
    ],
    [
-    "ETHFIUSDT",
+    "ADAUSDT",
     1,
-    "breakout"
+    "oversold bounce"
    ],
    [
-    "ASTERUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "BREVUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "DOGEUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "ENAUSDT",
-    1,
-    "breakout"
-   ],
-   [
-    "WLDUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "SUIUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "PENGUUSDT",
+    "HUMAUSDT",
     1,
     "pullback"
    ]
   ],
-  "mood": 1,
+  "mood": -1,
   "paused": [
    "pullback",
    "oversold bounce"
@@ -670,14 +649,14 @@
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 479.02,
+   "equity": 478.39,
    "cash": 328.73,
    "trades": 13,
    "win_rate": 0.0
   },
   "fut": {
    "start": 500.0,
-   "equity": 440.83,
+   "equity": 439.25,
    "cash": 365.13,
    "trades": 17,
    "win_rate": 0.0

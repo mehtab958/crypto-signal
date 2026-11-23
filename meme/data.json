@@ -1,24 +1,37 @@
 {
- "cash": 38.03667157903361,
+ "cash": 18.103450726555288,
  "positions": [
   {
-   "address": "E9rWKjVhHMxQkxfREr7Li8Yy46rVcWiWHoKVQAe9pump",
-   "symbol": "MINELIUS",
-   "name": "Minelius",
-   "url": "https://dexscreener.com/solana/7yjdp2vmgazvea6usbxm61usk5at3j4dzfajqvq2lnfz",
-   "entry_price": 0.0129059,
-   "last_price": 0.01253,
-   "peak_price": 0.01253,
-   "qty": 1549.6788290626769,
+   "address": "HKiMA2mKQHU2cjfZ4Kbmru5GBGCauSNqPtpu8cfmpump",
+   "symbol": "JENSEN",
+   "name": "Jensen Is Back",
+   "url": "https://dexscreener.com/solana/dqpqkbbqr3wmty5ryjoq3nzrrzwbh7h9x2gj7osn9mhh",
+   "entry_price": 0.00108047,
+   "last_price": 0.001049,
+   "peak_price": 0.001049,
+   "qty": 18510.463039232927,
    "cost": 20.0,
-   "entry_time": 1795420816.5092874,
-   "entry_liq": 267744.76,
-   "score": 17.9,
-   "reason": "1h +19%, buys/sells 1.2, liq $268k, age 10.5h",
+   "entry_time": 1795464437.4799044,
+   "entry_liq": 76973.27,
+   "score": 30.3,
+   "reason": "1h +7%, buys/sells 1.9, liq $77k, age 2.3h",
    "misses": 0
   }
  ],
  "closed": [
+  {
+   "symbol": "MINELIUS",
+   "address": "E9rWKjVhHMxQkxfREr7Li8Yy46rVcWiWHoKVQAe9pump",
+   "url": "https://dexscreener.com/solana/7yjdp2vmgazvea6usbxm61usk5at3j4dzfajqvq2lnfz",
+   "entry_time": 1795420816.5092874,
+   "exit_time": 1795464437.4799044,
+   "entry_price": 0.0129059,
+   "exit_price": 4.4425e-05,
+   "cost": 20.0,
+   "pnl": -19.93,
+   "pnl_pct": -99.7,
+   "why": "liquidity pulled"
+  },
   {
    "symbol": "UCASH",
    "address": "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump",
@@ -375,43 +388,50 @@
   [
    1795420816,
    57.45
+  ],
+  [
+   1795464437,
+   37.52
   ]
  ],
  "cooldown": {
-  "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump": 1795348211.4918702,
-  "3N6Mp8YQuVDfEtyuyJS72s4MRrgQuKY34gvYZD5Kpump": 1795374683.3519764,
   "ADs7gnpeYvkBLthYhqRcrVTeGSFQuqfYnv3PbS6Bpump": 1795420816.5092874,
-  "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump": 1795420816.5092874
+  "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump": 1795420816.5092874,
+  "E9rWKjVhHMxQkxfREr7Li8Yy46rVcWiWHoKVQAe9pump": 1795464437.4799044
  },
- "runs": 27,
+ "runs": 28,
  "summary": {
-  "updated": 1795420816,
+  "updated": 1795464437,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 57.45,
-  "cash": 38.04,
-  "trades": 19,
+  "equity": 37.52,
+  "cash": 18.1,
+  "trades": 20,
   "wins": 4,
-  "win_rate": 21.1,
-  "scanned": 44,
+  "win_rate": 20.0,
+  "scanned": 57,
   "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    30
+    38
    ],
    [
     "too old",
-    6
+    9
    ],
    [
     "1h move out of range",
-    3
+    2
    ],
    [
-    "not enough buying",
+    "no price",
     2
+   ],
+   [
+    "volume looks fake for this liquidity",
+    1
    ],
    [
     "falling right now",

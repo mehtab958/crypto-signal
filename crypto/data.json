@@ -1,43 +1,41 @@
 {
  "spot": {
-  "cash": 427.1958952391367,
-  "positions": [
-   {
-    "symbol": "MUBUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 626.0728799999999,
-    "last": 635.61,
-    "peak": 638.84,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795393283,
-    "checked": 1795420800000,
-    "misses": 0
-   }
-  ]
+  "cash": 481.6186452391367,
+  "positions": []
  },
  "fut": {
-  "cash": 413.8409441488535,
-  "positions": [
-   {
-    "symbol": "MUBUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 626.0728799999999,
-    "last": 635.61,
-    "peak": 638.84,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795393283,
-    "checked": 1795420800000,
-    "misses": 0
-   }
-  ]
+  "cash": 449.9603191488535,
+  "positions": []
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "MUBUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795393283,
+   "exit_time": 1795464314,
+   "entry": 626.0728799999999,
+   "exit": 682.0782294804,
+   "stake": 25.0,
+   "pnl": 11.06,
+   "pnl_pct": 44.2,
+   "why": "take profit"
+  },
+  {
+   "account": "spot",
+   "symbol": "MUBUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795393283,
+   "exit_time": 1795464314,
+   "entry": 626.0728799999999,
+   "exit": 682.0782294804,
+   "stake": 50.0,
+   "pnl": 4.37,
+   "pnl_pct": 8.7,
+   "why": "take profit"
+  },
   {
    "account": "fut",
    "symbol": "SKHYBUSDT",
@@ -735,53 +733,46 @@
   [
    1795420937,
    918.7
+  ],
+  [
+   1795464314,
+   931.58
   ]
  ],
  "cooldown": {
-  "spot:KORUBUSDT": 1795420937,
-  "spot:SKHYBUSDT": 1795420937,
-  "fut:KORUBUSDT": 1795420937,
-  "fut:SKHYBUSDT": 1795420937
+  "spot:MUBUSDT": 1795464314,
+  "fut:MUBUSDT": 1795464314
  },
- "runs": 27,
+ "runs": 28,
  "summary": {
-  "updated": 1795420937,
+  "updated": 1795464314,
   "api_ok": true,
-  "coins": 90,
+  "coins": 113,
   "studied": 60,
-  "signals": [
-   [
-    "GRAMUSDT",
-    1,
-    "breakout"
-   ]
-  ],
+  "signals": [],
   "mood": 1,
-  "paused": [
-   "breakout",
-   "pullback"
-  ],
+  "paused": [],
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 477.96,
-   "cash": 427.2,
-   "trades": 19,
-   "win_rate": 15.8
+   "equity": 481.62,
+   "cash": 481.62,
+   "trades": 20,
+   "win_rate": 20.0
   },
   "fut": {
    "start": 500.0,
-   "equity": 440.75,
-   "cash": 413.84,
-   "trades": 23,
-   "win_rate": 13.0
+   "equity": 449.96,
+   "cash": 449.96,
+   "trades": 24,
+   "win_rate": 16.7
   },
   "strategies": [
    [
     "breakout",
-    14,
-    43,
-    -8.61
+    16,
+    50,
+    6.82
    ],
    [
     "pullback",

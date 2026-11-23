@@ -1,99 +1,99 @@
 {
  "spot": {
-  "cash": 330.3443952391367,
+  "cash": 427.1958952391367,
   "positions": [
-   {
-    "symbol": "KORUBUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 5.432714999999999,
-    "last": 5.43,
-    "peak": 5.432714999999999,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795393283,
-    "checked": 1795392900000,
-    "misses": 0
-   },
-   {
-    "symbol": "SKHYBUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 113.026485,
-    "last": 112.97,
-    "peak": 113.026485,
-    "stake": 50.0,
-    "lev": 1,
-    "open_fee": 0.05,
-    "time": 1795393283,
-    "checked": 1795392900000,
-    "misses": 0
-   },
    {
     "symbol": "MUBUSDT",
     "dir": 1,
     "strategy": "breakout",
     "entry": 626.0728799999999,
-    "last": 625.76,
-    "peak": 626.0728799999999,
+    "last": 635.61,
+    "peak": 638.84,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1795393283,
-    "checked": 1795392900000,
+    "checked": 1795420800000,
     "misses": 0
    }
   ]
  },
  "fut": {
-  "cash": 371.58719414885354,
+  "cash": 413.8409441488535,
   "positions": [
-   {
-    "symbol": "KORUBUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 5.432714999999999,
-    "last": 5.43,
-    "peak": 5.432714999999999,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795393283,
-    "checked": 1795392900000,
-    "misses": 0
-   },
-   {
-    "symbol": "SKHYBUSDT",
-    "dir": 1,
-    "strategy": "breakout",
-    "entry": 113.026485,
-    "last": 112.97,
-    "peak": 113.026485,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795393283,
-    "checked": 1795392900000,
-    "misses": 0
-   },
    {
     "symbol": "MUBUSDT",
     "dir": 1,
     "strategy": "breakout",
     "entry": 626.0728799999999,
-    "last": 625.76,
-    "peak": 626.0728799999999,
+    "last": 635.61,
+    "peak": 638.84,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795393283,
-    "checked": 1795392900000,
+    "checked": 1795420800000,
     "misses": 0
    }
   ]
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "SKHYBUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795393283,
+   "exit_time": 1795420937,
+   "entry": 113.026485,
+   "exit": 109.580872604775,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "fut",
+   "symbol": "KORUBUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795393283,
+   "exit_time": 1795420937,
+   "entry": 5.432714999999999,
+   "exit": 5.267098683224999,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.7,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "SKHYBUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795393283,
+   "exit_time": 1795420937,
+   "entry": 113.026485,
+   "exit": 109.580872604775,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
+  {
+   "account": "spot",
+   "symbol": "KORUBUSDT",
+   "dir": 1,
+   "strategy": "breakout",
+   "entry_time": 1795393283,
+   "exit_time": 1795420937,
+   "entry": 5.432714999999999,
+   "exit": 5.267098683224999,
+   "stake": 50.0,
+   "pnl": -1.62,
+   "pnl_pct": -3.2,
+   "why": "stop loss"
+  },
   {
    "account": "fut",
    "symbol": "NIGHTUSDT",
@@ -731,77 +731,57 @@
   [
    1795393283,
    926.67
+  ],
+  [
+   1795420937,
+   918.7
   ]
  ],
  "cooldown": {
-  "spot:ETHFIUSDT": 1795374988,
-  "spot:ENAUSDT": 1795374988,
-  "spot:NIGHTUSDT": 1795374988,
-  "fut:NIGHTUSDT": 1795374988
+  "spot:KORUBUSDT": 1795420937,
+  "spot:SKHYBUSDT": 1795420937,
+  "fut:KORUBUSDT": 1795420937,
+  "fut:SKHYBUSDT": 1795420937
  },
- "runs": 26,
+ "runs": 27,
  "summary": {
-  "updated": 1795393283,
+  "updated": 1795420937,
   "api_ok": true,
-  "coins": 82,
+  "coins": 90,
   "studied": 60,
   "signals": [
    [
-    "NEARUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "KORUBUSDT",
-    1,
-    "breakout"
-   ],
-   [
-    "\u725b\u6765USDT",
-    1,
-    "pullback"
-   ],
-   [
-    "ETHFIUSDT",
-    1,
-    "pullback"
-   ],
-   [
-    "SKHYBUSDT",
-    1,
-    "breakout"
-   ],
-   [
-    "MUBUSDT",
+    "GRAMUSDT",
     1,
     "breakout"
    ]
   ],
   "mood": 1,
   "paused": [
+   "breakout",
    "pullback"
   ],
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 480.27,
-   "cash": 330.34,
-   "trades": 17,
-   "win_rate": 17.6
+   "equity": 477.96,
+   "cash": 427.2,
+   "trades": 19,
+   "win_rate": 15.8
   },
   "fut": {
    "start": 500.0,
-   "equity": 446.4,
-   "cash": 371.59,
-   "trades": 21,
-   "win_rate": 14.3
+   "equity": 440.75,
+   "cash": 413.84,
+   "trades": 23,
+   "win_rate": 13.0
   },
   "strategies": [
    [
     "breakout",
-    10,
-    60,
-    2.51
+    14,
+    43,
+    -8.61
    ],
    [
     "pullback",

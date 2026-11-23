@@ -1,40 +1,50 @@
 {
- "cash": 49.21688094526466,
+ "cash": 38.03667157903361,
  "positions": [
   {
-   "address": "ADs7gnpeYvkBLthYhqRcrVTeGSFQuqfYnv3PbS6Bpump",
-   "symbol": "XMAS",
-   "name": "Xtra Massive Ass Season",
-   "url": "https://dexscreener.com/solana/2yharf6uvwnalamylkhdmwe77sh6uaxitqsqeuy44otf",
-   "entry_price": 0.000146054,
-   "last_price": 0.0001418,
-   "peak_price": 0.0001418,
-   "qty": 136935.65393621536,
+   "address": "E9rWKjVhHMxQkxfREr7Li8Yy46rVcWiWHoKVQAe9pump",
+   "symbol": "MINELIUS",
+   "name": "Minelius",
+   "url": "https://dexscreener.com/solana/7yjdp2vmgazvea6usbxm61usk5at3j4dzfajqvq2lnfz",
+   "entry_price": 0.0129059,
+   "last_price": 0.01253,
+   "peak_price": 0.01253,
+   "qty": 1549.6788290626769,
    "cost": 20.0,
-   "entry_time": 1795393275.0878878,
-   "entry_liq": 26016.19,
-   "score": 68.0,
-   "reason": "1h +15%, buys/sells 3.9, liq $26k, age 1.9h",
-   "misses": 0
-  },
-  {
-   "address": "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump",
-   "symbol": "UCASH",
-   "name": "Umbra Cash",
-   "url": "https://dexscreener.com/solana/4h7r5jzaq6pgnjfud12aeuqjrqygwz2yhpsra6sh1rxt",
-   "entry_price": 0.00126175,
-   "last_price": 0.001225,
-   "peak_price": 0.001225,
-   "qty": 15851.000594412522,
-   "cost": 20.0,
-   "entry_time": 1795393275.0878878,
-   "entry_liq": 82020.06,
-   "score": 15.8,
-   "reason": "1h +11%, buys/sells 1.1, liq $82k, age 13.1h",
+   "entry_time": 1795420816.5092874,
+   "entry_liq": 267744.76,
+   "score": 17.9,
+   "reason": "1h +19%, buys/sells 1.2, liq $268k, age 10.5h",
    "misses": 0
   }
  ],
  "closed": [
+  {
+   "symbol": "UCASH",
+   "address": "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump",
+   "url": "https://dexscreener.com/solana/4h7r5jzaq6pgnjfud12aeuqjrqygwz2yhpsra6sh1rxt",
+   "entry_time": 1795393275.0878878,
+   "exit_time": 1795420816.5092874,
+   "entry_price": 0.00126175,
+   "exit_price": 0.0005672,
+   "cost": 20.0,
+   "pnl": -11.28,
+   "pnl_pct": -56.4,
+   "why": "stop loss"
+  },
+  {
+   "symbol": "XMAS",
+   "address": "ADs7gnpeYvkBLthYhqRcrVTeGSFQuqfYnv3PbS6Bpump",
+   "url": "https://dexscreener.com/solana/2yharf6uvwnalamylkhdmwe77sh6uaxitqsqeuy44otf",
+   "entry_time": 1795393275.0878878,
+   "exit_time": 1795420816.5092874,
+   "entry_price": 0.000146054,
+   "exit_price": 7.44e-07,
+   "cost": 20.0,
+   "pnl": -19.9,
+   "pnl_pct": -99.5,
+   "why": "liquidity pulled"
+  },
   {
    "symbol": "PushCoin",
    "address": "3N6Mp8YQuVDfEtyuyJS72s4MRrgQuKY34gvYZD5Kpump",
@@ -361,39 +371,39 @@
   [
    1795393275,
    88.05
+  ],
+  [
+   1795420816,
+   57.45
   ]
  ],
  "cooldown": {
-  "EoV9JQYi57tqjyQbWLdXVarYpEu82FsP8SDnkbFmpump": 1795317906.9291112,
-  "4mE8dPH1RTqQBT5EPim5Ubt2v2wXZ9zgEDDWmL1o1EYu": 1795317906.9291112,
   "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump": 1795348211.4918702,
-  "3N6Mp8YQuVDfEtyuyJS72s4MRrgQuKY34gvYZD5Kpump": 1795374683.3519764
+  "3N6Mp8YQuVDfEtyuyJS72s4MRrgQuKY34gvYZD5Kpump": 1795374683.3519764,
+  "ADs7gnpeYvkBLthYhqRcrVTeGSFQuqfYnv3PbS6Bpump": 1795420816.5092874,
+  "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump": 1795420816.5092874
  },
- "runs": 26,
+ "runs": 27,
  "summary": {
-  "updated": 1795393275,
+  "updated": 1795420816,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 88.05,
-  "cash": 49.22,
-  "trades": 17,
+  "equity": 57.45,
+  "cash": 38.04,
+  "trades": 19,
   "wins": 4,
-  "win_rate": 23.5,
-  "scanned": 45,
-  "passed": 2,
+  "win_rate": 21.1,
+  "scanned": 44,
+  "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    23
+    30
    ],
    [
     "too old",
-    8
-   ],
-   [
-    "no price",
-    3
+    6
    ],
    [
     "1h move out of range",
@@ -401,7 +411,7 @@
    ],
    [
     "not enough buying",
-    1
+    2
    ],
    [
     "falling right now",

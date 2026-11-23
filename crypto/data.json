@@ -1,11 +1,97 @@
 {
  "spot": {
-  "cash": 480.49439523913674,
-  "positions": []
+  "cash": 330.3443952391367,
+  "positions": [
+   {
+    "symbol": "KORUBUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 5.432714999999999,
+    "last": 5.43,
+    "peak": 5.432714999999999,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795393283,
+    "checked": 1795392900000,
+    "misses": 0
+   },
+   {
+    "symbol": "SKHYBUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 113.026485,
+    "last": 112.97,
+    "peak": 113.026485,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795393283,
+    "checked": 1795392900000,
+    "misses": 0
+   },
+   {
+    "symbol": "MUBUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 626.0728799999999,
+    "last": 625.76,
+    "peak": 626.0728799999999,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795393283,
+    "checked": 1795392900000,
+    "misses": 0
+   }
+  ]
  },
  "fut": {
-  "cash": 446.77469414885354,
-  "positions": []
+  "cash": 371.58719414885354,
+  "positions": [
+   {
+    "symbol": "KORUBUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 5.432714999999999,
+    "last": 5.43,
+    "peak": 5.432714999999999,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795393283,
+    "checked": 1795392900000,
+    "misses": 0
+   },
+   {
+    "symbol": "SKHYBUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 113.026485,
+    "last": 112.97,
+    "peak": 113.026485,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795393283,
+    "checked": 1795392900000,
+    "misses": 0
+   },
+   {
+    "symbol": "MUBUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 626.0728799999999,
+    "last": 625.76,
+    "peak": 626.0728799999999,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795393283,
+    "checked": 1795392900000,
+    "misses": 0
+   }
+  ]
  },
  "closed": [
   {
@@ -641,6 +727,10 @@
   [
    1795374988,
    927.27
+  ],
+  [
+   1795393283,
+   926.67
   ]
  ],
  "cooldown": {
@@ -649,37 +739,42 @@
   "spot:NIGHTUSDT": 1795374988,
   "fut:NIGHTUSDT": 1795374988
  },
- "runs": 25,
+ "runs": 26,
  "summary": {
-  "updated": 1795374988,
+  "updated": 1795393283,
   "api_ok": true,
-  "coins": 80,
+  "coins": 82,
   "studied": 60,
   "signals": [
    [
-    "FILUSDT",
+    "NEARUSDT",
     1,
     "pullback"
    ],
    [
-    "RENDERUSDT",
+    "KORUBUSDT",
+    1,
+    "breakout"
+   ],
+   [
+    "\u725b\u6765USDT",
     1,
     "pullback"
    ],
    [
-    "ONDOUSDT",
+    "ETHFIUSDT",
     1,
     "pullback"
    ],
    [
-    "APTUSDT",
+    "SKHYBUSDT",
     1,
-    "pullback"
+    "breakout"
    ],
    [
-    "DOTUSDT",
+    "MUBUSDT",
     1,
-    "pullback"
+    "breakout"
    ]
   ],
   "mood": 1,
@@ -689,15 +784,15 @@
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 480.49,
-   "cash": 480.49,
+   "equity": 480.27,
+   "cash": 330.34,
    "trades": 17,
    "win_rate": 17.6
   },
   "fut": {
    "start": 500.0,
-   "equity": 446.77,
-   "cash": 446.77,
+   "equity": 446.4,
+   "cash": 371.59,
    "trades": 21,
    "win_rate": 14.3
   },

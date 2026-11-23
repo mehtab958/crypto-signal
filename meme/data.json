@@ -1,6 +1,39 @@
 {
- "cash": 89.21688094526466,
- "positions": [],
+ "cash": 49.21688094526466,
+ "positions": [
+  {
+   "address": "ADs7gnpeYvkBLthYhqRcrVTeGSFQuqfYnv3PbS6Bpump",
+   "symbol": "XMAS",
+   "name": "Xtra Massive Ass Season",
+   "url": "https://dexscreener.com/solana/2yharf6uvwnalamylkhdmwe77sh6uaxitqsqeuy44otf",
+   "entry_price": 0.000146054,
+   "last_price": 0.0001418,
+   "peak_price": 0.0001418,
+   "qty": 136935.65393621536,
+   "cost": 20.0,
+   "entry_time": 1795393275.0878878,
+   "entry_liq": 26016.19,
+   "score": 68.0,
+   "reason": "1h +15%, buys/sells 3.9, liq $26k, age 1.9h",
+   "misses": 0
+  },
+  {
+   "address": "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump",
+   "symbol": "UCASH",
+   "name": "Umbra Cash",
+   "url": "https://dexscreener.com/solana/4h7r5jzaq6pgnjfud12aeuqjrqygwz2yhpsra6sh1rxt",
+   "entry_price": 0.00126175,
+   "last_price": 0.001225,
+   "peak_price": 0.001225,
+   "qty": 15851.000594412522,
+   "cost": 20.0,
+   "entry_time": 1795393275.0878878,
+   "entry_liq": 82020.06,
+   "score": 15.8,
+   "reason": "1h +11%, buys/sells 1.1, liq $82k, age 13.1h",
+   "misses": 0
+  }
+ ],
  "closed": [
   {
    "symbol": "PushCoin",
@@ -324,6 +357,10 @@
   [
    1795374683,
    89.22
+  ],
+  [
+   1795393275,
+   88.05
   ]
  ],
  "cooldown": {
@@ -332,42 +369,42 @@
   "B1oGtkaVAVZkdtWV7SXrHnFkcWC1Kd45sYpy6RYTpump": 1795348211.4918702,
   "3N6Mp8YQuVDfEtyuyJS72s4MRrgQuKY34gvYZD5Kpump": 1795374683.3519764
  },
- "runs": 25,
+ "runs": 26,
  "summary": {
-  "updated": 1795374683,
+  "updated": 1795393275,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 89.22,
-  "cash": 89.22,
+  "equity": 88.05,
+  "cash": 49.22,
   "trades": 17,
   "wins": 4,
   "win_rate": 23.5,
   "scanned": 45,
-  "passed": 0,
+  "passed": 2,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    27
+    23
    ],
    [
     "too old",
     8
    ],
    [
-    "volume looks fake for this liquidity",
+    "no price",
     3
    ],
    [
-    "no price",
-    2
+    "1h move out of range",
+    3
    ],
    [
-    "valuation out of range",
+    "not enough buying",
     1
    ],
    [
-    "volume too low",
+    "falling right now",
     1
    ]
   ]

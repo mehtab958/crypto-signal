@@ -392,17 +392,19 @@
   [
    1795495583,
    31.74
+  ],
+  [
+   1795533683,
+   31.74
   ]
  ],
  "cooldown": {
-  "ADs7gnpeYvkBLthYhqRcrVTeGSFQuqfYnv3PbS6Bpump": 1795420816.5092874,
-  "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump": 1795420816.5092874,
   "E9rWKjVhHMxQkxfREr7Li8Yy46rVcWiWHoKVQAe9pump": 1795464437.4799044,
   "HKiMA2mKQHU2cjfZ4Kbmru5GBGCauSNqPtpu8cfmpump": 1795495583.68773
  },
- "runs": 29,
+ "runs": 30,
  "summary": {
-  "updated": 1795495583,
+  "updated": 1795533683,
   "chain": "solana",
   "start_cash": 200.0,
   "equity": 31.74,
@@ -410,28 +412,28 @@
   "trades": 21,
   "wins": 4,
   "win_rate": 19.0,
-  "scanned": 44,
+  "scanned": 39,
   "passed": 0,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    36
+    27
    ],
    [
     "too old",
-    3
+    7
+   ],
+   [
+    "1h move out of range",
+    2
    ],
    [
     "not enough buying",
     1
    ],
    [
-    "1h move out of range",
-    1
-   ],
-   [
-    "no price",
+    "volume too low",
     1
    ]
   ]

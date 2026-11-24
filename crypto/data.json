@@ -737,20 +737,37 @@
   [
    1795464314,
    931.58
+  ],
+  [
+   1795495763,
+   931.58
   ]
  ],
- "cooldown": {
-  "spot:MUBUSDT": 1795464314,
-  "fut:MUBUSDT": 1795464314
- },
- "runs": 28,
+ "cooldown": {},
+ "runs": 29,
  "summary": {
-  "updated": 1795464314,
+  "updated": 1795495763,
   "api_ok": true,
   "coins": 113,
   "studied": 60,
-  "signals": [],
-  "mood": 1,
+  "signals": [
+   [
+    "SOXLBUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "MUUBUSDT",
+    1,
+    "pullback"
+   ],
+   [
+    "DRAMBUSDT",
+    1,
+    "pullback"
+   ]
+  ],
+  "mood": -1,
   "paused": [],
   "source": "https://data-api.binance.vision",
   "spot": {

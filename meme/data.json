@@ -1,24 +1,20 @@
 {
- "cash": 18.103450726555288,
- "positions": [
-  {
-   "address": "HKiMA2mKQHU2cjfZ4Kbmru5GBGCauSNqPtpu8cfmpump",
-   "symbol": "JENSEN",
-   "name": "Jensen Is Back",
-   "url": "https://dexscreener.com/solana/dqpqkbbqr3wmty5ryjoq3nzrrzwbh7h9x2gj7osn9mhh",
-   "entry_price": 0.00108047,
-   "last_price": 0.001049,
-   "peak_price": 0.001049,
-   "qty": 18510.463039232927,
-   "cost": 20.0,
-   "entry_time": 1795464437.4799044,
-   "entry_liq": 76973.27,
-   "score": 30.3,
-   "reason": "1h +7%, buys/sells 1.9, liq $77k, age 2.3h",
-   "misses": 0
-  }
- ],
+ "cash": 31.74218201941858,
+ "positions": [],
  "closed": [
+  {
+   "symbol": "JENSEN",
+   "address": "HKiMA2mKQHU2cjfZ4Kbmru5GBGCauSNqPtpu8cfmpump",
+   "url": "https://dexscreener.com/solana/dqpqkbbqr3wmty5ryjoq3nzrrzwbh7h9x2gj7osn9mhh",
+   "entry_time": 1795464437.4799044,
+   "exit_time": 1795495583.68773,
+   "entry_price": 0.00108047,
+   "exit_price": 0.0007596,
+   "cost": 20.0,
+   "pnl": -6.36,
+   "pnl_pct": -31.8,
+   "why": "stop loss"
+  },
   {
    "symbol": "MINELIUS",
    "address": "E9rWKjVhHMxQkxfREr7Li8Yy46rVcWiWHoKVQAe9pump",
@@ -392,49 +388,50 @@
   [
    1795464437,
    37.52
+  ],
+  [
+   1795495583,
+   31.74
   ]
  ],
  "cooldown": {
   "ADs7gnpeYvkBLthYhqRcrVTeGSFQuqfYnv3PbS6Bpump": 1795420816.5092874,
   "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump": 1795420816.5092874,
-  "E9rWKjVhHMxQkxfREr7Li8Yy46rVcWiWHoKVQAe9pump": 1795464437.4799044
+  "E9rWKjVhHMxQkxfREr7Li8Yy46rVcWiWHoKVQAe9pump": 1795464437.4799044,
+  "HKiMA2mKQHU2cjfZ4Kbmru5GBGCauSNqPtpu8cfmpump": 1795495583.68773
  },
- "runs": 28,
+ "runs": 29,
  "summary": {
-  "updated": 1795464437,
+  "updated": 1795495583,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 37.52,
-  "cash": 18.1,
-  "trades": 20,
+  "equity": 31.74,
+  "cash": 31.74,
+  "trades": 21,
   "wins": 4,
-  "win_rate": 20.0,
-  "scanned": 57,
-  "passed": 1,
+  "win_rate": 19.0,
+  "scanned": 44,
+  "passed": 0,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    38
+    36
    ],
    [
     "too old",
-    9
+    3
    ],
    [
-    "1h move out of range",
-    2
-   ],
-   [
-    "no price",
-    2
-   ],
-   [
-    "volume looks fake for this liquidity",
+    "not enough buying",
     1
    ],
    [
-    "falling right now",
+    "1h move out of range",
+    1
+   ],
+   [
+    "no price",
     1
    ]
   ]

@@ -4,8 +4,79 @@
   "positions": []
  },
  "fut": {
-  "cash": 449.9603191488535,
-  "positions": []
+  "cash": 324.6478191488535,
+  "positions": [
+   {
+    "symbol": "SOLUSDT",
+    "dir": -1,
+    "strategy": "breakdown",
+    "entry": 68.93551500000001,
+    "last": 68.97,
+    "peak": 68.93551500000001,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795534778,
+    "checked": 1795534200000,
+    "misses": 0
+   },
+   {
+    "symbol": "NEARUSDT",
+    "dir": -1,
+    "strategy": "breakdown",
+    "entry": 2.8135925,
+    "last": 2.815,
+    "peak": 2.8135925,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795534778,
+    "checked": 1795534200000,
+    "misses": 0
+   },
+   {
+    "symbol": "KORUBUSDT",
+    "dir": -1,
+    "strategy": "breakdown",
+    "entry": 5.43728,
+    "last": 5.44,
+    "peak": 5.43728,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795534778,
+    "checked": 1795534200000,
+    "misses": 0
+   },
+   {
+    "symbol": "QNTUSDT",
+    "dir": -1,
+    "strategy": "breakdown",
+    "entry": 144.857535,
+    "last": 144.93,
+    "peak": 144.857535,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795534778,
+    "checked": 1795534200000,
+    "misses": 0
+   },
+   {
+    "symbol": "CRCLBUSDT",
+    "dir": -1,
+    "strategy": "breakdown",
+    "entry": 48.655660000000005,
+    "last": 48.68,
+    "peak": 48.655660000000005,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795534778,
+    "checked": 1795534200000,
+    "misses": 0
+   }
+  ]
  },
  "closed": [
   {
@@ -741,30 +812,74 @@
   [
    1795495763,
    931.58
+  ],
+  [
+   1795534778,
+   930.95
   ]
  ],
  "cooldown": {},
- "runs": 29,
+ "runs": 30,
  "summary": {
-  "updated": 1795495763,
+  "updated": 1795534778,
   "api_ok": true,
-  "coins": 113,
+  "coins": 101,
   "studied": 60,
   "signals": [
    [
-    "SOXLBUSDT",
-    1,
-    "pullback"
+    "SOLUSDT",
+    -1,
+    "breakdown"
    ],
    [
-    "MUUBUSDT",
-    1,
-    "pullback"
+    "NEARUSDT",
+    -1,
+    "breakdown"
    ],
    [
-    "DRAMBUSDT",
-    1,
-    "pullback"
+    "KORUBUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "QNTUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "CRCLBUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "SKHYBUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "MARSCOINUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "XLMUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "PENGUUSDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "\u725b\u6765USDT",
+    -1,
+    "breakdown"
+   ],
+   [
+    "CHIPUSDT",
+    -1,
+    "breakdown"
    ]
   ],
   "mood": -1,
@@ -779,8 +894,8 @@
   },
   "fut": {
    "start": 500.0,
-   "equity": 449.96,
-   "cash": 449.96,
+   "equity": 449.34,
+   "cash": 324.65,
    "trades": 24,
    "win_rate": 16.7
   },

@@ -4,81 +4,109 @@
   "positions": []
  },
  "fut": {
-  "cash": 320.7084441488535,
+  "cash": 380.86070880202635,
   "positions": [
-   {
-    "symbol": "SOLUSDT",
-    "dir": -1,
-    "strategy": "breakdown",
-    "entry": 68.93551500000001,
-    "last": 69.63,
-    "peak": 68.57,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795534778,
-    "checked": 1795564800000,
-    "misses": 0
-   },
-   {
-    "symbol": "KORUBUSDT",
-    "dir": -1,
-    "strategy": "breakdown",
-    "entry": 5.43728,
-    "last": 5.43,
-    "peak": 5.22,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795534778,
-    "checked": 1795564800000,
-    "misses": 0
-   },
-   {
-    "symbol": "QNTUSDT",
-    "dir": -1,
-    "strategy": "breakdown",
-    "entry": 144.857535,
-    "last": 146.35,
-    "peak": 143.88,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795534778,
-    "checked": 1795564800000,
-    "misses": 0
-   },
-   {
-    "symbol": "CRCLBUSDT",
-    "dir": -1,
-    "strategy": "breakdown",
-    "entry": 48.655660000000005,
-    "last": 47.74,
-    "peak": 47.11,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795534778,
-    "checked": 1795564800000,
-    "misses": 0
-   },
    {
     "symbol": "GRAMUSDT",
     "dir": -1,
     "strategy": "breakdown",
     "entry": 0.9275360000000001,
-    "last": 0.928,
-    "peak": 0.9275360000000001,
+    "last": 0.934,
+    "peak": 0.916,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795565319,
-    "checked": 1795564800000,
+    "checked": 1795595400000,
+    "misses": 0
+   },
+   {
+    "symbol": "MANTRAUSDT",
+    "dir": -1,
+    "strategy": "overbought fade",
+    "entry": 0.0022288850000000003,
+    "last": 0.00223,
+    "peak": 0.0022288850000000003,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795596069,
+    "checked": 1795595400000,
+    "misses": 0
+   },
+   {
+    "symbol": "ATMUSDT",
+    "dir": -1,
+    "strategy": "breakdown",
+    "entry": 0.871564,
+    "last": 0.872,
+    "peak": 0.871564,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795596069,
+    "checked": 1795595400000,
     "misses": 0
    }
   ]
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "CRCLBUSDT",
+   "dir": -1,
+   "strategy": "breakdown",
+   "entry_time": 1795534778,
+   "exit_time": 1795596069,
+   "entry": 48.655660000000005,
+   "exit": 47.283629999999995,
+   "stake": 25.0,
+   "pnl": 3.4,
+   "pnl_pct": 13.6,
+   "why": "time limit"
+  },
+  {
+   "account": "fut",
+   "symbol": "QNTUSDT",
+   "dir": -1,
+   "strategy": "breakdown",
+   "entry_time": 1795534778,
+   "exit_time": 1795596069,
+   "entry": 144.857535,
+   "exit": 143.23157999999998,
+   "stake": 25.0,
+   "pnl": 1.28,
+   "pnl_pct": 5.1,
+   "why": "time limit"
+  },
+  {
+   "account": "fut",
+   "symbol": "KORUBUSDT",
+   "dir": -1,
+   "strategy": "breakdown",
+   "entry_time": 1795534778,
+   "exit_time": 1795596069,
+   "entry": 5.43728,
+   "exit": 5.260879124999999,
+   "stake": 25.0,
+   "pnl": 3.93,
+   "pnl_pct": 15.7,
+   "why": "trailing stop"
+  },
+  {
+   "account": "fut",
+   "symbol": "SOLUSDT",
+   "dir": -1,
+   "strategy": "breakdown",
+   "entry_time": 1795534778,
+   "exit_time": 1795596069,
+   "entry": 68.93551500000001,
+   "exit": 68.084025,
+   "stake": 25.0,
+   "pnl": 1.42,
+   "pnl_pct": 5.7,
+   "why": "time limit"
+  },
   {
    "account": "fut",
    "symbol": "NEARUSDT",
@@ -834,22 +862,39 @@
   [
    1795565319,
    927.24
+  ],
+  [
+   1795596069,
+   936.48
   ]
  ],
  "cooldown": {
-  "fut:NEARUSDT": 1795565319
+  "fut:SOLUSDT": 1795596069,
+  "fut:KORUBUSDT": 1795596069,
+  "fut:QNTUSDT": 1795596069,
+  "fut:CRCLBUSDT": 1795596069
  },
- "runs": 31,
+ "runs": 32,
  "summary": {
-  "updated": 1795565319,
+  "updated": 1795596069,
   "api_ok": true,
-  "coins": 95,
+  "coins": 92,
   "studied": 60,
   "signals": [
    [
-    "GRAMUSDT",
+    "MANTRAUSDT",
+    -1,
+    "overbought fade"
+   ],
+   [
+    "ATMUSDT",
     -1,
     "breakdown"
+   ],
+   [
+    "SKYUSDT",
+    1,
+    "pullback"
    ]
   ],
   "mood": -1,
@@ -864,10 +909,10 @@
   },
   "fut": {
    "start": 500.0,
-   "equity": 445.62,
-   "cash": 320.71,
-   "trades": 25,
-   "win_rate": 16.0
+   "equity": 454.86,
+   "cash": 380.86,
+   "trades": 29,
+   "win_rate": 27.6
   },
   "strategies": [
    [
@@ -890,9 +935,9 @@
    ],
    [
     "breakdown",
-    3,
-    0,
-    -11.82
+    7,
+    57,
+    -1.79
    ]
   ]
  },

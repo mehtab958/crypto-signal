@@ -1,6 +1,23 @@
 {
- "cash": 31.74218201941858,
- "positions": [],
+ "cash": 11.742182019418578,
+ "positions": [
+  {
+   "address": "4m2PS6yW2xDk5V9nJgPjnus1eguwCDSWXbA2YQeVkqxn",
+   "symbol": "Memeployed",
+   "name": "Memeployed",
+   "url": "https://dexscreener.com/solana/gy7pc4tijsvfds85hmdsngx5rccp3vmdysjtghlgdh8",
+   "entry_price": 7.2512e-05,
+   "last_price": 7.04e-05,
+   "peak_price": 7.04e-05,
+   "qty": 275816.4165931156,
+   "cost": 20.0,
+   "entry_time": 1795564907.4103706,
+   "entry_liq": 22778.71,
+   "score": 24.1,
+   "reason": "1h +9%, buys/sells 1.6, liq $23k, age 10.2h",
+   "misses": 0
+  }
+ ],
  "closed": [
   {
    "symbol": "JENSEN",
@@ -396,44 +413,51 @@
   [
    1795533683,
    31.74
+  ],
+  [
+   1795564907,
+   31.16
   ]
  ],
  "cooldown": {
-  "E9rWKjVhHMxQkxfREr7Li8Yy46rVcWiWHoKVQAe9pump": 1795464437.4799044,
   "HKiMA2mKQHU2cjfZ4Kbmru5GBGCauSNqPtpu8cfmpump": 1795495583.68773
  },
- "runs": 30,
+ "runs": 31,
  "summary": {
-  "updated": 1795533683,
+  "updated": 1795564907,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 31.74,
-  "cash": 31.74,
+  "equity": 31.16,
+  "cash": 11.74,
   "trades": 21,
   "wins": 4,
   "win_rate": 19.0,
-  "scanned": 39,
-  "passed": 0,
+  "scanned": 51,
+  "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    27
+    34
    ],
    [
     "too old",
-    7
+    10
+   ],
+   [
+    "no price",
+    2
    ],
    [
     "1h move out of range",
     2
    ],
    [
-    "not enough buying",
+    "volume looks fake for this liquidity",
     1
    ],
    [
-    "volume too low",
+    "almost no sells (possible honeypot)",
     1
    ]
   ]

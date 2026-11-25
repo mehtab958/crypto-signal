@@ -4,53 +4,52 @@
   "positions": []
  },
  "fut": {
-  "cash": 380.86070880202635,
-  "positions": [
-   {
-    "symbol": "GRAMUSDT",
-    "dir": -1,
-    "strategy": "breakdown",
-    "entry": 0.9275360000000001,
-    "last": 0.934,
-    "peak": 0.916,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795565319,
-    "checked": 1795595400000,
-    "misses": 0
-   },
-   {
-    "symbol": "MANTRAUSDT",
-    "dir": -1,
-    "strategy": "overbought fade",
-    "entry": 0.0022288850000000003,
-    "last": 0.00223,
-    "peak": 0.0022288850000000003,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795596069,
-    "checked": 1795595400000,
-    "misses": 0
-   },
-   {
-    "symbol": "ATMUSDT",
-    "dir": -1,
-    "strategy": "breakdown",
-    "entry": 0.871564,
-    "last": 0.872,
-    "peak": 0.871564,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795596069,
-    "checked": 1795595400000,
-    "misses": 0
-   }
-  ]
+  "cash": 464.175949644359,
+  "positions": []
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "ATMUSDT",
+   "dir": -1,
+   "strategy": "breakdown",
+   "entry_time": 1795596069,
+   "exit_time": 1795632669,
+   "entry": 0.871564,
+   "exit": 0.8491243499999999,
+   "stake": 25.0,
+   "pnl": 3.09,
+   "pnl_pct": 12.4,
+   "why": "trailing stop"
+  },
+  {
+   "account": "fut",
+   "symbol": "MANTRAUSDT",
+   "dir": -1,
+   "strategy": "overbought fade",
+   "entry_time": 1795596069,
+   "exit_time": 1795632669,
+   "entry": 0.0022288850000000003,
+   "exit": 0.0021228108749999993,
+   "stake": 25.0,
+   "pnl": 5.82,
+   "pnl_pct": 23.3,
+   "why": "trailing stop"
+  },
+  {
+   "account": "fut",
+   "symbol": "GRAMUSDT",
+   "dir": -1,
+   "strategy": "breakdown",
+   "entry_time": 1795565319,
+   "exit_time": 1795632669,
+   "entry": 0.9275360000000001,
+   "exit": 0.932466,
+   "stake": 25.0,
+   "pnl": -0.79,
+   "pnl_pct": -3.2,
+   "why": "time limit"
+  },
   {
    "account": "fut",
    "symbol": "CRCLBUSDT",
@@ -866,37 +865,24 @@
   [
    1795596069,
    936.48
+  ],
+  [
+   1795632669,
+   945.79
   ]
  ],
  "cooldown": {
-  "fut:SOLUSDT": 1795596069,
-  "fut:KORUBUSDT": 1795596069,
-  "fut:QNTUSDT": 1795596069,
-  "fut:CRCLBUSDT": 1795596069
+  "fut:GRAMUSDT": 1795632669,
+  "fut:MANTRAUSDT": 1795632669,
+  "fut:ATMUSDT": 1795632669
  },
- "runs": 32,
+ "runs": 33,
  "summary": {
-  "updated": 1795596069,
+  "updated": 1795632669,
   "api_ok": true,
-  "coins": 92,
+  "coins": 99,
   "studied": 60,
-  "signals": [
-   [
-    "MANTRAUSDT",
-    -1,
-    "overbought fade"
-   ],
-   [
-    "ATMUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "SKYUSDT",
-    1,
-    "pullback"
-   ]
-  ],
+  "signals": [],
   "mood": -1,
   "paused": [],
   "source": "https://data-api.binance.vision",
@@ -909,10 +895,10 @@
   },
   "fut": {
    "start": 500.0,
-   "equity": 454.86,
-   "cash": 380.86,
-   "trades": 29,
-   "win_rate": 27.6
+   "equity": 464.18,
+   "cash": 464.18,
+   "trades": 32,
+   "win_rate": 31.2
   },
   "strategies": [
    [
@@ -935,9 +921,15 @@
    ],
    [
     "breakdown",
-    7,
-    57,
-    -1.79
+    9,
+    56,
+    0.51
+   ],
+   [
+    "overbought fade",
+    1,
+    100,
+    5.82
    ]
   ]
  },

@@ -1,24 +1,20 @@
 {
- "cash": 11.742182019418578,
- "positions": [
-  {
-   "address": "4m2PS6yW2xDk5V9nJgPjnus1eguwCDSWXbA2YQeVkqxn",
-   "symbol": "Memeployed",
-   "name": "Memeployed",
-   "url": "https://dexscreener.com/solana/gy7pc4tijsvfds85hmdsngx5rccp3vmdysjtghlgdh8",
-   "entry_price": 7.2512e-05,
-   "last_price": 7.04e-05,
-   "peak_price": 7.04e-05,
-   "qty": 275816.4165931156,
-   "cost": 20.0,
-   "entry_time": 1795564907.4103706,
-   "entry_liq": 22778.71,
-   "score": 24.1,
-   "reason": "1h +9%, buys/sells 1.6, liq $23k, age 10.2h",
-   "misses": 0
-  }
- ],
+ "cash": 28.067590227715137,
+ "positions": [],
  "closed": [
+  {
+   "symbol": "Memeployed",
+   "address": "4m2PS6yW2xDk5V9nJgPjnus1eguwCDSWXbA2YQeVkqxn",
+   "url": "https://dexscreener.com/solana/gy7pc4tijsvfds85hmdsngx5rccp3vmdysjtghlgdh8",
+   "entry_time": 1795564907.4103706,
+   "exit_time": 1795594941.8825643,
+   "entry_price": 7.2512e-05,
+   "exit_price": 6.102e-05,
+   "cost": 20.0,
+   "pnl": -3.67,
+   "pnl_pct": -18.4,
+   "why": "time limit"
+  },
   {
    "symbol": "JENSEN",
    "address": "HKiMA2mKQHU2cjfZ4Kbmru5GBGCauSNqPtpu8cfmpump",
@@ -417,43 +413,43 @@
   [
    1795564907,
    31.16
+  ],
+  [
+   1795594941,
+   28.07
   ]
  ],
  "cooldown": {
-  "HKiMA2mKQHU2cjfZ4Kbmru5GBGCauSNqPtpu8cfmpump": 1795495583.68773
+  "4m2PS6yW2xDk5V9nJgPjnus1eguwCDSWXbA2YQeVkqxn": 1795594941.8825643
  },
- "runs": 31,
+ "runs": 32,
  "summary": {
-  "updated": 1795564907,
+  "updated": 1795594941,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 31.16,
-  "cash": 11.74,
-  "trades": 21,
+  "equity": 28.07,
+  "cash": 28.07,
+  "trades": 22,
   "wins": 4,
-  "win_rate": 19.0,
-  "scanned": 51,
-  "passed": 1,
+  "win_rate": 18.2,
+  "scanned": 40,
+  "passed": 0,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    34
-   ],
-   [
-    "too old",
-    10
+    26
    ],
    [
     "no price",
-    2
+    6
    ],
    [
-    "1h move out of range",
-    2
+    "too old",
+    5
    ],
    [
-    "volume looks fake for this liquidity",
+    "falling right now",
     1
    ],
    [

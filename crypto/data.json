@@ -4,34 +4,20 @@
   "positions": []
  },
  "fut": {
-  "cash": 324.6478191488535,
+  "cash": 320.7084441488535,
   "positions": [
    {
     "symbol": "SOLUSDT",
     "dir": -1,
     "strategy": "breakdown",
     "entry": 68.93551500000001,
-    "last": 68.97,
-    "peak": 68.93551500000001,
+    "last": 69.63,
+    "peak": 68.57,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795534778,
-    "checked": 1795534200000,
-    "misses": 0
-   },
-   {
-    "symbol": "NEARUSDT",
-    "dir": -1,
-    "strategy": "breakdown",
-    "entry": 2.8135925,
-    "last": 2.815,
-    "peak": 2.8135925,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795534778,
-    "checked": 1795534200000,
+    "checked": 1795564800000,
     "misses": 0
    },
    {
@@ -39,13 +25,13 @@
     "dir": -1,
     "strategy": "breakdown",
     "entry": 5.43728,
-    "last": 5.44,
-    "peak": 5.43728,
+    "last": 5.43,
+    "peak": 5.22,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795534778,
-    "checked": 1795534200000,
+    "checked": 1795564800000,
     "misses": 0
    },
    {
@@ -53,13 +39,13 @@
     "dir": -1,
     "strategy": "breakdown",
     "entry": 144.857535,
-    "last": 144.93,
-    "peak": 144.857535,
+    "last": 146.35,
+    "peak": 143.88,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795534778,
-    "checked": 1795534200000,
+    "checked": 1795564800000,
     "misses": 0
    },
    {
@@ -67,18 +53,46 @@
     "dir": -1,
     "strategy": "breakdown",
     "entry": 48.655660000000005,
-    "last": 48.68,
-    "peak": 48.655660000000005,
+    "last": 47.74,
+    "peak": 47.11,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795534778,
-    "checked": 1795534200000,
+    "checked": 1795564800000,
+    "misses": 0
+   },
+   {
+    "symbol": "GRAMUSDT",
+    "dir": -1,
+    "strategy": "breakdown",
+    "entry": 0.9275360000000001,
+    "last": 0.928,
+    "peak": 0.9275360000000001,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795565319,
+    "checked": 1795564800000,
     "misses": 0
    }
   ]
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "NEARUSDT",
+   "dir": -1,
+   "strategy": "breakdown",
+   "entry_time": 1795534778,
+   "exit_time": 1795565319,
+   "entry": 2.8135925,
+   "exit": 2.8994492751374996,
+   "stake": 25.0,
+   "pnl": -3.94,
+   "pnl_pct": -15.8,
+   "why": "stop loss"
+  },
   {
    "account": "fut",
    "symbol": "MUBUSDT",
@@ -816,68 +830,24 @@
   [
    1795534778,
    930.95
+  ],
+  [
+   1795565319,
+   927.24
   ]
  ],
- "cooldown": {},
- "runs": 30,
+ "cooldown": {
+  "fut:NEARUSDT": 1795565319
+ },
+ "runs": 31,
  "summary": {
-  "updated": 1795534778,
+  "updated": 1795565319,
   "api_ok": true,
-  "coins": 101,
+  "coins": 95,
   "studied": 60,
   "signals": [
    [
-    "SOLUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "NEARUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "KORUBUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "QNTUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "CRCLBUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "SKHYBUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "MARSCOINUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "XLMUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "PENGUUSDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "\u725b\u6765USDT",
-    -1,
-    "breakdown"
-   ],
-   [
-    "CHIPUSDT",
+    "GRAMUSDT",
     -1,
     "breakdown"
    ]
@@ -894,10 +864,10 @@
   },
   "fut": {
    "start": 500.0,
-   "equity": 449.34,
-   "cash": 324.65,
-   "trades": 24,
-   "win_rate": 16.7
+   "equity": 445.62,
+   "cash": 320.71,
+   "trades": 25,
+   "win_rate": 16.0
   },
   "strategies": [
    [
@@ -920,9 +890,9 @@
    ],
    [
     "breakdown",
-    2,
+    3,
     0,
-    -7.88
+    -11.82
    ]
   ]
  },

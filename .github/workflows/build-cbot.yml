@@ -28,11 +28,12 @@ jobs:
           dotnet build VsaBot/VsaBot.csproj --configuration Release -p:IncludeSource=True
           dotnet build RajaVsa/RajaVsa.csproj --configuration Release -p:IncludeSource=True
           dotnet build GoldSweep/GoldSweep.csproj --configuration Release -p:IncludeSource=True
+          dotnet build GoldFast/GoldFast.csproj --configuration Release -p:IncludeSource=True
       - name: Collect .algo files
         shell: bash
         run: |
           mkdir -p out
-          for bot in QuickScalper HedgeGrid HedgeRecovery RajaSnR VsaBot RajaVsa GoldSweep; do
+          for bot in QuickScalper HedgeGrid HedgeRecovery RajaSnR VsaBot RajaVsa GoldSweep GoldFast; do
             found=$(find "$bot/bin" -name "*.algo" | head -n 1)
             if [ -z "$found" ]; then found=$(find "$USERPROFILE/Documents" -name "$bot*.algo" | head -n 1); fi
             if [ -z "$found" ]; then echo "No .algo file was produced for $bot"; exit 1; fi
@@ -47,4 +48,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "cbot-${{ github.run_number }}" out/QuickScalper.algo out/HedgeGrid.algo out/HedgeRecovery.algo out/RajaSnR.algo out/VsaBot.algo out/RajaVsa.algo out/GoldSweep.algo --title "cTrader bots (build ${{ github.run_number }})" --notes "Open the .algo files on your phone with the cTrader app. Test on a demo account first." --target "${{ github.sha }}"
+        run: gh release create "cbot-${{ github.run_number }}" out/QuickScalper.algo out/HedgeGrid.algo out/HedgeRecovery.algo out/RajaSnR.algo out/VsaBot.algo out/RajaVsa.algo out/GoldSweep.algo out/GoldFast.algo --title "cTrader bots (build ${{ github.run_number }})" --notes "Open the .algo files on your phone with the cTrader app. Test on a demo account first." --target "${{ github.sha }}"

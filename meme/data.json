@@ -1,6 +1,23 @@
 {
- "cash": 28.067590227715137,
- "positions": [],
+ "cash": 8.067590227715137,
+ "positions": [
+  {
+   "address": "5EmvWDizkpjAXbcfCcVq69w1id8GaLzi4LLwtuSgpump",
+   "symbol": "Pompom",
+   "name": "Pompompurin",
+   "url": "https://dexscreener.com/solana/7knydybhbgmdqczmksxqnzg4p4pgc6vperzmfpbptgso",
+   "entry_price": 0.0005757700000000001,
+   "last_price": 0.000559,
+   "peak_price": 0.000559,
+   "qty": 34736.09253695051,
+   "cost": 20.0,
+   "entry_time": 1795632404.3756826,
+   "entry_liq": 59716.36,
+   "score": 45.4,
+   "reason": "1h +33%, buys/sells 1.2, liq $60k, age 7.5h",
+   "misses": 0
+  }
+ ],
  "closed": [
   {
    "symbol": "Memeployed",
@@ -417,43 +434,51 @@
   [
    1795594941,
    28.07
+  ],
+  [
+   1795632404,
+   27.49
   ]
  ],
  "cooldown": {
   "4m2PS6yW2xDk5V9nJgPjnus1eguwCDSWXbA2YQeVkqxn": 1795594941.8825643
  },
- "runs": 32,
+ "runs": 33,
  "summary": {
-  "updated": 1795594941,
+  "updated": 1795632404,
   "chain": "solana",
   "start_cash": 200.0,
-  "equity": 28.07,
-  "cash": 28.07,
+  "equity": 27.49,
+  "cash": 8.07,
   "trades": 22,
   "wins": 4,
   "win_rate": 18.2,
-  "scanned": 40,
-  "passed": 0,
+  "scanned": 50,
+  "passed": 2,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    26
-   ],
-   [
-    "no price",
-    6
+    29
    ],
    [
     "too old",
-    5
+    9
+   ],
+   [
+    "1h move out of range",
+    2
    ],
    [
     "falling right now",
-    1
+    2
    ],
    [
-    "almost no sells (possible honeypot)",
+    "no price",
+    2
+   ],
+   [
+    "too new or age unknown",
     1
    ]
   ]

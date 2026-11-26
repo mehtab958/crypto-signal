@@ -869,21 +869,21 @@
   [
    1795632669,
    945.79
+  ],
+  [
+   1795658791,
+   945.79
   ]
  ],
- "cooldown": {
-  "fut:GRAMUSDT": 1795632669,
-  "fut:MANTRAUSDT": 1795632669,
-  "fut:ATMUSDT": 1795632669
- },
- "runs": 33,
+ "cooldown": {},
+ "runs": 34,
  "summary": {
-  "updated": 1795632669,
+  "updated": 1795658791,
   "api_ok": true,
-  "coins": 99,
+  "coins": 110,
   "studied": 60,
   "signals": [],
-  "mood": -1,
+  "mood": 1,
   "paused": [],
   "source": "https://data-api.binance.vision",
   "spot": {

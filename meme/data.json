@@ -446,14 +446,16 @@
   [
    1795722717,
    12.37
+  ],
+  [
+   1795747313,
+   12.37
   ]
  ],
- "cooldown": {
-  "5EmvWDizkpjAXbcfCcVq69w1id8GaLzi4LLwtuSgpump": 1795658294.8389373
- },
- "runs": 36,
+ "cooldown": {},
+ "runs": 37,
  "summary": {
-  "updated": 1795722717,
+  "updated": 1795747313,
   "chain": "solana",
   "start_cash": 200.0,
   "equity": 12.37,
@@ -461,8 +463,8 @@
   "trades": 23,
   "wins": 4,
   "win_rate": 17.4,
-  "scanned": 42,
-  "passed": 0,
+  "scanned": 45,
+  "passed": 1,
   "api_ok": true,
   "rejected": [
    [
@@ -471,14 +473,18 @@
    ],
    [
     "too old",
-    8
+    7
+   ],
+   [
+    "1h move out of range",
+    2
    ],
    [
     "too new or age unknown",
     1
    ],
    [
-    "1h move out of range",
+    "volume looks fake for this liquidity",
     1
    ],
    [

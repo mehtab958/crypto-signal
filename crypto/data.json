@@ -1,57 +1,169 @@
 {
  "spot": {
-  "cash": 431.5686452391367,
+  "cash": 231.36864523913664,
   "positions": [
    {
     "symbol": "LAYERUSDT",
     "dir": 1,
     "strategy": "pullback",
     "entry": 0.04732365,
-    "last": 0.0473,
-    "peak": 0.04732365,
+    "last": 0.0484,
+    "peak": 0.0492,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1795723348,
-    "checked": 1795723200000,
+    "checked": 1795747500000,
+    "misses": 0
+   },
+   {
+    "symbol": "SKYUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 0.048154064999999996,
+    "last": 0.04813,
+    "peak": 0.048154064999999996,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795747564,
+    "checked": 1795747500000,
+    "misses": 0
+   },
+   {
+    "symbol": "WIFUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 0.1386693,
+    "last": 0.1386,
+    "peak": 0.1386693,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795747564,
+    "checked": 1795747500000,
+    "misses": 0
+   },
+   {
+    "symbol": "JSTUSDT",
+    "dir": 1,
+    "strategy": "oversold bounce",
+    "entry": 0.14313152999999998,
+    "last": 0.14306,
+    "peak": 0.14313152999999998,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795747564,
+    "checked": 1795747500000,
+    "misses": 0
+   },
+   {
+    "symbol": "SKHYBUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 115.787865,
+    "last": 115.73,
+    "peak": 115.787865,
+    "stake": 50.0,
+    "lev": 1,
+    "open_fee": 0.05,
+    "time": 1795747564,
+    "checked": 1795747500000,
     "misses": 0
    }
   ]
  },
  "fut": {
-  "cash": 414.050949644359,
+  "cash": 341.9518078991166,
   "positions": [
-   {
-    "symbol": "OPGUSDT",
-    "dir": -1,
-    "strategy": "overbought fade",
-    "entry": 0.17841075,
-    "last": 0.1785,
-    "peak": 0.17841075,
-    "stake": 25.0,
-    "lev": 5,
-    "open_fee": 0.0625,
-    "time": 1795723348,
-    "checked": 1795723200000,
-    "misses": 0
-   },
    {
     "symbol": "LAYERUSDT",
     "dir": 1,
     "strategy": "pullback",
     "entry": 0.04732365,
-    "last": 0.0473,
-    "peak": 0.04732365,
+    "last": 0.0484,
+    "peak": 0.0492,
     "stake": 25.0,
     "lev": 5,
     "open_fee": 0.0625,
     "time": 1795723348,
-    "checked": 1795723200000,
+    "checked": 1795747500000,
+    "misses": 0
+   },
+   {
+    "symbol": "SKYUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 0.048154064999999996,
+    "last": 0.04813,
+    "peak": 0.048154064999999996,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795747564,
+    "checked": 1795747500000,
+    "misses": 0
+   },
+   {
+    "symbol": "WIFUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 0.1386693,
+    "last": 0.1386,
+    "peak": 0.1386693,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795747564,
+    "checked": 1795747500000,
+    "misses": 0
+   },
+   {
+    "symbol": "JSTUSDT",
+    "dir": 1,
+    "strategy": "oversold bounce",
+    "entry": 0.14313152999999998,
+    "last": 0.14306,
+    "peak": 0.14313152999999998,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795747564,
+    "checked": 1795747500000,
+    "misses": 0
+   },
+   {
+    "symbol": "SKHYBUSDT",
+    "dir": 1,
+    "strategy": "breakout",
+    "entry": 115.787865,
+    "last": 115.73,
+    "peak": 115.787865,
+    "stake": 25.0,
+    "lev": 5,
+    "open_fee": 0.0625,
+    "time": 1795747564,
+    "checked": 1795747500000,
     "misses": 0
    }
   ]
  },
  "closed": [
+  {
+   "account": "fut",
+   "symbol": "OPGUSDT",
+   "dir": -1,
+   "strategy": "overbought fade",
+   "entry_time": 1795723348,
+   "exit_time": 1795747564,
+   "entry": 0.17841075,
+   "exit": 0.17382436874999999,
+   "stake": 25.0,
+   "pnl": 3.09,
+   "pnl_pct": 12.4,
+   "why": "trailing stop"
+  },
   {
    "account": "fut",
    "symbol": "ATMUSDT",
@@ -925,25 +1037,41 @@
   [
    1795723348,
    945.47
+  ],
+  [
+   1795747564,
+   951.95
   ]
  ],
- "cooldown": {},
- "runs": 36,
+ "cooldown": {
+  "fut:OPGUSDT": 1795747564
+ },
+ "runs": 37,
  "summary": {
-  "updated": 1795723348,
+  "updated": 1795747564,
   "api_ok": true,
-  "coins": 93,
+  "coins": 86,
   "studied": 60,
   "signals": [
    [
-    "OPGUSDT",
-    -1,
-    "overbought fade"
+    "SKYUSDT",
+    1,
+    "breakout"
    ],
    [
-    "LAYERUSDT",
+    "WIFUSDT",
     1,
-    "pullback"
+    "breakout"
+   ],
+   [
+    "JSTUSDT",
+    1,
+    "oversold bounce"
+   ],
+   [
+    "SKHYBUSDT",
+    1,
+    "breakout"
    ]
   ],
   "mood": 1,
@@ -951,17 +1079,17 @@
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 481.54,
-   "cash": 431.57,
+   "equity": 482.41,
+   "cash": 231.37,
    "trades": 20,
    "win_rate": 20.0
   },
   "fut": {
    "start": 500.0,
-   "equity": 463.93,
-   "cash": 414.05,
-   "trades": 32,
-   "win_rate": 31.2
+   "equity": 469.54,
+   "cash": 341.95,
+   "trades": 33,
+   "win_rate": 33.3
   },
   "strategies": [
    [
@@ -990,9 +1118,9 @@
    ],
    [
     "overbought fade",
-    1,
+    2,
     100,
-    5.82
+    8.91
    ]
   ]
  },

@@ -7,13 +7,13 @@
     "dir": 1,
     "strategy": "breakout",
     "entry": 0.1386693,
-    "last": 0.1404,
-    "peak": 0.1421,
+    "last": 0.1406,
+    "peak": 0.1442,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1795747564,
-    "checked": 1795809600000,
+    "checked": 1795833000000,
     "misses": 0
    },
    {
@@ -21,13 +21,13 @@
     "dir": 1,
     "strategy": "oversold bounce",
     "entry": 0.14313152999999998,
-    "last": 0.14719,
-    "peak": 0.14761,
+    "last": 0.14767,
+    "peak": 0.14769,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1795747564,
-    "checked": 1795809600000,
+    "checked": 1795833000000,
     "misses": 0
    },
    {
@@ -35,13 +35,13 @@
     "dir": 1,
     "strategy": "breakout",
     "entry": 115.787865,
-    "last": 118.73,
+    "last": 119.14,
     "peak": 120.05,
     "stake": 50.0,
     "lev": 1,
     "open_fee": 0.05,
     "time": 1795747564,
-    "checked": 1795809600000,
+    "checked": 1795833000000,
     "misses": 0
    }
   ]
@@ -1062,19 +1062,18 @@
   [
    1795810301,
    953.15
+  ],
+  [
+   1795833821,
+   953.57
   ]
  ],
- "cooldown": {
-  "fut:WIFUSDT": 1795810301,
-  "fut:JSTUSDT": 1795810301,
-  "fut:SKHYBUSDT": 1795810301,
-  "fut:PORTALUSDT": 1795810301
- },
- "runs": 39,
+ "cooldown": {},
+ "runs": 40,
  "summary": {
-  "updated": 1795810301,
+  "updated": 1795833821,
   "api_ok": true,
-  "coins": 104,
+  "coins": 106,
   "studied": 60,
   "signals": [],
   "mood": -1,
@@ -1085,7 +1084,7 @@
   "source": "https://data-api.binance.vision",
   "spot": {
    "start": 500.0,
-   "equity": 486.04,
+   "equity": 486.45,
    "cash": 332.72,
    "trades": 22,
    "win_rate": 27.3

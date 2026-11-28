@@ -462,12 +462,16 @@
   [
    1795834059,
    12.37
+  ],
+  [
+   1795863425,
+   12.37
   ]
  ],
  "cooldown": {},
- "runs": 40,
+ "runs": 41,
  "summary": {
-  "updated": 1795834059,
+  "updated": 1795863425,
   "chain": "solana",
   "start_cash": 200.0,
   "equity": 12.37,
@@ -475,24 +479,28 @@
   "trades": 23,
   "wins": 4,
   "win_rate": 17.4,
-  "scanned": 55,
-  "passed": 0,
+  "scanned": 48,
+  "passed": 1,
   "api_ok": true,
   "rejected": [
    [
     "liquidity too low",
-    39
+    38
    ],
    [
     "too old",
-    9
-   ],
-   [
-    "1h move out of range",
-    4
+    6
    ],
    [
     "falling right now",
+    1
+   ],
+   [
+    "1h move out of range",
+    1
+   ],
+   [
+    "not enough buying",
     1
    ]
   ]
